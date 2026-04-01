@@ -2,10 +2,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import LumoCharacter, { getLumoMood, getLumoMessage } from "@/components/LumoCharacter";
 
 interface Child {
   id: string; name: string; avatar: string; ageGroup: string;
-  level: number; xp: number; streak: number;
+  level: number; xp: number; streak: number; lastActivity: string | null;
   profile: {
     scoreReading: number; scoreWriting: number; scoreMath: number;
     scoreMemory: number; scoreAttention: number; personalPlan: string;
@@ -136,7 +137,8 @@ export default function ChildHomePage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [child, setChild] = useState<Child | null>(null);
   const [loading, setLoading] = useState(true);
-  const [greeting, setGreeting] = useState("");
+  const [lumoMsg, setLumoMsg] = useState("");
+  const [msgKey, setMsgKey] = useState(0);
 
   useEffect(() => {
     fetch(`/api/children/${id}`)
@@ -147,11 +149,20 @@ export default function ChildHomePage({ params }: { params: { id: string } }) {
       .then((data) => {
         if (!data) return;
         setChild(data);
-        const greetings = ageGreetings[data.ageGroup] || ageGreetings["primaire"];
-        setGreeting(greetings[Math.floor(Math.random() * greetings.length)]);
+        setLumoMsg(getLumoMessage(data));
         setLoading(false);
       });
   }, [id, router]);
+
+  // Change le message de Lumo toutes les 10 secondes
+  useEffect(() => {
+    if (!child) return;
+    const interval = setInterval(() => {
+      setLumoMsg(getLumoMessage(child));
+      setMsgKey((k) => k + 1);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [child]);
 
   if (loading || !child) {
     return (
@@ -166,117 +177,152 @@ export default function ChildHomePage({ params }: { params: { id: string } }) {
 
   const availableModules = modules.filter((m) => m.ageGroups.includes(child.ageGroup));
   const troubles = (() => { try { return JSON.parse(child.profile?.troubles || "[]"); } catch { return []; } })();
+  const lumoMood = getLumoMood(child);
+
+  const bgGradient =
+    child.ageGroup === "maternelle" ? "from-amber-500 via-orange-500 to-yellow-500" :
+    child.ageGroup === "primaire" ? "from-emerald-600 via-teal-600 to-cyan-600" :
+    "from-violet-600 via-purple-600 to-indigo-700";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700">
-      {/* Header */}
-      <header className="px-6 pt-6 pb-4">
-        <div className="max-w-4xl mx-auto">
-          {/* Top row */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-3xl">
-                {child.avatar}
-              </div>
-              <div>
-                <h1 className="font-black text-white text-xl">{child.name}</h1>
-                <p className="text-white/70 text-sm">{greeting}</p>
-              </div>
+    <div className={`min-h-screen bg-gradient-to-br ${bgGradient}`}>
+      {/* Header avec Lumo */}
+      <header className="px-4 pt-5 pb-0">
+        <div className="max-w-md mx-auto">
+
+          {/* Barre nav top */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <span className="font-black text-white text-lg">{child.name}</span>
+              <span className="bg-white/20 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                Niv.{child.level}
+              </span>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {child.streak > 0 && (
-                <div className="bg-white/20 backdrop-blur rounded-xl px-3 py-2 text-center">
-                  <div className="text-lg">🔥</div>
-                  <div className="text-xs font-bold text-white">{child.streak}j</div>
+                <div className="bg-white/20 backdrop-blur rounded-xl px-2.5 py-1.5 flex items-center gap-1">
+                  <span className="text-base">🔥</span>
+                  <span className="text-xs font-black text-white">{child.streak}j</span>
                 </div>
               )}
-              <Link
-                href={`/child/${id}/profile`}
-                className="bg-white/20 backdrop-blur rounded-xl px-3 py-2 text-xs font-bold text-white hover:bg-white/30 transition-colors"
-              >
+              <Link href={`/child/${id}/profile`}
+                className="bg-white/20 backdrop-blur rounded-xl px-2.5 py-1.5 text-sm font-bold text-white hover:bg-white/30 transition-colors">
                 🏆
               </Link>
-              <Link
-                href="/parent"
-                className="bg-white/20 backdrop-blur rounded-xl px-3 py-2 text-xs font-bold text-white hover:bg-white/30 transition-colors"
-              >
-                👨‍👩‍👧 Parents
+              <Link href="/parent"
+                className="bg-white/20 backdrop-blur rounded-xl px-2.5 py-1.5 text-xs font-bold text-white hover:bg-white/30 transition-colors">
+                👨‍👩‍👧
               </Link>
             </div>
           </div>
 
+          {/* Zone Lumo */}
+          <div className="flex flex-col items-center pt-2 pb-4">
+            {/* Bulle de dialogue */}
+            <div key={msgKey} className="speech-bubble relative bg-white rounded-2xl rounded-bl-sm px-4 py-2.5 shadow-lg mb-1 max-w-[260px] text-center">
+              <p className="text-sm font-semibold text-slate-700 leading-snug">{lumoMsg}</p>
+              {/* Petite queue vers le bas */}
+              <div className="absolute -bottom-2 left-8 w-4 h-4 bg-white" style={{ clipPath: "polygon(0 0, 100% 0, 0 100%)" }} />
+            </div>
+
+            {/* Personnage Lumo cliquable */}
+            <LumoCharacter
+              ageGroup={child.ageGroup as "maternelle" | "primaire" | "college-lycee"}
+              level={child.level}
+              mood={lumoMood}
+              size={170}
+              onClick={() => router.push(`/child/${id}/lumo`)}
+            />
+
+            <p className="text-white/60 text-xs mt-1 font-medium">Appuie sur Lumo pour jouer !</p>
+          </div>
+
           {/* XP Bar */}
           <XPBar xp={child.xp} level={child.level} />
-
-          {/* Recent achievements */}
-          {child.achievements.length > 0 && (
-            <div className="flex gap-2 mt-4">
-              {child.achievements.slice(0, 4).map((a) => (
-                <span key={a.id} title={a.title} className="text-2xl">{a.emoji}</span>
-              ))}
-              {child.achievements.length > 4 && (
-                <span className="text-white/60 text-sm self-center">+{child.achievements.length - 4}</span>
-              )}
-            </div>
-          )}
         </div>
       </header>
 
       {/* Main content */}
-      <main className="bg-slate-50 rounded-t-[2rem] min-h-[calc(100vh-200px)] px-6 pt-8 pb-10">
-        <div className="max-w-4xl mx-auto">
+      <main className="bg-slate-50 rounded-t-[2rem] min-h-[calc(100vh-200px)] px-4 pt-7 pb-10">
+        <div className="max-w-md mx-auto">
           {/* Alert if troubles detected */}
           {troubles.length > 0 && (
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 flex items-start gap-3">
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-5 flex items-start gap-3">
               <span className="text-2xl">💡</span>
               <div>
                 <p className="font-bold text-amber-800 text-sm">On travaille ensemble !</p>
                 <p className="text-amber-700 text-sm">
-                  Elevo a préparé des exercices spéciaux pour t&apos;aider avec {troubles[0]}.
+                  Lumo a préparé des exercices spéciaux pour t&apos;aider avec {troubles[0]}.
                 </p>
               </div>
             </div>
           )}
 
-          <h2 className="font-black text-2xl text-slate-800 mb-6">
-            Que veux-tu faire aujourd&apos;hui ? 🎯
+          <h2 className="font-black text-xl text-slate-800 mb-4">
+            Que veux-tu faire ? 🎯
           </h2>
 
+          {/* Lumo interaction card */}
+          <Link
+            href={`/child/${id}/lumo`}
+            className={`card-bubble mb-5 p-4 flex items-center gap-4 bg-gradient-to-r ${
+              child.ageGroup === "maternelle" ? "from-amber-400 to-orange-500" :
+              child.ageGroup === "primaire" ? "from-emerald-500 to-teal-600" :
+              "from-violet-500 to-purple-700"
+            }`}
+          >
+            <div className="shrink-0">
+              <LumoCharacter
+                ageGroup={child.ageGroup as "maternelle" | "primaire" | "college-lycee"}
+                level={child.level}
+                mood="happy"
+                size={64}
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-black text-white">Jouer avec Lumo !</p>
+              <p className="text-white/80 text-xs mt-0.5">Parler, explorer, grandir ensemble</p>
+            </div>
+            <span className="text-white text-xl shrink-0">→</span>
+          </Link>
+
           {/* Module grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             {availableModules.map((mod) => (
               <Link
                 key={mod.id}
                 href={`/child/${child.id}/module/${mod.id}`}
-                className={`card-bubble border-2 ${mod.border} ${mod.bg} p-5 flex flex-col gap-3 group`}
+                className={`card-bubble border-2 ${mod.border} ${mod.bg} p-4 flex flex-col gap-2.5 group`}
               >
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${mod.color} flex items-center justify-center text-2xl shadow-md group-hover:scale-110 transition-transform`}>
+                <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${mod.color} flex items-center justify-center text-xl shadow-md group-hover:scale-110 transition-transform`}>
                   {mod.emoji}
                 </div>
                 <div>
-                  <h3 className="font-black text-slate-800 text-sm leading-tight">{mod.name}</h3>
+                  <h3 className="font-black text-slate-800 text-xs leading-tight">{mod.name}</h3>
                   <p className="text-xs text-slate-500 mt-0.5 leading-tight">{mod.desc}</p>
                 </div>
               </Link>
             ))}
           </div>
 
-          {/* Chat with Elevo */}
-          <div className="mt-8">
+          {/* Chat IA */}
+          <div className="mt-4">
             <Link
               href={`/child/${child.id}/chat`}
-              className="card-bubble bg-gradient-to-r from-violet-500 to-purple-600 p-6 flex items-center gap-4 hover:shadow-2xl"
+              className="card-bubble bg-white border-2 border-slate-100 p-4 flex items-center gap-4"
             >
-              <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center text-4xl">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-xl shadow-md">
                 🤖
               </div>
               <div className="flex-1">
-                <h3 className="font-black text-white text-lg">Parler avec Elevo IA</h3>
-                <p className="text-white/80 text-sm">Pose n&apos;importe quelle question, je suis là pour toi !</p>
+                <p className="font-black text-slate-800 text-sm">Elevo IA</p>
+                <p className="text-xs text-slate-500">Pose n&apos;importe quelle question !</p>
               </div>
-              <span className="text-white text-2xl">→</span>
+              <span className="text-slate-400 text-xl">→</span>
             </Link>
           </div>
+
+          <div className="pb-6" />
         </div>
       </main>
     </div>
