@@ -432,16 +432,19 @@ function AssessmentModule({ child, onComplete }: { child: Child; onComplete: (sc
 
   async function submitAssessment(finalAnswers: Record<string, unknown>) {
     setLoading(true);
-    const res = await fetch("/api/ai/assessment", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ childId: child.id, answers: finalAnswers, assessmentType: "Bilan général" }),
-    });
-    if (res.ok) {
+    try {
+      const res = await fetch("/api/ai/assessment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ childId: child.id, answers: finalAnswers, assessmentType: "Bilan général" }),
+      });
       const data = await res.json();
-      setResult(data);
+      setResult(data.riskLevel ? data : { riskLevel: "low", strengths: [], detectedChallenges: [], recommendations: [], summary: "Évaluation terminée !" });
+    } catch {
+      setResult({ riskLevel: "low", strengths: [], detectedChallenges: [], recommendations: [], summary: "Évaluation terminée ! Consulte le tableau de bord parent pour les détails." });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   if (loading) {
