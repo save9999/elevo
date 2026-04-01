@@ -98,7 +98,7 @@ function ReadingModule({ child, onComplete }: { child: Child; onComplete: (score
   const [step, setStep] = useState<"read" | "quiz" | "done">("read");
   const [answers, setAnswers] = useState<(number | null)[]>(story.questions.map(() => null));
   const [current, setCurrent] = useState(0);
-  const { speak, stop, speaking, supported } = useLumoSpeech(child.ageGroup);
+  const { speak, stop, speaking } = useLumoSpeech(child.ageGroup);
 
   function answer(idx: number) {
     const next = [...answers];
@@ -129,18 +129,16 @@ function ReadingModule({ child, onComplete }: { child: Child; onComplete: (score
             <p className="text-xs font-bold text-blue-600 mb-1">
               {speaking ? "🔊 Lumo lit l'histoire…" : "Lumo va te raconter l'histoire !"}
             </p>
-            {supported && (
-              <button
-                onClick={() => speaking ? stop() : speak(story.text)}
-                className={`mt-1 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                  speaking
-                    ? "bg-red-100 text-red-600 hover:bg-red-200"
-                    : "bg-blue-500 text-white hover:bg-blue-600"
-                }`}
-              >
-                {speaking ? "⏹ Arrêter" : "▶ Écouter Lumo"}
-              </button>
-            )}
+            <button
+              onClick={() => speaking ? stop() : speak(story.text)}
+              className={`mt-1 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                speaking
+                  ? "bg-red-100 text-red-600 hover:bg-red-200"
+                  : "bg-blue-500 text-white hover:bg-blue-600"
+              }`}
+            >
+              {speaking ? "⏹ Arrêter" : "▶ Écouter Lumo"}
+            </button>
           </div>
         </div>
 
