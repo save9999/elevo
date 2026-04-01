@@ -8,41 +8,91 @@ interface Child {
 }
 
 // ── READING MODULE ─────────────────────────────────────────────────────────────
-function ReadingModule({ child, onComplete }: { child: Child; onComplete: (score: number, xp: number) => void }) {
-  const stories: Record<string, { text: string; questions: { q: string; options: string[]; correct: number }[] }[]> = {
-    maternelle: [
-      {
-        text: "🐱 Le chat s'appelle Mimi. Mimi aime jouer avec une pelote de laine rouge. Aujourd'hui, il fait beau et Mimi joue dans le jardin.",
-        questions: [
-          { q: "Comment s'appelle le chat ?", options: ["Tom", "Mimi", "Felix", "Luna"], correct: 1 },
-          { q: "Avec quoi Mimi aime-t-il jouer ?", options: ["Une balle", "Une pelote de laine", "Un os", "Un poisson"], correct: 1 },
-          { q: "Où Mimi joue-t-il aujourd'hui ?", options: ["Dans la maison", "À l'école", "Dans le jardin", "Dans la rue"], correct: 2 },
-        ],
-      },
-    ],
-    primaire: [
-      {
-        text: "🌍 La déforestation est un problème majeur pour notre planète. Chaque année, des millions d'arbres sont abattus pour faire place à des cultures ou des villes. Sans arbres, les animaux perdent leur habitat et l'air devient moins pur.",
-        questions: [
-          { q: "Qu'est-ce que la déforestation ?", options: ["Planter des arbres", "Couper des arbres", "Arroser les plantes", "Observer les oiseaux"], correct: 1 },
-          { q: "Quelles sont les conséquences de la déforestation ?", options: ["Plus d'animaux", "Moins de pollution", "Les animaux perdent leur habitat", "L'air devient plus pur"], correct: 2 },
-          { q: "Pourquoi coupe-t-on des arbres ?", options: ["Pour les vendre comme jouets", "Pour faire place à des cultures ou des villes", "Pour les replanter ailleurs", "Pour fabriquer des livres scolaires"], correct: 1 },
-        ],
-      },
-    ],
-    "college-lycee": [
-      {
-        text: "🧬 La mitose est le processus par lequel une cellule se divise pour donner deux cellules filles identiques. Ce mécanisme est fondamental pour la croissance et la réparation des tissus. Il comprend quatre phases principales : la prophase, la métaphase, l'anaphase et la télophase.",
-        questions: [
-          { q: "Combien de cellules filles produit la mitose ?", options: ["1", "2", "4", "8"], correct: 1 },
-          { q: "À quoi sert la mitose ?", options: ["À produire des gamètes", "À la croissance et réparation des tissus", "À la digestion", "À la respiration"], correct: 1 },
-          { q: "Quelle est la première phase de la mitose ?", options: ["Anaphase", "Métaphase", "Prophase", "Télophase"], correct: 2 },
-        ],
-      },
-    ],
-  };
+const ALL_STORIES: Record<string, { text: string; questions: { q: string; options: string[]; correct: number }[] }[]> = {
+  maternelle: [
+    {
+      text: "🐱 Le chat s'appelle Mimi. Mimi aime jouer avec une pelote de laine rouge. Aujourd'hui, il fait beau et Mimi joue dans le jardin.",
+      questions: [
+        { q: "Comment s'appelle le chat ?", options: ["Tom", "Mimi", "Felix", "Luna"], correct: 1 },
+        { q: "Avec quoi Mimi aime-t-il jouer ?", options: ["Une balle", "Une pelote de laine", "Un os", "Un poisson"], correct: 1 },
+        { q: "Où Mimi joue-t-il aujourd'hui ?", options: ["Dans la maison", "À l'école", "Dans le jardin", "Dans la rue"], correct: 2 },
+      ],
+    },
+    {
+      text: "🐶 Léo est un petit chien très joyeux. Il a des poils tout dorés et une grande queue. Léo adore courir avec les enfants et attraper les balles rouges.",
+      questions: [
+        { q: "Comment s'appelle le chien ?", options: ["Max", "Rex", "Léo", "Fido"], correct: 2 },
+        { q: "De quelle couleur sont ses poils ?", options: ["Blancs", "Noirs", "Dorés", "Gris"], correct: 2 },
+        { q: "Qu'est-ce que Léo adore faire ?", options: ["Dormir", "Courir et attraper les balles", "Manger", "Nager"], correct: 1 },
+      ],
+    },
+    {
+      text: "🌧️ Aujourd'hui il pleut. Tom reste à la maison. Il dessine un arc-en-ciel avec ses crayons de couleur. Sa maman dit que c'est très beau.",
+      questions: [
+        { q: "Quel temps fait-il ?", options: ["Il fait beau", "Il neige", "Il pleut", "Il y a du vent"], correct: 2 },
+        { q: "Que fait Tom ?", options: ["Il joue dehors", "Il dessine", "Il mange", "Il dort"], correct: 1 },
+        { q: "Qu'est-ce que Tom dessine ?", options: ["Une maison", "Un chien", "Un arc-en-ciel", "Un arbre"], correct: 2 },
+      ],
+    },
+  ],
+  primaire: [
+    {
+      text: "🌍 La déforestation est un problème majeur pour notre planète. Chaque année, des millions d'arbres sont abattus pour faire place à des cultures ou des villes. Sans arbres, les animaux perdent leur habitat et l'air devient moins pur.",
+      questions: [
+        { q: "Qu'est-ce que la déforestation ?", options: ["Planter des arbres", "Couper des arbres", "Arroser les plantes", "Observer les oiseaux"], correct: 1 },
+        { q: "Quelles sont les conséquences de la déforestation ?", options: ["Plus d'animaux", "Moins de pollution", "Les animaux perdent leur habitat", "L'air devient plus pur"], correct: 2 },
+        { q: "Pourquoi coupe-t-on des arbres ?", options: ["Pour les vendre comme jouets", "Pour faire place à des cultures ou des villes", "Pour les replanter ailleurs", "Pour fabriquer des livres scolaires"], correct: 1 },
+      ],
+    },
+    {
+      text: "🦋 La métamorphose du papillon est l'un des phénomènes les plus fascinants de la nature. Une chenille tisse un cocon autour d'elle et, après plusieurs semaines, elle en sort transformée en magnifique papillon aux ailes colorées.",
+      questions: [
+        { q: "Qu'est-ce qu'une métamorphose ?", options: ["Un voyage", "Une transformation complète", "Une maladie", "Un jeu"], correct: 1 },
+        { q: "Où la chenille se transforme-t-elle ?", options: ["Dans l'eau", "Dans un cocon", "Sous la terre", "Dans un arbre"], correct: 1 },
+        { q: "En quoi se transforme la chenille ?", options: ["En abeille", "En araignée", "En papillon", "En fourmi"], correct: 2 },
+      ],
+    },
+    {
+      text: "🚀 Le système solaire est composé du Soleil et de tous les astres qui gravitent autour de lui. Il comprend huit planètes principales : Mercure, Vénus, la Terre, Mars, Jupiter, Saturne, Uranus et Neptune. La Terre est la seule planète connue où la vie existe.",
+      questions: [
+        { q: "Combien y a-t-il de planètes dans le système solaire ?", options: ["6", "7", "8", "9"], correct: 2 },
+        { q: "Quelle est la planète où la vie existe ?", options: ["Mars", "Venus", "La Terre", "Jupiter"], correct: 2 },
+        { q: "Autour de quoi gravitent les planètes ?", options: ["La Lune", "Le Soleil", "La Terre", "Une étoile lointaine"], correct: 1 },
+      ],
+    },
+  ],
+  "college-lycee": [
+    {
+      text: "🧬 La mitose est le processus par lequel une cellule se divise pour donner deux cellules filles identiques. Ce mécanisme est fondamental pour la croissance et la réparation des tissus. Il comprend quatre phases principales : la prophase, la métaphase, l'anaphase et la télophase.",
+      questions: [
+        { q: "Combien de cellules filles produit la mitose ?", options: ["1", "2", "4", "8"], correct: 1 },
+        { q: "À quoi sert la mitose ?", options: ["À produire des gamètes", "À la croissance et réparation des tissus", "À la digestion", "À la respiration"], correct: 1 },
+        { q: "Quelle est la première phase de la mitose ?", options: ["Anaphase", "Métaphase", "Prophase", "Télophase"], correct: 2 },
+      ],
+    },
+    {
+      text: "📜 La Révolution française de 1789 marque une rupture majeure dans l'histoire de France. Née d'une crise financière et sociale profonde, elle aboutit à l'abolition des privilèges, à la Déclaration des droits de l'homme et du citoyen, et à la fin de la monarchie absolue.",
+      questions: [
+        { q: "En quelle année a eu lieu la Révolution française ?", options: ["1689", "1789", "1789", "1889"], correct: 1 },
+        { q: "Qu'est-ce que la Révolution a aboli ?", options: ["Le commerce", "Les privilèges", "L'agriculture", "La religion"], correct: 1 },
+        { q: "Quel document a été rédigé pendant la Révolution ?", options: ["La Constitution américaine", "Le Manifeste du Parti communiste", "La Déclaration des droits de l'homme", "La Charte de l'ONU"], correct: 2 },
+      ],
+    },
+    {
+      text: "🌡️ Le réchauffement climatique désigne l'augmentation de la température moyenne à la surface de la Terre. Il est principalement causé par les émissions de gaz à effet de serre dues aux activités humaines. Ses conséquences incluent la montée des eaux, la multiplication des événements climatiques extrêmes et la disparition de nombreuses espèces.",
+      questions: [
+        { q: "Quelle est la principale cause du réchauffement climatique ?", options: ["Les volcans", "Les activités humaines", "Les marées", "Le soleil"], correct: 1 },
+        { q: "Quelle est une conséquence du réchauffement ?", options: ["Plus de biodiversité", "Baisse des températures", "Montée des eaux", "Diminution des tempêtes"], correct: 2 },
+        { q: "Par quoi le réchauffement est-il mesuré ?", options: ["La pression atmosphérique", "La température moyenne de la Terre", "Le niveau des océans", "Le nombre d'ouragans"], correct: 1 },
+      ],
+    },
+  ],
+};
 
-  const story = stories[child.ageGroup]?.[0] || stories.primaire[0];
+function ReadingModule({ child, onComplete }: { child: Child; onComplete: (score: number, xp: number) => void }) {
+  const storyList = ALL_STORIES[child.ageGroup] || ALL_STORIES.primaire;
+  const [storyIdx] = useState(() => Math.floor(Math.random() * storyList.length));
+  const story = storyList[storyIdx];
   const [step, setStep] = useState<"read" | "quiz" | "done">("read");
   const [answers, setAnswers] = useState<(number | null)[]>(story.questions.map(() => null));
   const [current, setCurrent] = useState(0);
@@ -129,6 +179,55 @@ function ReadingModule({ child, onComplete }: { child: Child; onComplete: (score
 }
 
 // ── MATH MODULE ─────────────────────────────────────────────────────────────
+const MATH_POOLS: Record<string, { q: string; answer: string }[]> = {
+  maternelle: [
+    { q: "🍎🍎🍎 + 🍎🍎 = ?", answer: "5" },
+    { q: "🐣🐣🐣🐣 - 🐣🐣 = ?", answer: "2" },
+    { q: "3 + 4 = ?", answer: "7" },
+    { q: "6 - 2 = ?", answer: "4" },
+    { q: "2 + 2 = ?", answer: "4" },
+    { q: "8 - 3 = ?", answer: "5" },
+    { q: "🌟🌟 + 🌟🌟🌟 = ?", answer: "5" },
+    { q: "4 + 3 = ?", answer: "7" },
+    { q: "9 - 4 = ?", answer: "5" },
+    { q: "🐱🐱🐱 + 🐱 = ?", answer: "4" },
+    { q: "5 + 5 = ?", answer: "10" },
+    { q: "7 - 3 = ?", answer: "4" },
+  ],
+  primaire: [
+    { q: "24 × 3 = ?", answer: "72" },
+    { q: "144 ÷ 12 = ?", answer: "12" },
+    { q: "15% de 200 = ?", answer: "30" },
+    { q: "√49 = ?", answer: "7" },
+    { q: "63 ÷ 7 = ?", answer: "9" },
+    { q: "17 × 4 = ?", answer: "68" },
+    { q: "25% de 80 = ?", answer: "20" },
+    { q: "√64 = ?", answer: "8" },
+    { q: "45 + 38 = ?", answer: "83" },
+    { q: "120 ÷ 8 = ?", answer: "15" },
+    { q: "12 × 12 = ?", answer: "144" },
+    { q: "50% de 150 = ?", answer: "75" },
+  ],
+  "college-lycee": [
+    { q: "Résoudre : 2x + 5 = 13, x = ?", answer: "4" },
+    { q: "sin(90°) = ?", answer: "1" },
+    { q: "log₁₀(1000) = ?", answer: "3" },
+    { q: "Dériver f(x) = x² : f'(x) = ?", answer: "2x" },
+    { q: "Résoudre : 3x - 7 = 8, x = ?", answer: "5" },
+    { q: "cos(0°) = ?", answer: "1" },
+    { q: "log₂(8) = ?", answer: "3" },
+    { q: "Dériver f(x) = 3x² : f'(x) = ?", answer: "6x" },
+    { q: "Résoudre : x² = 25, x = ?", answer: "5" },
+    { q: "tan(45°) = ?", answer: "1" },
+    { q: "Périmètre d'un cercle de rayon 5 : 2π× ?", answer: "5" },
+    { q: "Résoudre : 5x + 10 = 35, x = ?", answer: "5" },
+  ],
+};
+
+function shuffle<T>(arr: T[]): T[] {
+  return [...arr].sort(() => Math.random() - 0.5);
+}
+
 function MathModule({ child, onComplete }: { child: Child; onComplete: (score: number, xp: number) => void }) {
   const [answers, setAnswers] = useState<string[]>([]);
   const [current, setCurrent] = useState(0);
@@ -136,30 +235,10 @@ function MathModule({ child, onComplete }: { child: Child; onComplete: (score: n
   const [feedback, setFeedback] = useState<"" | "correct" | "wrong">("");
   const [done, setDone] = useState(false);
 
-  const problems = (() => {
-    if (child.ageGroup === "maternelle") {
-      return [
-        { q: "🍎🍎🍎 + 🍎🍎 = ?", answer: "5" },
-        { q: "🐣🐣🐣🐣 - 🐣🐣 = ?", answer: "2" },
-        { q: "3 + 4 = ?", answer: "7" },
-        { q: "6 - 2 = ?", answer: "4" },
-      ];
-    }
-    if (child.ageGroup === "primaire") {
-      return [
-        { q: "24 × 3 = ?", answer: "72" },
-        { q: "144 ÷ 12 = ?", answer: "12" },
-        { q: "15% de 200 = ?", answer: "30" },
-        { q: "√49 = ?", answer: "7" },
-      ];
-    }
-    return [
-      { q: "Résoudre : 2x + 5 = 13, x = ?", answer: "4" },
-      { q: "sin(90°) = ?", answer: "1" },
-      { q: "log₁₀(1000) = ?", answer: "3" },
-      { q: "Dériver f(x) = x² : f'(x) = ?", answer: "2x" },
-    ];
-  })();
+  const [problems] = useState(() => {
+    const pool = MATH_POOLS[child.ageGroup] || MATH_POOLS.primaire;
+    return shuffle(pool).slice(0, 5);
+  });
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -1164,6 +1243,8 @@ function CreativityModule({ child, onComplete }: { child: Child; onComplete: (sc
     { enigme: "En 1928, un médecin oublie une boîte de bactéries avant ses vacances. À son retour, il découvre que des moisissures ont tué toutes les bactéries. Cette erreur a sauvé des millions de vies. De quoi s'agit-il ?", emoji: "💊", indices: ["C'est un médicament", "Ça combat les infections", "Alexander Fleming l'a découvert par accident"], reponse: "La pénicilline", explication: "La pénicilline, premier antibiotique, a été découverte par accident par Alexander Fleming en 1928 !" },
   ];
 
+  const [showAnswer, setShowAnswer] = useState(false);
+
   const ageGroup = child.ageGroup as keyof typeof defisCreatifs;
 
   if (!activity) {
@@ -1294,7 +1375,6 @@ function CreativityModule({ child, onComplete }: { child: Child; onComplete: (sc
 
   // ── Mystère & Inventions ──
   const inv = inventions[step % inventions.length];
-  const [showAnswer, setShowAnswer] = useState(false);
   return (
     <div className="space-y-5">
       <div className="bg-slate-800 rounded-2xl p-6 text-center">

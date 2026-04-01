@@ -127,6 +127,12 @@ export default function ParentDashboard() {
             <span className="text-sm text-slate-500 hidden md:block">
               Bonjour {session?.user?.name || "Parent"} 👋
             </span>
+            <Link
+              href="/parent/settings"
+              className="text-sm font-semibold text-slate-500 hover:text-violet-600 transition-colors"
+            >
+              ⚙️ Paramètres
+            </Link>
             <button
               onClick={() => signOut({ callbackUrl: "/" })}
               className="text-sm font-semibold text-slate-500 hover:text-red-500 transition-colors"

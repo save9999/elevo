@@ -26,9 +26,31 @@ export async function POST(req: NextRequest) {
     const newXp = child.xp + xpEarned;
     const xpPerLevel = 500;
     const newLevel = Math.floor(newXp / xpPerLevel) + 1;
+
+    // Streak calculation
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let newStreak = child.streak;
+    if (child.lastActivity) {
+      const last = new Date(child.lastActivity);
+      const lastDay = new Date(last.getFullYear(), last.getMonth(), last.getDate());
+      const diffDays = Math.round((today.getTime() - lastDay.getTime()) / 86400000);
+      if (diffDays === 0) {
+        // Already played today — keep streak
+      } else if (diffDays === 1) {
+        // Consecutive day
+        newStreak = child.streak + 1;
+      } else {
+        // Gap — reset streak
+        newStreak = 1;
+      }
+    } else {
+      newStreak = 1;
+    }
+
     await prisma.child.update({
       where: { id: childId },
-      data: { xp: newXp, level: newLevel, lastActivity: new Date() },
+      data: { xp: newXp, level: newLevel, streak: newStreak, lastActivity: new Date() },
     });
 
     // Check for achievements

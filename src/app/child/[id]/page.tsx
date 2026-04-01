@@ -191,6 +191,12 @@ export default function ChildHomePage({ params }: { params: { id: string } }) {
                 </div>
               )}
               <Link
+                href={`/child/${id}/profile`}
+                className="bg-white/20 backdrop-blur rounded-xl px-3 py-2 text-xs font-bold text-white hover:bg-white/30 transition-colors"
+              >
+                🏆
+              </Link>
+              <Link
                 href="/parent"
                 className="bg-white/20 backdrop-blur rounded-xl px-3 py-2 text-xs font-bold text-white hover:bg-white/30 transition-colors"
               >
