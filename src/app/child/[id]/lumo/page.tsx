@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import LumoCharacter, { LumoMood, getLumoMood } from "@/components/LumoCharacter";
+import { useLumoSpeech } from "@/components/useLumoSpeech";
 
 interface Child {
   id: string; name: string; avatar: string; ageGroup: string;
@@ -185,6 +186,9 @@ export default function LumoPage({ params }: { params: { id: string } }) {
   const [riddleDone, setRiddleDone] = useState(false);
   const [riddleList, setRiddleList] = useState<(typeof RIDDLES)[string]>([]);
 
+  const ageGroupKey = (child?.ageGroup ?? "primaire") as "maternelle" | "primaire" | "college-lycee";
+  const { speak, speaking } = useLumoSpeech(ageGroupKey);
+
   useEffect(() => {
     fetch(`/api/children/${id}`)
       .then((r) => { if (!r.ok) { router.push("/parent"); return null; } return r.json(); })
@@ -192,11 +196,19 @@ export default function LumoPage({ params }: { params: { id: string } }) {
         if (!data) return;
         setChild(data);
         setLumoMood(getLumoMood(data));
-        // Sélectionner 5 devinettes aléatoires
         const pool = RIDDLES[data.ageGroup] || RIDDLES.primaire;
         setRiddleList([...pool].sort(() => Math.random() - 0.5).slice(0, 5));
+        // Lumo se présente à l'arrivée
+        setTimeout(() => {
+          const greetings: Record<string, string> = {
+            maternelle: `Salut ${data.name.split(" ")[0]} ! C'est moi, Lumo ! On va s'amuser ensemble !`,
+            primaire: `Hey ${data.name.split(" ")[0]} ! Je suis Lumo, ton compagnon d'aventure !`,
+            "college-lycee": `Salut ${data.name.split(" ")[0]} ! Je suis Lumo. On va faire de grandes choses ensemble !`,
+          };
+          speak(greetings[data.ageGroup] || greetings.primaire);
+        }, 600);
       });
-  }, [id, router]);
+  }, [id, router]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleLumoClick() {
     if (!child) return;
@@ -205,10 +217,12 @@ export default function LumoPage({ params }: { params: { id: string } }) {
     setReactionMsg(msg);
     setReactionKey((k) => k + 1);
     setLumoMood("excited");
+    // Lumo dit sa réaction à voix haute
+    speak(msg.replace(/[😄🌟💛😂🚀💪⭐🎉🔥😎✨🤙]/g, ""));
     setTimeout(() => {
       setLumoMood(getLumoMood(child));
       setReactionMsg(null);
-    }, 2500);
+    }, 3000);
   }
 
   function startGame() {
@@ -218,6 +232,7 @@ export default function LumoPage({ params }: { params: { id: string } }) {
     setRiddleChosen(null);
     setRiddleFeedback(null);
     setRiddleDone(false);
+    speak("C'est parti ! Je te pose une devinette, tu réponds !");
   }
 
   function pickRiddle(idx: number) {
@@ -231,18 +246,23 @@ export default function LumoPage({ params }: { params: { id: string } }) {
     } else {
       setLumoMood("idle");
     }
+    const feedback = correct
+      ? riddle.reaction.replace(/[🏼🎨🚀💧📚🌍🐘⚡💊🔢🌍😄🌈🐱🔢🍎⭐]/g, "")
+      : `Pas tout à fait. La bonne réponse était : ${riddle.options[riddle.correct]}`;
     setRiddleFeedback(correct ? riddle.reaction : `Pas tout à fait… La bonne réponse était : "${riddle.options[riddle.correct]}" 🤔`);
+    speak(feedback);
     setTimeout(() => {
       if (riddleStep >= riddleList.length - 1) {
         setRiddleDone(true);
         setLumoMood("proud");
+        speak("Bravo ! La partie est terminée ! Tu as été fantastique !");
       } else {
         setRiddleStep((s) => s + 1);
         setRiddleChosen(null);
         setRiddleFeedback(null);
         setLumoMood("happy");
       }
-    }, 2000);
+    }, 2500);
   }
 
   if (!child) {
@@ -311,6 +331,7 @@ export default function LumoPage({ params }: { params: { id: string } }) {
             ageGroup={child.ageGroup as "maternelle" | "primaire" | "college-lycee"}
             level={child.level}
             mood={lumoMood}
+            speaking={speaking}
             size={220}
             onClick={handleLumoClick}
             className="drop-shadow-2xl"
@@ -350,14 +371,16 @@ export default function LumoPage({ params }: { params: { id: string } }) {
                   onClick={() => {
                     setLumoMood(item.mood);
                     const reacts: Record<string, string> = {
-                      excited: "Génial ! Moi aussi je suis super content(e) ! 🎉",
-                      happy: "Cool ! On va passer une super journée ! 😊",
-                      idle: "Je suis là pour toi, quoi qu'il arrive ! 🤗",
-                      sleeping: "Tu es fatigué(e) ? Repose-toi, je reste là ! 😴",
+                      excited: "Génial ! Moi aussi je suis super content ! Allez, on s'amuse !",
+                      happy: "Cool ! On va passer une super journée ensemble !",
+                      idle: "Je suis là pour toi, quoi qu'il arrive !",
+                      sleeping: "Tu es fatigué ? Repose-toi bien, je reste là !",
                     };
-                    setReactionMsg(reacts[item.mood]);
+                    const msg = reacts[item.mood];
+                    setReactionMsg(msg);
                     setReactionKey((k) => k + 1);
-                    setTimeout(() => setReactionMsg(null), 3000);
+                    speak(msg);
+                    setTimeout(() => setReactionMsg(null), 4000);
                   }}
                   className="flex flex-col items-center bg-white/20 hover:bg-white/35 rounded-2xl py-2.5 px-1 transition-all"
                 >

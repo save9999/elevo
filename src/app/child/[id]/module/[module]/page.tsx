@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import LumoCharacter from "@/components/LumoCharacter";
+import { useLumoSpeech } from "@/components/useLumoSpeech";
 
 interface Child {
   id: string; name: string; avatar: string; ageGroup: string; level: number; xp: number;
@@ -96,6 +98,7 @@ function ReadingModule({ child, onComplete }: { child: Child; onComplete: (score
   const [step, setStep] = useState<"read" | "quiz" | "done">("read");
   const [answers, setAnswers] = useState<(number | null)[]>(story.questions.map(() => null));
   const [current, setCurrent] = useState(0);
+  const { speak, stop, speaking, supported } = useLumoSpeech(child.ageGroup);
 
   function answer(idx: number) {
     const next = [...answers];
@@ -110,12 +113,44 @@ function ReadingModule({ child, onComplete }: { child: Child; onComplete: (score
 
   if (step === "read") {
     return (
-      <div className="space-y-6">
-        <div className="bg-blue-50 rounded-2xl p-6 text-slate-700 text-lg leading-relaxed font-medium">
+      <div className="space-y-5">
+        {/* Lumo narrateur */}
+        <div className="flex items-start gap-4">
+          <div className="shrink-0">
+            <LumoCharacter
+              ageGroup={child.ageGroup as "maternelle" | "primaire" | "college-lycee"}
+              level={child.level}
+              mood={speaking ? "excited" : "happy"}
+              speaking={speaking}
+              size={80}
+            />
+          </div>
+          <div className="flex-1 bg-blue-50 rounded-2xl rounded-tl-sm p-4">
+            <p className="text-xs font-bold text-blue-600 mb-1">
+              {speaking ? "🔊 Lumo lit l'histoire…" : "Lumo va te raconter l'histoire !"}
+            </p>
+            {supported && (
+              <button
+                onClick={() => speaking ? stop() : speak(story.text)}
+                className={`mt-1 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                  speaking
+                    ? "bg-red-100 text-red-600 hover:bg-red-200"
+                    : "bg-blue-500 text-white hover:bg-blue-600"
+                }`}
+              >
+                {speaking ? "⏹ Arrêter" : "▶ Écouter Lumo"}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Texte de l'histoire */}
+        <div className="bg-white border-2 border-blue-100 rounded-2xl p-6 text-slate-700 text-base leading-relaxed font-medium shadow-sm">
           {story.text}
         </div>
+
         <button
-          onClick={() => setStep("quiz")}
+          onClick={() => { stop(); setStep("quiz"); }}
           className="btn-fun w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-4 text-lg"
         >
           J&apos;ai lu ! Passer au quiz 🧠
