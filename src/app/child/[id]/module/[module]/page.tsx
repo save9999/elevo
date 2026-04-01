@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, use } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -707,8 +707,8 @@ const moduleMeta: Record<string, { name: string; emoji: string; color: string; b
 };
 
 // ── MAIN PAGE ─────────────────────────────────────────────────────────────────
-export default function ModulePage({ params }: { params: Promise<{ id: string; module: string }> }) {
-  const { id, module: moduleId } = use(params);
+export default function ModulePage({ params }: { params: { id: string; module: string } }) {
+  const { id, module: moduleId } = params;
   const router = useRouter();
   const [child, setChild] = useState<Child | null>(null);
   const [completed, setCompleted] = useState(false);

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, use } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -52,8 +52,8 @@ const moduleLabels: Record<string, string> = {
   orientation: "Orientation",
 };
 
-export default function ChildDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function ChildDetailPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const { status } = useSession();
   const router = useRouter();
   const [child, setChild] = useState<ChildData | null>(null);

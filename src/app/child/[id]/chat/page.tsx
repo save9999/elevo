@@ -1,13 +1,13 @@
 "use client";
-import { useEffect, useState, useRef, use } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 interface Message { role: "user" | "assistant"; content: string }
 interface Child { id: string; name: string; avatar: string; ageGroup: string; level: number }
 
-export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function ChatPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const router = useRouter();
   const [child, setChild] = useState<Child | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
