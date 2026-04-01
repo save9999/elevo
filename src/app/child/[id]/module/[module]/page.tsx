@@ -100,45 +100,66 @@ function ReadingModule({ child, onComplete }: { child: Child; onComplete: (score
   const [current, setCurrent] = useState(0);
   const { speak, stop, speaking } = useLumoSpeech(child.ageGroup);
 
+  // ── Lecture automatique du texte dès l'affichage ──────────────────────────
+  useEffect(() => {
+    if (step !== "read") return;
+    const t = setTimeout(() => speak(story.text), 900);
+    return () => { clearTimeout(t); stop(); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Lecture automatique de chaque question du quiz ────────────────────────
+  useEffect(() => {
+    if (step !== "quiz") return;
+    const q = story.questions[current];
+    const t = setTimeout(() => speak(q.q), 400);
+    return () => clearTimeout(t);
+  }, [current, step]); // eslint-disable-line react-hooks/exhaustive-deps
+
   function answer(idx: number) {
     const next = [...answers];
     next[current] = idx;
     setAnswers(next);
+    const q = story.questions[current];
+    const correct = idx === q.correct;
+    // Lumo commente la réponse
+    speak(correct ? "Bravo ! Bonne réponse !" : `Pas tout à fait. La bonne réponse était : ${q.options[q.correct]}`);
     if (current < story.questions.length - 1) {
-      setTimeout(() => setCurrent((c) => c + 1), 500);
+      setTimeout(() => setCurrent((c) => c + 1), 2000);
     } else {
-      setTimeout(() => setStep("done"), 500);
+      setTimeout(() => setStep("done"), 2000);
     }
   }
 
   if (step === "read") {
     return (
       <div className="space-y-5">
-        {/* Lumo narrateur */}
-        <div className="flex items-start gap-4">
+        {/* Lumo narrateur — affiché en haut, lit automatiquement */}
+        <div className="flex items-center gap-4 bg-blue-50 rounded-2xl p-4">
           <div className="shrink-0">
             <LumoCharacter
               ageGroup={child.ageGroup as "maternelle" | "primaire" | "college-lycee"}
               level={child.level}
               mood={speaking ? "excited" : "happy"}
               speaking={speaking}
-              size={80}
+              size={72}
             />
           </div>
-          <div className="flex-1 bg-blue-50 rounded-2xl rounded-tl-sm p-4">
-            <p className="text-xs font-bold text-blue-600 mb-1">
-              {speaking ? "🔊 Lumo lit l'histoire…" : "Lumo va te raconter l'histoire !"}
+          <div className="flex-1">
+            <p className="text-sm font-black text-blue-700">
+              {speaking ? "Lumo lit l'histoire…" : "Lumo te raconte l'histoire !"}
             </p>
-            <button
-              onClick={() => speaking ? stop() : speak(story.text)}
-              className={`mt-1 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                speaking
-                  ? "bg-red-100 text-red-600 hover:bg-red-200"
-                  : "bg-blue-500 text-white hover:bg-blue-600"
-              }`}
-            >
-              {speaking ? "⏹ Arrêter" : "▶ Écouter Lumo"}
-            </button>
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={() => speaking ? stop() : speak(story.text)}
+                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  speaking
+                    ? "bg-red-100 text-red-600 hover:bg-red-200"
+                    : "bg-blue-500 text-white hover:bg-blue-600"
+                }`}
+              >
+                {speaking ? "⏹ Pause" : "▶ Réécouter"}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -151,7 +172,7 @@ function ReadingModule({ child, onComplete }: { child: Child; onComplete: (score
           onClick={() => { stop(); setStep("quiz"); }}
           className="btn-fun w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-4 text-lg"
         >
-          J&apos;ai lu ! Passer au quiz 🧠
+          J&apos;ai compris ! Quiz 🧠
         </button>
       </div>
     );
@@ -161,12 +182,23 @@ function ReadingModule({ child, onComplete }: { child: Child; onComplete: (score
     const q = story.questions[current];
     return (
       <div className="space-y-5">
-        <div className="flex justify-between text-sm text-slate-500 font-bold">
-          <span>Question {current + 1}/{story.questions.length}</span>
-          <span>{Math.round(((current) / story.questions.length) * 100)}%</span>
-        </div>
-        <div className="h-2 bg-slate-100 rounded-full">
-          <div className="h-full bg-blue-400 rounded-full transition-all" style={{ width: `${(current / story.questions.length) * 100}%` }} />
+        {/* Lumo pose la question */}
+        <div className="flex items-center gap-3 mb-1">
+          <LumoCharacter
+            ageGroup={child.ageGroup as "maternelle" | "primaire" | "college-lycee"}
+            level={child.level}
+            mood="happy"
+            speaking={speaking}
+            size={52}
+          />
+          <div>
+            <div className="flex justify-between text-sm text-slate-500 font-bold gap-4">
+              <span>Question {current + 1}/{story.questions.length}</span>
+            </div>
+            <div className="h-2 bg-slate-100 rounded-full w-40 mt-1">
+              <div className="h-full bg-blue-400 rounded-full transition-all" style={{ width: `${(current / story.questions.length) * 100}%` }} />
+            </div>
+          </div>
         </div>
         <p className="text-xl font-black text-slate-800">{q.q}</p>
         <div className="grid grid-cols-1 gap-3">
