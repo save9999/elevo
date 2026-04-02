@@ -96,3 +96,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Nunito", san
 .lumo-sleeping { animation: lumo-sleeping 3s   ease-in-out infinite; }
 .lumo-sparkle  { animation: lumo-sparkle  1.4s ease-in-out infinite; position: absolute; }
 .speech-bubble { animation: speech-appear 0.4s cubic-bezier(.34,1.56,.64,1) forwards; }
+
+/* Utilitaires manquants */
+@keyframes bounce-slow {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-12px); }
+}
+.animate-bounce-slow { animation: bounce-slow 2s ease-in-out infinite; }

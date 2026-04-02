@@ -8,6 +8,10 @@ export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
+  if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY.includes("REMPLACE")) {
+    return NextResponse.json({ message: "Désolé, le service IA est temporairement indisponible. Réessaie plus tard ! 🙏" });
+  }
+
   const { messages, childProfile, systemContext } = await req.json();
 
   const systemPrompt = `Tu es Elevo, un assistant IA bienveillant et expert en éducation pour enfants de 3 à 18 ans.
@@ -31,16 +35,22 @@ Règles importantes:
 - Si un enfant semble en difficulté, suggère doucement de demander l'aide d'un adulte
 - Ne donne jamais d'informations médicales précises`;
 
-  const response = await client.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 1024,
-    system: systemPrompt,
-    messages: messages.map((m: { role: string; content: string }) => ({
-      role: m.role,
-      content: m.content,
-    })),
-  });
-
-  const text = response.content[0].type === "text" ? response.content[0].text : "";
-  return NextResponse.json({ message: text });
+  try {
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages: messages.map((m: { role: string; content: string }) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      })),
+    });
+    const text = response.content[0].type === "text" ? response.content[0].text : "";
+    return NextResponse.json({ message: text });
+  } catch (err: unknown) {
+    console.error("Claude chat error:", err);
+    return NextResponse.json({
+      message: "Oups, je n'arrive pas à te répondre en ce moment. Réessaie dans quelques secondes ! 🔄",
+    });
+  }
 }
