@@ -211,6 +211,75 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Pricing */}
+      <section id="pricing" className="py-24 bg-white">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-black text-slate-900 mb-4">Des tarifs simples et transparents</h2>
+            <p className="text-lg text-slate-500">Commencez gratuitement, évoluez à votre rythme.</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8 items-start">
+            {/* Gratuit */}
+            <div className="card-bubble border-2 border-slate-200 bg-slate-50 p-8">
+              <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-2">Gratuit</p>
+              <div className="flex items-end gap-1 mb-1">
+                <span className="text-5xl font-black text-slate-800">0€</span>
+                <span className="text-slate-500 mb-2">/mois</span>
+              </div>
+              <p className="text-slate-500 text-sm mb-6">Pour découvrir Elevo</p>
+              <ul className="space-y-3 mb-8 text-sm text-slate-700">
+                {["1 enfant", "Évaluation initiale", "5 sessions/mois", "Lumo accessible", "Modules de base"].map((f) => (
+                  <li key={f} className="flex items-center gap-2"><span className="text-emerald-500 font-bold">✓</span>{f}</li>
+                ))}
+              </ul>
+              <Link href="/register" className="btn-fun w-full text-center block bg-slate-200 text-slate-700 py-3 font-bold">
+                Commencer gratuitement
+              </Link>
+            </div>
+
+            {/* Famille — mis en avant */}
+            <div className="card-bubble border-2 border-violet-400 bg-gradient-to-br from-violet-50 to-purple-50 p-8 relative">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-violet-500 to-purple-600 text-white text-xs font-black px-4 py-1.5 rounded-full shadow">
+                ⭐ LE PLUS POPULAIRE
+              </div>
+              <p className="text-sm font-bold text-violet-600 uppercase tracking-widest mb-2">Famille</p>
+              <div className="flex items-end gap-1 mb-1">
+                <span className="text-5xl font-black text-slate-800">9,90€</span>
+                <span className="text-slate-500 mb-2">/mois</span>
+              </div>
+              <p className="text-slate-500 text-sm mb-6">Pour un suivi complet</p>
+              <ul className="space-y-3 mb-8 text-sm text-slate-700">
+                {["Jusqu'à 3 enfants", "Sessions illimitées", "Plan IA personnalisé", "Tous les modules", "Tableau de bord parent", "Rapports hebdomadaires"].map((f) => (
+                  <li key={f} className="flex items-center gap-2"><span className="text-violet-500 font-bold">✓</span>{f}</li>
+                ))}
+              </ul>
+              <Link href="/register" className="btn-fun w-full text-center block bg-gradient-to-r from-violet-500 to-purple-600 text-white py-3 font-bold">
+                Démarrer l&apos;essai gratuit
+              </Link>
+            </div>
+
+            {/* Premium */}
+            <div className="card-bubble border-2 border-slate-200 bg-slate-50 p-8">
+              <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-2">Premium</p>
+              <div className="flex items-end gap-1 mb-1">
+                <span className="text-5xl font-black text-slate-800">19€</span>
+                <span className="text-slate-500 mb-2">/mois</span>
+              </div>
+              <p className="text-slate-500 text-sm mb-6">Pour les familles exigeantes</p>
+              <ul className="space-y-3 mb-8 text-sm text-slate-700">
+                {["Enfants illimités", "Tout le plan Famille", "Analyse approfondie dys", "Alertes comportementales", "Export PDF des rapports", "Support prioritaire"].map((f) => (
+                  <li key={f} className="flex items-center gap-2"><span className="text-emerald-500 font-bold">✓</span>{f}</li>
+                ))}
+              </ul>
+              <Link href="/register" className="btn-fun w-full text-center block bg-slate-800 text-white py-3 font-bold">
+                Choisir Premium
+              </Link>
+            </div>
+          </div>
+          <p className="text-center text-slate-400 text-sm mt-8">Sans engagement · Résiliable à tout moment · Paiement sécurisé</p>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="py-24 bg-gradient-to-br from-violet-600 to-purple-700">
         <div className="max-w-3xl mx-auto px-6 text-center">
