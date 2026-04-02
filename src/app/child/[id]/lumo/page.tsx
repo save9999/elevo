@@ -184,9 +184,6 @@ export default function LumoPage({ params }: { params: { id: string } }) {
   const [riddleDone, setRiddleDone] = useState(false);
   const [riddleList, setRiddleList] = useState<(typeof RIDDLES)[string]>([]);
 
-  const ageGroupKey = (child?.ageGroup ?? "primaire") as "maternelle" | "primaire" | "college-lycee";
-  void ageGroupKey; // conservé pour LumoCharacter
-
   useEffect(() => {
     fetch(`/api/children/${id}`)
       .then((r) => { if (!r.ok) { router.push("/parent"); return null; } return r.json(); })
@@ -196,12 +193,7 @@ export default function LumoPage({ params }: { params: { id: string } }) {
         setLumoMood(getLumoMood(data));
         const pool = RIDDLES[data.ageGroup] || RIDDLES.primaire;
         setRiddleList([...pool].sort(() => Math.random() - 0.5).slice(0, 5));
-        // Stocke le salut pour le jouer après interaction utilisateur
-        const greetings: Record<string, string> = {
-          maternelle: `Salut ${data.name.split(" ")[0]} ! C'est moi, Lumo ! On va s'amuser ensemble !`,
-          primaire: `Hey ${data.name.split(" ")[0]} ! Je suis Lumo, ton compagnon d'aventure !`,
-          "college-lycee": `Salut ${data.name.split(" ")[0]} ! Je suis Lumo. On va faire de grandes choses ensemble !`,
-        };
+
       });
   }, [id, router]); // eslint-disable-line react-hooks/exhaustive-deps
 
