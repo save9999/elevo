@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import LumoCharacter from "@/components/LumoCharacter";
-import { useLumoSpeech } from "@/components/useLumoSpeech";
 
 interface Child {
   id: string; name: string; avatar: string; ageGroup: string; level: number; xp: number;
@@ -98,35 +97,14 @@ function ReadingModule({ child, onComplete }: { child: Child; onComplete: (score
   const [step, setStep] = useState<"read" | "quiz" | "done">("read");
   const [answers, setAnswers] = useState<(number | null)[]>(story.questions.map(() => null));
   const [current, setCurrent] = useState(0);
-  const { speak, stop, speaking } = useLumoSpeech(child.ageGroup);
-
-  // ── Lecture automatique du texte dès l'affichage ──────────────────────────
-  useEffect(() => {
-    if (step !== "read") return;
-    const t = setTimeout(() => speak(story.text), 900);
-    return () => { clearTimeout(t); stop(); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Lecture automatique de chaque question du quiz ────────────────────────
-  useEffect(() => {
-    if (step !== "quiz") return;
-    const q = story.questions[current];
-    const t = setTimeout(() => speak(q.q), 400);
-    return () => clearTimeout(t);
-  }, [current, step]); // eslint-disable-line react-hooks/exhaustive-deps
-
   function answer(idx: number) {
     const next = [...answers];
     next[current] = idx;
     setAnswers(next);
-    const q = story.questions[current];
-    const correct = idx === q.correct;
-    // Lumo commente la réponse
-    speak(correct ? "Bravo ! Bonne réponse !" : `Pas tout à fait. La bonne réponse était : ${q.options[q.correct]}`);
     if (current < story.questions.length - 1) {
-      setTimeout(() => setCurrent((c) => c + 1), 2000);
+      setTimeout(() => setCurrent((c) => c + 1), 1500);
     } else {
-      setTimeout(() => setStep("done"), 2000);
+      setTimeout(() => setStep("done"), 1500);
     }
   }
 
@@ -139,27 +117,12 @@ function ReadingModule({ child, onComplete }: { child: Child; onComplete: (score
             <LumoCharacter
               ageGroup={child.ageGroup as "maternelle" | "primaire" | "college-lycee"}
               level={child.level}
-              mood={speaking ? "excited" : "happy"}
-              speaking={speaking}
+              mood="happy"
               size={72}
             />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-black text-blue-700">
-              {speaking ? "Lumo lit l'histoire…" : "Lumo te raconte l'histoire !"}
-            </p>
-            <div className="flex gap-2 mt-2">
-              <button
-                onClick={() => speaking ? stop() : speak(story.text)}
-                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  speaking
-                    ? "bg-red-100 text-red-600 hover:bg-red-200"
-                    : "bg-blue-500 text-white hover:bg-blue-600"
-                }`}
-              >
-                {speaking ? "⏹ Pause" : "▶ Réécouter"}
-              </button>
-            </div>
+            <p className="text-sm font-black text-blue-700">Lumo te raconte l&apos;histoire !</p>
           </div>
         </div>
 
@@ -169,7 +132,7 @@ function ReadingModule({ child, onComplete }: { child: Child; onComplete: (score
         </div>
 
         <button
-          onClick={() => { stop(); setStep("quiz"); }}
+          onClick={() => setStep("quiz")}
           className="btn-fun w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-4 text-lg"
         >
           J&apos;ai compris ! Quiz 🧠
@@ -188,7 +151,6 @@ function ReadingModule({ child, onComplete }: { child: Child; onComplete: (score
             ageGroup={child.ageGroup as "maternelle" | "primaire" | "college-lycee"}
             level={child.level}
             mood="happy"
-            speaking={speaking}
             size={52}
           />
           <div>
