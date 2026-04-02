@@ -177,6 +177,8 @@ export default function LumoPage({ params }: { params: { id: string } }) {
   const [lumoMood, setLumoMood] = useState<LumoMood>("idle");
   const [reactionMsg, setReactionMsg] = useState<string | null>(null);
   const [reactionKey, setReactionKey] = useState(0);
+  const [started, setStarted] = useState(false);
+  const pendingGreeting = useRef<string | null>(null);
 
   // Jeu de devinettes
   const [riddleStep, setRiddleStep] = useState(0);
@@ -198,15 +200,13 @@ export default function LumoPage({ params }: { params: { id: string } }) {
         setLumoMood(getLumoMood(data));
         const pool = RIDDLES[data.ageGroup] || RIDDLES.primaire;
         setRiddleList([...pool].sort(() => Math.random() - 0.5).slice(0, 5));
-        // Lumo se présente à l'arrivée
-        setTimeout(() => {
-          const greetings: Record<string, string> = {
-            maternelle: `Salut ${data.name.split(" ")[0]} ! C'est moi, Lumo ! On va s'amuser ensemble !`,
-            primaire: `Hey ${data.name.split(" ")[0]} ! Je suis Lumo, ton compagnon d'aventure !`,
-            "college-lycee": `Salut ${data.name.split(" ")[0]} ! Je suis Lumo. On va faire de grandes choses ensemble !`,
-          };
-          speak(greetings[data.ageGroup] || greetings.primaire);
-        }, 600);
+        // Stocke le salut pour le jouer après interaction utilisateur
+        const greetings: Record<string, string> = {
+          maternelle: `Salut ${data.name.split(" ")[0]} ! C'est moi, Lumo ! On va s'amuser ensemble !`,
+          primaire: `Hey ${data.name.split(" ")[0]} ! Je suis Lumo, ton compagnon d'aventure !`,
+          "college-lycee": `Salut ${data.name.split(" ")[0]} ! Je suis Lumo. On va faire de grandes choses ensemble !`,
+        };
+        pendingGreeting.current = greetings[data.ageGroup] || greetings.primaire;
       });
   }, [id, router]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -269,6 +269,43 @@ export default function LumoPage({ params }: { params: { id: string } }) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-5xl animate-bounce">🌟</div>
+      </div>
+    );
+  }
+
+  // Écran de démarrage — nécessaire pour débloquer l'autoplay audio dans les navigateurs
+  if (!started) {
+    const bg =
+      child.ageGroup === "maternelle" ? "from-amber-500 via-orange-500 to-yellow-500" :
+      child.ageGroup === "primaire" ? "from-emerald-600 via-teal-600 to-cyan-500" :
+      "from-violet-700 via-purple-600 to-indigo-600";
+    const firstName = child.name.split(" ")[0];
+    return (
+      <div className={`min-h-screen bg-gradient-to-br ${bg} flex flex-col items-center justify-center p-8`}>
+        <LumoCharacter
+          ageGroup={child.ageGroup as "maternelle" | "primaire" | "college-lycee"}
+          level={child.level}
+          mood="happy"
+          size={180}
+          className="drop-shadow-2xl mb-6"
+        />
+        <h1 className="text-white font-black text-3xl text-center mb-2">
+          {child.ageGroup === "maternelle" ? `Salut ${firstName} !` : `Hey ${firstName} !`}
+        </h1>
+        <p className="text-white/80 text-center mb-8 text-lg">
+          Lumo est prêt à jouer avec toi !
+        </p>
+        <button
+          onClick={() => {
+            setStarted(true);
+            if (pendingGreeting.current) {
+              setTimeout(() => speak(pendingGreeting.current!), 200);
+            }
+          }}
+          className="bg-white font-black text-slate-700 text-xl px-10 py-5 rounded-3xl shadow-2xl active:scale-95 transition-all"
+        >
+          {child.ageGroup === "maternelle" ? "🌟 Appuie ici !" : "🚀 C'est parti !"}
+        </button>
       </div>
     );
   }
