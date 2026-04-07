@@ -72,9 +72,11 @@ export default function ParentDashboard() {
   useEffect(() => {
     if (status === "authenticated") {
       fetch("/api/children")
-        .then((r) => r.json())
-        .then((data) => { setChildren(data); setLoading(false); });
+        .then((r) => r.ok ? r.json() : [])
+        .then((data) => { setChildren(Array.isArray(data) ? data : []); setLoading(false); })
+        .catch(() => setLoading(false));
     }
+    if (status === "unauthenticated") setLoading(false);
   }, [status]);
 
   async function addChild(e: React.FormEvent) {

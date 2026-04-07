@@ -67,11 +67,12 @@ export default function ChildHomePage({ params }: { params: { id: string } }) {
         return r.json();
       })
       .then((data) => {
-        if (!data) return;
+        if (!data) { setLoading(false); return; }
         setChild(data);
         setLumoMsg(getLumoMessage(data));
         setLoading(false);
-      });
+      })
+      .catch(() => { router.push("/parent"); });
   }, [id, router]);
 
   // Auto-change message every 12 seconds

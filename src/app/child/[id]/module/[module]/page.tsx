@@ -1742,7 +1742,8 @@ export default function ModulePage({ params }: { params: { id: string; module: s
   useEffect(() => {
     fetch(`/api/children/${id}`)
       .then((r) => { if (!r.ok) { router.push("/parent"); return null; } return r.json(); })
-      .then((data) => { if (data) setChild(data); });
+      .then((data) => { if (data) setChild(data); })
+      .catch(() => router.push("/parent"));
   }, [id, router]);
 
   const handleComplete = useCallback(async (score: number, xp: number) => {
