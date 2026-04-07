@@ -1,67 +1,62 @@
 "use client";
-// Narration vocale féminine en français — Web Speech API
+// Narration vocale via API TTS serveur (ElevenLabs ou Google TTS)
+// Lecture MP3 via Web Audio API — voix naturelle, non robotique
 
 import { useRef, useState } from "react";
 
 export function useNarration() {
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [speaking, setSpeaking] = useState(false);
 
-  function getBestFrenchVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
-    // Priorité : voix féminines naturelles françaises
-    return (
-      voices.find(v => v.name === "Amélie") ||
-      voices.find(v => v.name === "Marie") ||
-      voices.find(v => v.name === "Audrey") ||
-      voices.find(v => v.name.includes("Amélie")) ||
-      voices.find(v => v.lang === "fr-FR" && v.name.toLowerCase().includes("fem")) ||
-      voices.find(v => v.lang === "fr-FR" && (v.name.includes("Google") || v.name.includes("Microsoft"))) ||
-      voices.find(v => v.lang === "fr-FR" && !v.name.toLowerCase().includes("thomas")) ||
-      voices.find(v => v.lang === "fr-FR") ||
-      voices.find(v => v.lang.startsWith("fr")) ||
-      null
-    );
-  }
+  async function narrate(text: string) {
+    if (typeof window === "undefined") return;
 
-  function narrate(text: string, options?: { rate?: number; pitch?: number }) {
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-
-    const cleaned = text
-      .replace(/[🌍🚀🦋🐱🐶🌈🍎🐸🌟✨⭐💫🎯❓✅❌]/gu, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-
-    function speak(voices: SpeechSynthesisVoice[]) {
-      const utterance = new SpeechSynthesisUtterance(cleaned);
-      utterance.lang = "fr-FR";
-      utterance.rate = options?.rate ?? 0.82;
-      utterance.pitch = options?.pitch ?? 1.08;
-      utterance.volume = 1.0;
-      const voice = getBestFrenchVoice(voices);
-      if (voice) utterance.voice = voice;
-      utterance.onend = () => setSpeaking(false);
-      utterance.onerror = () => setSpeaking(false);
-      utteranceRef.current = utterance;
-      window.speechSynthesis.speak(utterance);
-      setSpeaking(true);
+    // Arrêter la lecture en cours
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current = null;
     }
+    setSpeaking(false);
 
-    const voices = window.speechSynthesis.getVoices();
-    if (voices.length > 0) {
-      speak(voices);
-    } else {
-      window.speechSynthesis.onvoiceschanged = () => {
-        window.speechSynthesis.onvoiceschanged = null;
-        speak(window.speechSynthesis.getVoices());
+    try {
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!res.ok) throw new Error(`TTS error: ${res.status}`);
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+
+      const audio = new Audio(url);
+      audioRef.current = audio;
+
+      audio.onended = () => {
+        setSpeaking(false);
+        URL.revokeObjectURL(url);
+        audioRef.current = null;
       };
-      window.speechSynthesis.getVoices();
+      audio.onerror = () => {
+        setSpeaking(false);
+        URL.revokeObjectURL(url);
+        audioRef.current = null;
+      };
+
+      setSpeaking(true);
+      await audio.play();
+    } catch {
+      setSpeaking(false);
     }
   }
 
   function stop() {
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current = null;
     }
     setSpeaking(false);
   }
