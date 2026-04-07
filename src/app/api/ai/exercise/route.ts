@@ -8,15 +8,41 @@ export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
-  const { module, ageGroup, level, sessionCount, childName } = await req.json();
+  const { module, ageGroup, level, sessionCount, childName, heroMode } = await req.json();
 
   const systemPrompt = `Tu es un expert en pédagogie française spécialisé dans la création d'exercices éducatifs pour enfants.
 Tu dois générer un exercice UNIQUE et adapté, jamais vu par l'enfant avant.
 
 IMPORTANT : Réponds UNIQUEMENT avec du JSON valide, sans markdown ni explication.`;
 
+  // Mode héros : l'enfant est le protagoniste de l'histoire
+  const heroPrompt = heroMode && childName
+    ? `Crée une histoire merveilleuse et UNIQUE où ${childName} est le personnage PRINCIPAL et le héros de l'aventure.
+L'histoire doit :
+- Commencer par "Il était une fois ${childName}..." ou "${childName} se réveilla ce matin-là avec..."
+- Mentionner le prénom ${childName} au moins 3 fois dans le texte
+- Être adaptée au niveau "${ageGroup}" (session n°${sessionCount})
+- Avoir une belle morale à la fin
+- Contenir des émojis pour rendre l'histoire vivante
+
+Thèmes magiques selon le niveau :
+- maternelle: animaux magiques, forêt enchantée, château, fées, dragons gentils
+- primaire: aventure, découverte scientifique, voyage, super-pouvoirs, amitié
+- college-lycee: quête identitaire, défi intellectuel, voyage dans le temps, découverte artistique
+
+Format JSON exact :
+{
+  "text": "L'histoire complète avec ${childName} comme héros (5-8 phrases, émojis bienvenus) ✨",
+  "questions": [
+    {"q": "question sur l'histoire ?", "options": ["A", "B", "C", "D"], "correct": 0},
+    {"q": "question sur l'histoire ?", "options": ["A", "B", "C", "D"], "correct": 2},
+    {"q": "question sur l'histoire ?", "options": ["A", "B", "C", "D"], "correct": 1}
+  ]
+}`
+    : null;
+
   const prompts: Record<string, string> = {
-    reading: `Génère UNE histoire courte et engageante pour un enfant de niveau "${ageGroup}" (session n°${sessionCount}) avec 3 questions QCM.
+    reading: heroPrompt || `Génère UNE histoire courte et engageante pour un enfant de niveau "${ageGroup}" (session n°${sessionCount}) avec 3 questions QCM.
 
 Thèmes possibles selon le niveau:
 - maternelle: animaux, famille, nature, jouets, saisons

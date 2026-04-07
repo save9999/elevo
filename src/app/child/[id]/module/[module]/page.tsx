@@ -76,40 +76,37 @@ const ALL_STORIES: Record<string, { text: string; questions: { q: string; option
 function ReadingModule({ child, onComplete }: { child: Child; onComplete: (score: number, xp: number) => void }) {
   const { narrate, stop: stopNarration, speaking } = useNarration();
   const storyList = ALL_STORIES[child.ageGroup] || ALL_STORIES.primaire;
-  // Use rotating index so exercise is NEVER the same session after session
-  const [storyIdx] = useState(() => {
-    const idx = getExerciseIdx(child.id, "reading");
-    return idx % storyList.length;
-  });
+  const [mode, setMode] = useState<"library" | "ai">("library");
+  const [storyIdx] = useState(() => getExerciseIdx(child.id, "reading") % storyList.length);
   const [aiStory, setAiStory] = useState<typeof storyList[0] | null>(null);
   const [loadingAI, setLoadingAI] = useState(false);
 
-  // If we've gone through all static stories, fetch AI-generated one
-  useEffect(() => {
-    const idx = getExerciseIdx(child.id, "reading");
-    if (idx >= storyList.length) {
-      setLoadingAI(true);
-      fetch("/api/ai/exercise", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          module: "reading",
-          ageGroup: child.ageGroup,
-          level: child.level,
-          sessionCount: idx,
-          childName: child.name,
-        }),
-      })
-        .then((r) => r.json())
-        .then((data) => {
-          if (data.data) setAiStory(data.data);
-          setLoadingAI(false);
-        })
-        .catch(() => setLoadingAI(false));
-    }
-  }, [child, storyList.length]);
+  function fetchAiStory() {
+    setLoadingAI(true);
+    setAiStory(null);
+    fetch("/api/ai/exercise", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        module: "reading",
+        ageGroup: child.ageGroup,
+        level: child.level,
+        sessionCount: getExerciseIdx(child.id, "reading"),
+        childName: child.name,
+        heroMode: true, // enfant = protagoniste
+      }),
+    })
+      .then((r) => r.json())
+      .then((data) => { if (data.data) setAiStory(data.data); setLoadingAI(false); })
+      .catch(() => setLoadingAI(false));
+  }
 
-  const story = aiStory || storyList[storyIdx];
+  useEffect(() => {
+    if (mode === "ai" && !aiStory && !loadingAI) fetchAiStory();
+  }, [mode]); // eslint-disable-line
+
+  const staticStory = storyList[storyIdx];
+  const story = mode === "ai" && aiStory ? aiStory : staticStory;
   const [step, setStep] = useState<"read" | "quiz" | "done">("read");
   const [answers, setAnswers] = useState<(number | null)[]>(story.questions.map(() => null));
   const [current, setCurrent] = useState(0);
@@ -127,9 +124,9 @@ function ReadingModule({ child, onComplete }: { child: Child; onComplete: (score
   if (loadingAI) {
     return (
       <div className="text-center py-16 space-y-4">
-        <div className="text-5xl animate-spin">✨</div>
-        <p className="font-black text-slate-700 text-xl">Génération d&apos;une histoire unique…</p>
-        <p className="text-sm text-slate-500">L&apos;IA prépare quelque chose de spécial pour toi !</p>
+        <div className="text-6xl animate-bounce-slow">✨</div>
+        <p className="font-black text-slate-700 text-xl">Lumo prépare une histoire pour {child.name}…</p>
+        <p className="text-sm text-slate-500">Une aventure unique rien que pour toi !</p>
         <div className="flex justify-center gap-1">
           {[0,1,2].map((i) => (
             <div key={i} className="w-3 h-3 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: `${i*150}ms` }} />
@@ -142,6 +139,23 @@ function ReadingModule({ child, onComplete }: { child: Child; onComplete: (score
   if (step === "read") {
     return (
       <div className="space-y-5">
+
+        {/* Sélecteur de mode */}
+        <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl">
+          <button
+            onClick={() => { setMode("library"); stopNarration(); }}
+            className={`flex-1 py-2.5 rounded-xl text-sm font-black transition-all ${mode === "library" ? "bg-white text-violet-700 shadow-sm" : "text-slate-500"}`}
+          >
+            📚 Bibliothèque
+          </button>
+          <button
+            onClick={() => { setMode("ai"); stopNarration(); }}
+            className={`flex-1 py-2.5 rounded-xl text-sm font-black transition-all ${mode === "ai" ? "bg-white text-violet-700 shadow-sm" : "text-slate-500"}`}
+          >
+            ✨ Histoire pour {child.name}
+          </button>
+        </div>
+
         {/* Lumo narrateur */}
         <div className="flex items-center gap-4 bg-blue-50 rounded-2xl p-4">
           <div className="shrink-0">
@@ -153,7 +167,10 @@ function ReadingModule({ child, onComplete }: { child: Child; onComplete: (score
             />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-black text-blue-700">Lumo te raconte l&apos;histoire !</p>
+            {mode === "ai"
+              ? <p className="text-sm font-black text-blue-700">✨ Histoire créée spécialement pour {child.name} !</p>
+              : <p className="text-sm font-black text-blue-700">Lumo te raconte l&apos;histoire !</p>
+            }
           </div>
         </div>
 
@@ -169,6 +186,16 @@ function ReadingModule({ child, onComplete }: { child: Child; onComplete: (score
         >
           {speaking ? "⏸ Pause narration" : "🔊 Écouter l'histoire"}
         </button>
+
+        {/* Mode IA : bouton nouvelle histoire */}
+        {mode === "ai" && (
+          <button
+            onClick={() => { stopNarration(); fetchAiStory(); }}
+            className="w-full py-3 rounded-2xl font-black text-base flex items-center justify-center gap-2 transition-all active:scale-95 bg-violet-50 text-violet-700 border-2 border-violet-200"
+          >
+            🎲 Nouvelle histoire pour {child.name}
+          </button>
+        )}
 
         <button
           onClick={() => { stopNarration(); setStep("quiz"); }}

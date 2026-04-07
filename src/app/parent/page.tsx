@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import SmartDateInput from "@/components/SmartDateInput";
 
 interface Achievement { id: string; title: string; emoji: string; desc: string }
 interface ChildProfile {
@@ -64,6 +65,7 @@ export default function ParentDashboard() {
   const [showAddChild, setShowAddChild] = useState(false);
   const [addForm, setAddForm] = useState({ name: "", birthDate: "", avatar: "🦊" });
   const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState("");
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -81,19 +83,30 @@ export default function ParentDashboard() {
 
   async function addChild(e: React.FormEvent) {
     e.preventDefault();
+    setAddError("");
+    // Validation date
+    if (!addForm.birthDate || addForm.birthDate.length < 10) {
+      setAddError("Veuillez entrer une date de naissance complète (JJ/MM/AAAA).");
+      return;
+    }
     setAdding(true);
-    const res = await fetch("/api/children", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(addForm),
-    });
-    if (res.ok) {
-      const child = await res.json();
-      setChildren((prev) => [...prev, child]);
-      setShowAddChild(false);
-      setAddForm({ name: "", birthDate: "", avatar: "🦊" });
-      // Redirect to avatar creation wizard
-      router.push(`/child/${child.id}/avatar`);
+    try {
+      const res = await fetch("/api/children", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(addForm),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setChildren((prev) => [...prev, data]);
+        setShowAddChild(false);
+        setAddForm({ name: "", birthDate: "", avatar: "🦊" });
+        router.push(`/child/${data.id}/avatar`);
+      } else {
+        setAddError(data.error || "Une erreur s'est produite. Réessayez.");
+      }
+    } catch {
+      setAddError("Impossible de créer le profil. Vérifiez votre connexion.");
     }
     setAdding(false);
   }
@@ -327,13 +340,11 @@ export default function ParentDashboard() {
               </div>
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">Date de naissance</label>
-                <input
-                  type="date"
-                  required
+                <SmartDateInput
                   value={addForm.birthDate}
-                  onChange={(e) => setAddForm({ ...addForm, birthDate: e.target.value })}
-                  className="w-full border-2 border-slate-200 rounded-2xl px-4 py-3 focus:outline-none focus:border-violet-400 text-slate-800"
+                  onChange={(v) => setAddForm({ ...addForm, birthDate: v })}
                 />
+                <p className="text-xs text-slate-400 mt-1">Tapez le jour → le mois → l&apos;année s&apos;enchaînent automatiquement</p>
               </div>
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">Avatar</label>
@@ -350,10 +361,15 @@ export default function ParentDashboard() {
                   ))}
                 </div>
               </div>
+              {addError && (
+                <div className="bg-red-50 border-2 border-red-200 rounded-2xl px-4 py-3 text-sm text-red-600 font-medium">
+                  ⚠️ {addError}
+                </div>
+              )}
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowAddChild(false)}
+                  onClick={() => { setShowAddChild(false); setAddError(""); }}
                   className="btn-fun flex-1 bg-slate-100 text-slate-700 py-3"
                 >
                   Annuler
