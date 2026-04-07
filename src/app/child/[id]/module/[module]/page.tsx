@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import LumoCharacter from "@/components/LumoCharacter";
+import { useNarration } from "@/hooks/useNarration";
 
 // ── EXERCISE TRACKER (localStorage) ───────────────────────────────────────────
 function getExerciseIdx(childId: string, module: string): number {
@@ -73,6 +74,7 @@ const ALL_STORIES: Record<string, { text: string; questions: { q: string; option
 };
 
 function ReadingModule({ child, onComplete }: { child: Child; onComplete: (score: number, xp: number) => void }) {
+  const { narrate, stop: stopNarration, speaking } = useNarration();
   const storyList = ALL_STORIES[child.ageGroup] || ALL_STORIES.primaire;
   // Use rotating index so exercise is NEVER the same session after session
   const [storyIdx] = useState(() => {
@@ -160,8 +162,16 @@ function ReadingModule({ child, onComplete }: { child: Child; onComplete: (score
           {story.text}
         </div>
 
+        {/* Bouton narration */}
         <button
-          onClick={() => setStep("quiz")}
+          onClick={() => speaking ? stopNarration() : narrate(story.text)}
+          className={`w-full py-3 rounded-2xl font-black text-base flex items-center justify-center gap-2 transition-all active:scale-95 ${speaking ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white" : "bg-blue-50 text-blue-700 border-2 border-blue-200"}`}
+        >
+          {speaking ? "⏸ Pause narration" : "🔊 Écouter l'histoire"}
+        </button>
+
+        <button
+          onClick={() => { stopNarration(); setStep("quiz"); }}
           className="btn-fun w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-4 text-lg"
         >
           J&apos;ai compris ! Quiz 🧠

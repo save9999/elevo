@@ -3,6 +3,8 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import LumoCharacter, { getLumoMood, getLumoMessage } from "@/components/LumoCharacter";
+import { useAmbientMusic } from "@/hooks/useAmbientMusic";
+import { useNarration } from "@/hooks/useNarration";
 
 interface Child {
   id: string; name: string; avatar: string; avatarConfig: string; ageGroup: string;
@@ -54,6 +56,10 @@ export default function ChildHomePage({ params }: { params: { id: string } }) {
   const [characterLoading, setCharacterLoading] = useState(false);
   const [characterTalking, setCharacterTalking] = useState(false);
   const [showPulse, setShowPulse] = useState(false);
+  const [musicOn, setMusicOn] = useState(false);
+  const ageGroup = (child?.ageGroup || "primaire") as "maternelle" | "primaire" | "college-lycee";
+  const { isPlaying, startMusic, stopMusic } = useAmbientMusic(ageGroup, musicOn);
+  const { narrate, stop: stopNarration, speaking } = useNarration();
 
   // Parse avatar config
   const avatarConfig = (() => {
@@ -194,6 +200,14 @@ export default function ChildHomePage({ params }: { params: { id: string } }) {
               )}
               <Link href={`/child/${id}/profile`} className="bg-white/20 backdrop-blur rounded-xl px-2.5 py-1.5 text-sm font-bold text-white hover:bg-white/30 transition-colors">🏆</Link>
               <Link href={`/child/${id}/avatar`} className="bg-white/20 backdrop-blur rounded-xl px-2.5 py-1.5 text-sm font-bold text-white hover:bg-white/30 transition-colors">🎨</Link>
+              <button
+                onClick={() => {
+                  if (musicOn) { stopMusic(); setMusicOn(false); }
+                  else { setMusicOn(true); startMusic(); }
+                }}
+                className="bg-white/20 backdrop-blur rounded-xl px-2.5 py-1.5 text-sm font-bold text-white hover:bg-white/30 transition-colors"
+                title={musicOn ? "Couper la musique" : "Musique d'ambiance"}
+              >{isPlaying ? "🔊" : "🔇"}</button>
               <Link href="/parent" className="bg-white/20 backdrop-blur rounded-xl px-2.5 py-1.5 text-xs font-bold text-white hover:bg-white/30 transition-colors">👨‍👩‍👧</Link>
             </div>
           </div>
