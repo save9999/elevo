@@ -1744,7 +1744,7 @@ export default function ModulePage({ params }: { params: { id: string; module: s
       .then((r) => { if (!r.ok) { router.push("/parent"); return null; } return r.json(); })
       .then((data) => { if (data) setChild(data); })
       .catch(() => router.push("/parent"));
-  }, [id, router]);
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleComplete = useCallback(async (score: number, xp: number) => {
     setFinalScore(score);

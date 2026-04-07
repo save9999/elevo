@@ -48,6 +48,7 @@ export default function ChildHomePage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [child, setChild] = useState<Child | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadTimeout, setLoadTimeout] = useState(false);
   const [lumoMsg, setLumoMsg] = useState("");
   const [msgKey, setMsgKey] = useState(0);
   const [characterLoading, setCharacterLoading] = useState(false);
@@ -61,19 +62,23 @@ export default function ChildHomePage({ params }: { params: { id: string } }) {
   const characterName = avatarConfig.characterName || "Lumo";
 
   useEffect(() => {
+    // Timeout de sécurité : si chargement > 8s, afficher un bouton de secours
+    const timer = setTimeout(() => setLoadTimeout(true), 8000);
     fetch(`/api/children/${id}`)
       .then((r) => {
-        if (!r.ok) { router.push("/parent"); return null; }
+        if (!r.ok) { clearTimeout(timer); router.push("/parent"); return null; }
         return r.json();
       })
       .then((data) => {
+        clearTimeout(timer);
         if (!data) { setLoading(false); return; }
         setChild(data);
         setLumoMsg(getLumoMessage(data));
         setLoading(false);
       })
-      .catch(() => { router.push("/parent"); });
-  }, [id, router]);
+      .catch(() => { clearTimeout(timer); router.push("/parent"); });
+    return () => clearTimeout(timer);
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-change message every 12 seconds
   useEffect(() => {
@@ -138,6 +143,17 @@ export default function ChildHomePage({ params }: { params: { id: string } }) {
         <div className="text-center text-white">
           <div className="text-7xl animate-bounce mb-4">🌟</div>
           <p className="font-bold text-xl">Chargement…</p>
+          {loadTimeout && (
+            <div className="mt-6 space-y-3">
+              <p className="text-white/70 text-sm">Ça prend plus de temps que prévu…</p>
+              <button
+                onClick={() => router.push("/parent")}
+                className="bg-white text-purple-700 font-black px-6 py-3 rounded-2xl hover:scale-105 transition-transform"
+              >
+                ← Retour au tableau de bord
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
