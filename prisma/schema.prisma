@@ -60,6 +60,7 @@ model Child {
   birthDate    DateTime
   ageGroup     String
   avatar       String    @default("🦊")
+  avatarConfig String    @default("{}")
   level        Int       @default(1)
   xp           Int       @default(0)
   streak       Int       @default(0)

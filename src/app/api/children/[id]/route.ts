@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 const ALLOWED_PATCH_FIELDS = new Set([
-  "name", "birthDate", "avatar", "ageGroup",
+  "name", "birthDate", "avatar", "avatarConfig", "ageGroup",
   "level", "xp", "streak", "lastActivity",
 ]);
 

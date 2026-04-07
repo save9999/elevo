@@ -90,6 +90,8 @@ export default function ParentDashboard() {
       setChildren((prev) => [...prev, child]);
       setShowAddChild(false);
       setAddForm({ name: "", birthDate: "", avatar: "🦊" });
+      // Redirect to avatar creation wizard
+      router.push(`/child/${child.id}/avatar`);
     }
     setAdding(false);
   }

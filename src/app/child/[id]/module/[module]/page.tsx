@@ -1,8 +1,44 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import LumoCharacter from "@/components/LumoCharacter";
+
+// ── EXERCISE TRACKER (localStorage) ───────────────────────────────────────────
+function getExerciseIdx(childId: string, module: string): number {
+  if (typeof window === "undefined") return 0;
+  const key = `elevo_ex_${childId}_${module}`;
+  return parseInt(localStorage.getItem(key) || "0", 10);
+}
+function advanceExerciseIdx(childId: string, module: string): void {
+  if (typeof window === "undefined") return;
+  const key = `elevo_ex_${childId}_${module}`;
+  const cur = parseInt(localStorage.getItem(key) || "0", 10);
+  localStorage.setItem(key, String(cur + 1));
+}
+
+// ── CONFETTI ANIMATION ────────────────────────────────────────────────────────
+function ConfettiPop() {
+  const pieces = Array.from({ length: 20 }, (_, i) => i);
+  return (
+    <div className="pointer-events-none fixed inset-0 overflow-hidden z-50">
+      {pieces.map((i) => (
+        <div
+          key={i}
+          className="absolute w-3 h-3 rounded-sm animate-bounce"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            backgroundColor: ["#8B5CF6","#3B82F6","#10B981","#F59E0B","#EF4444","#EC4899"][i % 6],
+            animationDelay: `${Math.random() * 0.5}s`,
+            animationDuration: `${0.5 + Math.random() * 1}s`,
+            transform: `rotate(${Math.random() * 360}deg)`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
 
 interface Child {
   id: string; name: string; avatar: string; ageGroup: string; level: number; xp: number;
@@ -11,89 +47,67 @@ interface Child {
 // ── READING MODULE ─────────────────────────────────────────────────────────────
 const ALL_STORIES: Record<string, { text: string; questions: { q: string; options: string[]; correct: number }[] }[]> = {
   maternelle: [
-    {
-      text: "🐱 Le chat s'appelle Mimi. Mimi aime jouer avec une pelote de laine rouge. Aujourd'hui, il fait beau et Mimi joue dans le jardin.",
-      questions: [
-        { q: "Comment s'appelle le chat ?", options: ["Tom", "Mimi", "Felix", "Luna"], correct: 1 },
-        { q: "Avec quoi Mimi aime-t-il jouer ?", options: ["Une balle", "Une pelote de laine", "Un os", "Un poisson"], correct: 1 },
-        { q: "Où Mimi joue-t-il aujourd'hui ?", options: ["Dans la maison", "À l'école", "Dans le jardin", "Dans la rue"], correct: 2 },
-      ],
-    },
-    {
-      text: "🐶 Léo est un petit chien très joyeux. Il a des poils tout dorés et une grande queue. Léo adore courir avec les enfants et attraper les balles rouges.",
-      questions: [
-        { q: "Comment s'appelle le chien ?", options: ["Max", "Rex", "Léo", "Fido"], correct: 2 },
-        { q: "De quelle couleur sont ses poils ?", options: ["Blancs", "Noirs", "Dorés", "Gris"], correct: 2 },
-        { q: "Qu'est-ce que Léo adore faire ?", options: ["Dormir", "Courir et attraper les balles", "Manger", "Nager"], correct: 1 },
-      ],
-    },
-    {
-      text: "🌧️ Aujourd'hui il pleut. Tom reste à la maison. Il dessine un arc-en-ciel avec ses crayons de couleur. Sa maman dit que c'est très beau.",
-      questions: [
-        { q: "Quel temps fait-il ?", options: ["Il fait beau", "Il neige", "Il pleut", "Il y a du vent"], correct: 2 },
-        { q: "Que fait Tom ?", options: ["Il joue dehors", "Il dessine", "Il mange", "Il dort"], correct: 1 },
-        { q: "Qu'est-ce que Tom dessine ?", options: ["Une maison", "Un chien", "Un arc-en-ciel", "Un arbre"], correct: 2 },
-      ],
-    },
+    { text: "🐱 Le chat s'appelle Mimi. Mimi aime jouer avec une pelote de laine rouge. Aujourd'hui, il fait beau et Mimi joue dans le jardin.", questions: [{ q: "Comment s'appelle le chat ?", options: ["Tom", "Mimi", "Felix", "Luna"], correct: 1 }, { q: "Avec quoi Mimi joue-t-il ?", options: ["Une balle", "Une pelote de laine", "Un os", "Un poisson"], correct: 1 }, { q: "Où joue-t-il ?", options: ["Dans la maison", "À l'école", "Dans le jardin", "Dans la rue"], correct: 2 }] },
+    { text: "🐶 Léo est un petit chien très joyeux. Il a des poils tout dorés et une grande queue. Léo adore courir avec les enfants et attraper les balles rouges.", questions: [{ q: "Comment s'appelle le chien ?", options: ["Max", "Rex", "Léo", "Fido"], correct: 2 }, { q: "De quelle couleur sont ses poils ?", options: ["Blancs", "Noirs", "Dorés", "Gris"], correct: 2 }, { q: "Qu'est-ce que Léo adore faire ?", options: ["Dormir", "Courir et attraper les balles", "Manger", "Nager"], correct: 1 }] },
+    { text: "🌧️ Aujourd'hui il pleut. Tom reste à la maison. Il dessine un arc-en-ciel avec ses crayons de couleur. Sa maman dit que c'est très beau.", questions: [{ q: "Quel temps fait-il ?", options: ["Il fait beau", "Il neige", "Il pleut", "Il y a du vent"], correct: 2 }, { q: "Que fait Tom ?", options: ["Il joue dehors", "Il dessine", "Il mange", "Il dort"], correct: 1 }, { q: "Qu'est-ce que Tom dessine ?", options: ["Une maison", "Un chien", "Un arc-en-ciel", "Un arbre"], correct: 2 }] },
+    { text: "🍎 La maîtresse apporte des pommes pour toute la classe. Il y a des pommes rouges et des pommes vertes. Chaque enfant choisit sa pomme préférée.", questions: [{ q: "Qui apporte les pommes ?", options: ["La maman", "La maîtresse", "Le directeur", "Le facteur"], correct: 1 }, { q: "De quelles couleurs sont les pommes ?", options: ["Jaunes et rouges", "Vertes et jaunes", "Rouges et vertes", "Bleues et rouges"], correct: 2 }, { q: "Que font les enfants ?", options: ["Ils jouent", "Ils choisissent leur pomme", "Ils dorment", "Ils chantent"], correct: 1 }] },
+    { text: "🌈 Après la pluie, un bel arc-en-ciel apparaît dans le ciel. Emma montre l'arc-en-ciel à son petit frère. Ils comptent sept couleurs ensemble.", questions: [{ q: "Quand apparaît l'arc-en-ciel ?", options: ["Avant la pluie", "Pendant la pluie", "Après la pluie", "La nuit"], correct: 2 }, { q: "Que fait Emma ?", options: ["Elle pleure", "Elle montre l'arc-en-ciel", "Elle court", "Elle chante"], correct: 1 }, { q: "Combien de couleurs ont-ils compté ?", options: ["5", "6", "7", "8"], correct: 2 }] },
+    { text: "🐸 Grenouille vit au bord d'un étang. Elle aime sauter de feuille en feuille. Ce matin, elle a trouvé un nouveau copain : un escargot qui marchait lentement.", questions: [{ q: "Où vit Grenouille ?", options: ["Dans la forêt", "Au bord d'un étang", "Dans une maison", "Dans les montagnes"], correct: 1 }, { q: "Qu'aime faire Grenouille ?", options: ["Nager", "Sauter de feuille en feuille", "Manger des insectes", "Dormir"], correct: 1 }, { q: "Qui a-t-elle rencontré ?", options: ["Un papillon", "Un chat", "Un escargot", "Une abeille"], correct: 2 }] },
   ],
   primaire: [
-    {
-      text: "🌍 La déforestation est un problème majeur pour notre planète. Chaque année, des millions d'arbres sont abattus pour faire place à des cultures ou des villes. Sans arbres, les animaux perdent leur habitat et l'air devient moins pur.",
-      questions: [
-        { q: "Qu'est-ce que la déforestation ?", options: ["Planter des arbres", "Couper des arbres", "Arroser les plantes", "Observer les oiseaux"], correct: 1 },
-        { q: "Quelles sont les conséquences de la déforestation ?", options: ["Plus d'animaux", "Moins de pollution", "Les animaux perdent leur habitat", "L'air devient plus pur"], correct: 2 },
-        { q: "Pourquoi coupe-t-on des arbres ?", options: ["Pour les vendre comme jouets", "Pour faire place à des cultures ou des villes", "Pour les replanter ailleurs", "Pour fabriquer des livres scolaires"], correct: 1 },
-      ],
-    },
-    {
-      text: "🦋 La métamorphose du papillon est l'un des phénomènes les plus fascinants de la nature. Une chenille tisse un cocon autour d'elle et, après plusieurs semaines, elle en sort transformée en magnifique papillon aux ailes colorées.",
-      questions: [
-        { q: "Qu'est-ce qu'une métamorphose ?", options: ["Un voyage", "Une transformation complète", "Une maladie", "Un jeu"], correct: 1 },
-        { q: "Où la chenille se transforme-t-elle ?", options: ["Dans l'eau", "Dans un cocon", "Sous la terre", "Dans un arbre"], correct: 1 },
-        { q: "En quoi se transforme la chenille ?", options: ["En abeille", "En araignée", "En papillon", "En fourmi"], correct: 2 },
-      ],
-    },
-    {
-      text: "🚀 Le système solaire est composé du Soleil et de tous les astres qui gravitent autour de lui. Il comprend huit planètes principales : Mercure, Vénus, la Terre, Mars, Jupiter, Saturne, Uranus et Neptune. La Terre est la seule planète connue où la vie existe.",
-      questions: [
-        { q: "Combien y a-t-il de planètes dans le système solaire ?", options: ["6", "7", "8", "9"], correct: 2 },
-        { q: "Quelle est la planète où la vie existe ?", options: ["Mars", "Venus", "La Terre", "Jupiter"], correct: 2 },
-        { q: "Autour de quoi gravitent les planètes ?", options: ["La Lune", "Le Soleil", "La Terre", "Une étoile lointaine"], correct: 1 },
-      ],
-    },
+    { text: "🌍 La déforestation est un problème majeur pour notre planète. Chaque année, des millions d'arbres sont abattus pour faire place à des cultures ou des villes. Sans arbres, les animaux perdent leur habitat et l'air devient moins pur.", questions: [{ q: "Qu'est-ce que la déforestation ?", options: ["Planter des arbres", "Couper des arbres", "Arroser les plantes", "Observer les oiseaux"], correct: 1 }, { q: "Quelles sont les conséquences ?", options: ["Plus d'animaux", "Moins de pollution", "Les animaux perdent leur habitat", "L'air devient plus pur"], correct: 2 }, { q: "Pourquoi coupe-t-on des arbres ?", options: ["Pour les vendre comme jouets", "Pour faire place à des cultures ou des villes", "Pour les replanter ailleurs", "Pour fabriquer des livres"], correct: 1 }] },
+    { text: "🦋 La métamorphose du papillon est l'un des phénomènes les plus fascinants de la nature. Une chenille tisse un cocon autour d'elle et, après plusieurs semaines, elle en sort transformée en magnifique papillon aux ailes colorées.", questions: [{ q: "Qu'est-ce qu'une métamorphose ?", options: ["Un voyage", "Une transformation complète", "Une maladie", "Un jeu"], correct: 1 }, { q: "Où la chenille se transforme-t-elle ?", options: ["Dans l'eau", "Dans un cocon", "Sous la terre", "Dans un arbre"], correct: 1 }, { q: "En quoi se transforme la chenille ?", options: ["En abeille", "En araignée", "En papillon", "En fourmi"], correct: 2 }] },
+    { text: "🚀 Le système solaire est composé du Soleil et de tous les astres qui gravitent autour de lui. Il comprend huit planètes principales. La Terre est la seule planète connue où la vie existe.", questions: [{ q: "Combien y a-t-il de planètes ?", options: ["6", "7", "8", "9"], correct: 2 }, { q: "Quelle planète abrite la vie ?", options: ["Mars", "Venus", "La Terre", "Jupiter"], correct: 2 }, { q: "Autour de quoi gravitent les planètes ?", options: ["La Lune", "Le Soleil", "La Terre", "Une étoile lointaine"], correct: 1 }] },
+    { text: "🐋 Les baleines sont les plus grands animaux de la planète. Elles vivent dans tous les océans du monde et se nourrissent principalement de minuscules crevettes appelées krill. Malgré leur taille immense, ce sont des animaux très doux.", questions: [{ q: "Qu'est-ce que les baleines ?", options: ["Les poissons les plus grands", "Les plus grands animaux", "Des créatures dangereuses", "Des poissons rares"], correct: 1 }, { q: "De quoi se nourrissent-elles ?", options: ["De poissons géants", "De krill", "D'algues", "De méduses"], correct: 1 }, { q: "Comment sont les baleines malgré leur taille ?", options: ["Très agressives", "Très lentes", "Très douces", "Très bruyantes"], correct: 2 }] },
+    { text: "⚡ L'électricité est une forme d'énergie utilisée partout dans notre vie quotidienne. Elle alimente les lampes, les appareils ménagers et les transports. Benjamin Franklin a découvert que la foudre est une forme d'électricité.", questions: [{ q: "Qu'est-ce que l'électricité ?", options: ["Un liquide", "Une forme d'énergie", "Un métal", "Un gaz"], correct: 1 }, { q: "Qui a découvert le lien entre foudre et électricité ?", options: ["Einstein", "Newton", "Benjamin Franklin", "Edison"], correct: 2 }, { q: "Que fait l'électricité dans notre vie ?", options: ["Elle pollue uniquement", "Elle n'est pas utile", "Elle alimente lampes et appareils", "Elle crée du froid"], correct: 2 }] },
+    { text: "🏔️ Les montagnes se forment sur des millions d'années à cause du mouvement des plaques tectoniques. Les sommets les plus hauts du monde se trouvent dans l'Himalaya, notamment l'Everest, culminant à 8 849 mètres.", questions: [{ q: "Comment se forment les montagnes ?", options: ["En quelques années", "Par la pluie", "Sur des millions d'années", "Par le vent"], correct: 2 }, { q: "Où se trouvent les sommets les plus hauts ?", options: ["Dans les Alpes", "Dans l'Himalaya", "Dans les Pyrénées", "Dans les Andes"], correct: 1 }, { q: "Quelle est l'altitude de l'Everest ?", options: ["7 000 m", "8 000 m", "8 849 m", "9 000 m"], correct: 2 }] },
   ],
   "college-lycee": [
-    {
-      text: "🧬 La mitose est le processus par lequel une cellule se divise pour donner deux cellules filles identiques. Ce mécanisme est fondamental pour la croissance et la réparation des tissus. Il comprend quatre phases principales : la prophase, la métaphase, l'anaphase et la télophase.",
-      questions: [
-        { q: "Combien de cellules filles produit la mitose ?", options: ["1", "2", "4", "8"], correct: 1 },
-        { q: "À quoi sert la mitose ?", options: ["À produire des gamètes", "À la croissance et réparation des tissus", "À la digestion", "À la respiration"], correct: 1 },
-        { q: "Quelle est la première phase de la mitose ?", options: ["Anaphase", "Métaphase", "Prophase", "Télophase"], correct: 2 },
-      ],
-    },
-    {
-      text: "📜 La Révolution française de 1789 marque une rupture majeure dans l'histoire de France. Née d'une crise financière et sociale profonde, elle aboutit à l'abolition des privilèges, à la Déclaration des droits de l'homme et du citoyen, et à la fin de la monarchie absolue.",
-      questions: [
-        { q: "En quelle année a eu lieu la Révolution française ?", options: ["1689", "1789", "1789", "1889"], correct: 1 },
-        { q: "Qu'est-ce que la Révolution a aboli ?", options: ["Le commerce", "Les privilèges", "L'agriculture", "La religion"], correct: 1 },
-        { q: "Quel document a été rédigé pendant la Révolution ?", options: ["La Constitution américaine", "Le Manifeste du Parti communiste", "La Déclaration des droits de l'homme", "La Charte de l'ONU"], correct: 2 },
-      ],
-    },
-    {
-      text: "🌡️ Le réchauffement climatique désigne l'augmentation de la température moyenne à la surface de la Terre. Il est principalement causé par les émissions de gaz à effet de serre dues aux activités humaines. Ses conséquences incluent la montée des eaux, la multiplication des événements climatiques extrêmes et la disparition de nombreuses espèces.",
-      questions: [
-        { q: "Quelle est la principale cause du réchauffement climatique ?", options: ["Les volcans", "Les activités humaines", "Les marées", "Le soleil"], correct: 1 },
-        { q: "Quelle est une conséquence du réchauffement ?", options: ["Plus de biodiversité", "Baisse des températures", "Montée des eaux", "Diminution des tempêtes"], correct: 2 },
-        { q: "Par quoi le réchauffement est-il mesuré ?", options: ["La pression atmosphérique", "La température moyenne de la Terre", "Le niveau des océans", "Le nombre d'ouragans"], correct: 1 },
-      ],
-    },
+    { text: "🧬 La mitose est le processus par lequel une cellule se divise pour donner deux cellules filles identiques. Ce mécanisme est fondamental pour la croissance et la réparation des tissus. Il comprend quatre phases principales : la prophase, la métaphase, l'anaphase et la télophase.", questions: [{ q: "Combien de cellules produit la mitose ?", options: ["1", "2", "4", "8"], correct: 1 }, { q: "À quoi sert la mitose ?", options: ["À produire des gamètes", "À la croissance et réparation des tissus", "À la digestion", "À la respiration"], correct: 1 }, { q: "Quelle est la première phase ?", options: ["Anaphase", "Métaphase", "Prophase", "Télophase"], correct: 2 }] },
+    { text: "📜 La Révolution française de 1789 marque une rupture majeure dans l'histoire de France. Elle aboutit à l'abolition des privilèges, à la Déclaration des droits de l'homme et du citoyen, et à la fin de la monarchie absolue.", questions: [{ q: "En quelle année ?", options: ["1689", "1789", "1869", "1889"], correct: 1 }, { q: "Qu'a-t-elle aboli ?", options: ["Le commerce", "Les privilèges", "L'agriculture", "La religion"], correct: 1 }, { q: "Quel document a été rédigé ?", options: ["La Constitution américaine", "Le Manifeste communiste", "La Déclaration des droits de l'homme", "La Charte de l'ONU"], correct: 2 }] },
+    { text: "🌡️ Le réchauffement climatique désigne l'augmentation de la température moyenne à la surface de la Terre. Il est principalement causé par les émissions de gaz à effet de serre. Ses conséquences incluent la montée des eaux et la disparition de nombreuses espèces.", questions: [{ q: "Quelle est la principale cause ?", options: ["Les volcans", "Les activités humaines", "Les marées", "Le soleil"], correct: 1 }, { q: "Quelle est une conséquence ?", options: ["Plus de biodiversité", "Baisse des températures", "Montée des eaux", "Moins de tempêtes"], correct: 2 }, { q: "Par quoi est-il mesuré ?", options: ["La pression atmosphérique", "La température moyenne", "Le niveau des océans", "Le nombre d'ouragans"], correct: 1 }] },
+    { text: "🤖 L'intelligence artificielle (IA) est une branche de l'informatique qui vise à créer des systèmes capables d'effectuer des tâches nécessitant normalement l'intelligence humaine. Elle trouve des applications dans la médecine, l'éducation et la création artistique.", questions: [{ q: "Qu'est-ce que l'IA ?", options: ["Un robot physique", "Une branche de l'informatique", "Un langage de programmation", "Une console de jeux"], correct: 1 }, { q: "Quelles tâches effectue-t-elle ?", options: ["Uniquement calculer", "Tâches nécessitant l'intelligence humaine", "Seulement écrire du texte", "Uniquement jouer aux échecs"], correct: 1 }, { q: "Dans quel domaine est-elle utilisée ?", options: ["Uniquement la guerre", "La médecine, l'éducation et les arts", "Uniquement le sport", "Uniquement l'agriculture"], correct: 1 }] },
+    { text: "⚗️ La photosynthèse est le processus par lequel les plantes utilisent la lumière du soleil pour transformer le dioxyde de carbone et l'eau en glucose et en oxygène. Ce mécanisme est à la base de toute vie sur Terre.", questions: [{ q: "Qu'est-ce que la photosynthèse ?", options: ["Un type de digestion", "Un mécanisme des plantes pour produire de l'énergie", "Un processus chimique industriel", "Une réaction nucléaire"], correct: 1 }, { q: "Quels éléments sont transformés ?", options: ["Glucose et eau", "CO2 et eau", "Oxygène et glucose", "Azote et eau"], correct: 1 }, { q: "Qu'est-ce qui est produit ?", options: ["CO2 et eau", "Azote et glucose", "Glucose et oxygène", "Eau et azote"], correct: 2 }] },
+    { text: "🌐 La mondialisation désigne l'interdépendance croissante des économies, des sociétés et des cultures à l'échelle mondiale. Elle est facilitée par les nouvelles technologies de communication et les échanges commerciaux internationaux.", questions: [{ q: "Que désigne la mondialisation ?", options: ["L'uniformisation des cultures", "L'interdépendance croissante à l'échelle mondiale", "La domination d'un pays", "La fin des États-nations"], correct: 1 }, { q: "Qu'est-ce qui facilite la mondialisation ?", options: ["Les guerres", "Les nouvelles technologies et les échanges commerciaux", "L'isolationnisme", "Les frontières fermées"], correct: 1 }, { q: "Quels domaines sont concernés ?", options: ["Seulement l'économie", "Seulement la culture", "Les économies, sociétés et cultures", "Seulement la politique"], correct: 2 }] },
   ],
 };
 
 function ReadingModule({ child, onComplete }: { child: Child; onComplete: (score: number, xp: number) => void }) {
   const storyList = ALL_STORIES[child.ageGroup] || ALL_STORIES.primaire;
-  const [storyIdx] = useState(() => Math.floor(Math.random() * storyList.length));
-  const story = storyList[storyIdx];
+  // Use rotating index so exercise is NEVER the same session after session
+  const [storyIdx] = useState(() => {
+    const idx = getExerciseIdx(child.id, "reading");
+    return idx % storyList.length;
+  });
+  const [aiStory, setAiStory] = useState<typeof storyList[0] | null>(null);
+  const [loadingAI, setLoadingAI] = useState(false);
+
+  // If we've gone through all static stories, fetch AI-generated one
+  useEffect(() => {
+    const idx = getExerciseIdx(child.id, "reading");
+    if (idx >= storyList.length) {
+      setLoadingAI(true);
+      fetch("/api/ai/exercise", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          module: "reading",
+          ageGroup: child.ageGroup,
+          level: child.level,
+          sessionCount: idx,
+          childName: child.name,
+        }),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.data) setAiStory(data.data);
+          setLoadingAI(false);
+        })
+        .catch(() => setLoadingAI(false));
+    }
+  }, [child, storyList.length]);
+
+  const story = aiStory || storyList[storyIdx];
   const [step, setStep] = useState<"read" | "quiz" | "done">("read");
   const [answers, setAnswers] = useState<(number | null)[]>(story.questions.map(() => null));
   const [current, setCurrent] = useState(0);
@@ -108,10 +122,25 @@ function ReadingModule({ child, onComplete }: { child: Child; onComplete: (score
     }
   }
 
+  if (loadingAI) {
+    return (
+      <div className="text-center py-16 space-y-4">
+        <div className="text-5xl animate-spin">✨</div>
+        <p className="font-black text-slate-700 text-xl">Génération d&apos;une histoire unique…</p>
+        <p className="text-sm text-slate-500">L&apos;IA prépare quelque chose de spécial pour toi !</p>
+        <div className="flex justify-center gap-1">
+          {[0,1,2].map((i) => (
+            <div key={i} className="w-3 h-3 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: `${i*150}ms` }} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (step === "read") {
     return (
       <div className="space-y-5">
-        {/* Lumo narrateur — affiché en haut, lit automatiquement */}
+        {/* Lumo narrateur */}
         <div className="flex items-center gap-4 bg-blue-50 rounded-2xl p-4">
           <div className="shrink-0">
             <LumoCharacter
@@ -220,6 +249,12 @@ const MATH_POOLS: Record<string, { q: string; answer: string }[]> = {
     { q: "🐱🐱🐱 + 🐱 = ?", answer: "4" },
     { q: "5 + 5 = ?", answer: "10" },
     { q: "7 - 3 = ?", answer: "4" },
+    { q: "🐢🐢 + 🐢🐢🐢🐢 = ?", answer: "6" },
+    { q: "10 - 3 = ?", answer: "7" },
+    { q: "1 + 6 = ?", answer: "7" },
+    { q: "🌸🌸🌸🌸 - 🌸 = ?", answer: "3" },
+    { q: "8 + 2 = ?", answer: "10" },
+    { q: "6 - 4 = ?", answer: "2" },
   ],
   primaire: [
     { q: "24 × 3 = ?", answer: "72" },
@@ -234,6 +269,12 @@ const MATH_POOLS: Record<string, { q: string; answer: string }[]> = {
     { q: "120 ÷ 8 = ?", answer: "15" },
     { q: "12 × 12 = ?", answer: "144" },
     { q: "50% de 150 = ?", answer: "75" },
+    { q: "33 × 3 = ?", answer: "99" },
+    { q: "72 ÷ 9 = ?", answer: "8" },
+    { q: "10% de 350 = ?", answer: "35" },
+    { q: "√81 = ?", answer: "9" },
+    { q: "56 ÷ 8 = ?", answer: "7" },
+    { q: "Périmètre d'un carré de côté 6 = ?", answer: "24" },
   ],
   "college-lycee": [
     { q: "Résoudre : 2x + 5 = 13, x = ?", answer: "4" },
@@ -246,8 +287,14 @@ const MATH_POOLS: Record<string, { q: string; answer: string }[]> = {
     { q: "Dériver f(x) = 3x² : f'(x) = ?", answer: "6x" },
     { q: "Résoudre : x² = 25, x = ?", answer: "5" },
     { q: "tan(45°) = ?", answer: "1" },
-    { q: "Périmètre d'un cercle de rayon 5 : 2π× ?", answer: "5" },
+    { q: "Périmètre d'un cercle de rayon 5 : 2π × ?", answer: "5" },
     { q: "Résoudre : 5x + 10 = 35, x = ?", answer: "5" },
+    { q: "Résoudre : x² - 9 = 0, x = ?", answer: "3" },
+    { q: "cos(60°) = ?", answer: "0.5" },
+    { q: "Dériver f(x) = 2x³ : f'(x) = ?", answer: "6x²" },
+    { q: "log₁₀(100) = ?", answer: "2" },
+    { q: "Résoudre : 4x - 3 = 17, x = ?", answer: "5" },
+    { q: "sin(30°) = ?", answer: "0.5" },
   ],
 };
 
@@ -264,7 +311,10 @@ function MathModule({ child, onComplete }: { child: Child; onComplete: (score: n
 
   const [problems] = useState(() => {
     const pool = MATH_POOLS[child.ageGroup] || MATH_POOLS.primaire;
-    return shuffle(pool).slice(0, 5);
+    // Rotating offset so problems are different each session
+    const offset = getExerciseIdx(child.id, "math") % Math.max(1, pool.length - 5);
+    const rotated = [...pool.slice(offset), ...pool.slice(0, offset)];
+    return shuffle(rotated).slice(0, 5);
   });
 
   function submit(e: React.FormEvent) {
@@ -335,8 +385,17 @@ function MathModule({ child, onComplete }: { child: Child; onComplete: (score: n
 }
 
 // ── MEMORY MODULE ────────────────────────────────────────────────────────────
-function MemoryModule({ onComplete }: { onComplete: (score: number, xp: number) => void }) {
-  const emojis = ["🦊", "🐼", "🦁", "🐬", "🦋", "🐙", "🦄", "🐧"];
+const MEMORY_POOLS = [
+  ["🦊", "🐼", "🦁", "🐬", "🦋", "🐙", "🦄", "🐧"],
+  ["🚀", "🌈", "⭐", "🎸", "🍕", "🎯", "💎", "🌺"],
+  ["🏆", "🎮", "🍦", "🎨", "🌊", "🦅", "🍀", "🎭"],
+  ["🌙", "☀️", "⚡", "🔮", "🎪", "🎡", "🎠", "🎢"],
+  ["🦖", "🐲", "🦄", "🐳", "🦋", "🦚", "🦩", "🦜"],
+];
+
+function MemoryModule({ child, onComplete }: { child: Child; onComplete: (score: number, xp: number) => void }) {
+  const poolIdx = getExerciseIdx(child.id, "memory") % MEMORY_POOLS.length;
+  const emojis = MEMORY_POOLS[poolIdx];
   const pairs = [...emojis, ...emojis].sort(() => Math.random() - 0.5);
   const [cards, setCards] = useState(pairs.map((e, i) => ({ id: i, emoji: e, flipped: false, matched: false })));
   const [selected, setSelected] = useState<number[]>([]);
@@ -411,33 +470,19 @@ function MemoryModule({ onComplete }: { onComplete: (score: number, xp: number) 
 }
 
 // ── EMOTIONAL MODULE ─────────────────────────────────────────────────────────
+const ALL_EMOTIONAL_SCENARIOS = [
+  { situation: "Ton ami a dit quelque chose de blessant devant toute la classe.", emotion: "😢", question: "Comment tu te sens ?", options: ["Je suis très triste et blessé(e)", "Je m'en fiche complètement", "Je suis content(e)", "Je veux me battre"], best: 0, advice: "Il est normal de se sentir blessé(e). Tu peux en parler à un adulte de confiance ou à ton ami en privé." },
+  { situation: "Tu as beaucoup travaillé pour un examen mais tu n'as pas eu une bonne note.", emotion: "😤", question: "Quelle est la meilleure réaction ?", options: ["Arrêter de travailler", "Analyser mes erreurs et demander de l'aide", "Copier sur les autres", "Pleurer sans rien faire"], best: 1, advice: "Analyser ses erreurs est la clé du progrès ! Chaque erreur est une occasion d'apprendre." },
+  { situation: "Un camarade est tout seul dans la cour et semble triste.", emotion: "🤝", question: "Que fais-tu ?", options: ["Je l'ignore", "Je vais lui parler et lui demander si ça va", "Je me moque de lui", "Je raconte à tout le monde"], best: 1, advice: "Aller vers quelqu'un qui semble seul, c'est un acte de gentillesse très courageux !" },
+  { situation: "Tu as perdu ton jouet préféré et tu es très triste.", emotion: "😭", question: "Comment gérer cette tristesse ?", options: ["Crier et me mettre en colère contre tout le monde", "Pleurer un peu, puis chercher une solution ou demander de l'aide", "Prétendre que ça ne m'embête pas", "Ne plus jamais jouer avec quoi que ce soit"], best: 1, advice: "Exprimer sa tristesse est sain, puis chercher une solution est courageux !" },
+  { situation: "Tu es jaloux(se) du cadeau reçu par ton frère/ta sœur.", emotion: "😒", question: "Que fais-tu ?", options: ["Je lui prends son cadeau", "J'exprime que je me sens jaloux(se) mais je suis content(e) pour lui/elle", "Je boude toute la journée", "Je casse son cadeau"], best: 1, advice: "Reconnaître la jalousie est mature ! L'important c'est de ne pas la laisser guider nos actions." },
+  { situation: "Un ami te propose de faire quelque chose que tu trouves injuste.", emotion: "😟", question: "Quelle est la bonne réaction ?", options: ["Je fais ce qu'il dit pour ne pas perdre son amitié", "J'explique calmement que ça ne me semble pas juste", "Je l'insulte", "J'obéis en me sentant mal"], best: 1, advice: "Savoir dire non avec respect, c'est un signe de courage et de confiance en soi !" },
+];
+
 function EmotionalModule({ child, onComplete }: { child: Child; onComplete: (score: number, xp: number) => void }) {
-  const scenarios = [
-    {
-      situation: "Ton ami a dit quelque chose de blessant devant toute la classe.",
-      emotion: "😢",
-      question: "Comment tu te sens ?",
-      options: ["Je suis très triste et blessé(e)", "Je m'en fiche complètement", "Je suis content(e)", "Je veux me battre"],
-      best: 0,
-      advice: "Il est normal de se sentir blessé(e). Tu peux en parler à un adulte de confiance ou à ton ami en privé.",
-    },
-    {
-      situation: "Tu as beaucoup travaillé pour un examen mais tu n'as pas eu une bonne note.",
-      emotion: "😤",
-      question: "Quelle est la meilleure réaction ?",
-      options: ["Arrêter de travailler", "Analyser mes erreurs et demander de l'aide", "Copier sur les autres", "Pleurer sans rien faire"],
-      best: 1,
-      advice: "Analyser ses erreurs est la clé du progrès ! Chaque erreur est une occasion d'apprendre.",
-    },
-    {
-      situation: "Un camarade est tout seul dans la cour et semble triste.",
-      emotion: "🤝",
-      question: "Que fais-tu ?",
-      options: ["Je l'ignore", "Je vais lui parler et lui demander si ça va", "Je me moque de lui", "Je raconte à tout le monde"],
-      best: 1,
-      advice: "Aller vers quelqu'un qui semble seul, c'est un acte de gentillesse très courageux !",
-    },
-  ];
+  // Rotate 3 scenarios per session
+  const offset = getExerciseIdx(child.id, "emotional") % (ALL_EMOTIONAL_SCENARIOS.length - 2);
+  const scenarios = ALL_EMOTIONAL_SCENARIOS.slice(offset, offset + 3);
 
   const [step, setStep] = useState(0);
   const [chosen, setChosen] = useState<number | null>(null);
@@ -507,105 +552,328 @@ function EmotionalModule({ child, onComplete }: { child: Child; onComplete: (sco
   );
 }
 
-// ── ASSESSMENT MODULE ────────────────────────────────────────────────────────
+// ── ASSESSMENT MODULE — Détection Dys enrichie ───────────────────────────────
+const DYS_QUESTIONS = [
+  // Dyslexie — lecture
+  {
+    id: "dyslexia_letters",
+    category: "dyslexie",
+    q: "📖 Est-ce que certaines lettres se ressemblent et tu les confonds parfois ? (b/d, p/q, m/n…)",
+    options: ["Non, je les distingue bien", "Parfois oui", "Souvent", "Presque tout le temps"],
+    weights: [0, 1, 2, 3],
+    emoji: "🔤",
+  },
+  {
+    id: "dyslexia_reading",
+    category: "dyslexie",
+    q: "📚 Quand tu lis à voix haute, est-ce que les mots te semblent difficiles à déchiffrer ?",
+    options: ["Non, je lis facilement", "Parfois c'est lent", "Souvent difficile", "Très difficile"],
+    weights: [0, 1, 2, 3],
+    emoji: "📖",
+  },
+  {
+    id: "dyslexia_order",
+    category: "dyslexie",
+    q: "🔄 Est-ce que tu inverses parfois l'ordre des lettres dans les mots quand tu écris ? (ex: 'por' au lieu de 'pro')",
+    options: ["Non, jamais", "Rarement", "Assez souvent", "Très souvent"],
+    weights: [0, 1, 2, 3],
+    emoji: "↔️",
+  },
+  // Dysorthographie — écriture
+  {
+    id: "dysortho_spelling",
+    category: "dysorthographie",
+    q: "✏️ Fais-tu des fautes d'orthographe même sur des mots simples que tu connais ?",
+    options: ["Non, rarement", "Parfois oui", "Assez souvent", "Tout le temps"],
+    weights: [0, 1, 2, 3],
+    emoji: "📝",
+  },
+  {
+    id: "dysortho_sounds",
+    category: "dysorthographie",
+    q: "🔊 Est-ce qu'il t'arrive d'écrire les mots comme ils sonnent, pas comme ils s'écrivent ? (ex: 'sou' au lieu de 'sous')",
+    options: ["Non, jamais", "Rarement", "Parfois", "Souvent"],
+    weights: [0, 1, 2, 3],
+    emoji: "🎵",
+  },
+  // Dyspraxie — motricité
+  {
+    id: "dyspraxia_writing",
+    category: "dyspraxie",
+    q: "✍️ Est-ce que tu trouves difficile d'écrire de façon lisible et régulière ?",
+    options: ["Non, mon écriture est claire", "Parfois brouillonne", "Souvent difficile à lire", "Très difficile"],
+    weights: [0, 1, 2, 3],
+    emoji: "🖊️",
+  },
+  {
+    id: "dyspraxia_coordination",
+    category: "dyspraxie",
+    q: "⚽ As-tu du mal à coordonner tes gestes ? (attraper une balle, découper avec des ciseaux, lacer tes chaussures…)",
+    options: ["Non, pas de problème", "Parfois maladroit(e)", "Souvent difficile", "Très difficile"],
+    weights: [0, 1, 2, 3],
+    emoji: "🤸",
+  },
+  // Dyscalculie — maths
+  {
+    id: "dyscalculia_numbers",
+    category: "dyscalculie",
+    q: "🔢 As-tu du mal à te souvenir des tables de multiplication même après beaucoup de pratique ?",
+    options: ["Non, je les connais", "Quelques-unes m'échappent", "Souvent difficile", "Très difficile"],
+    weights: [0, 1, 2, 3],
+    emoji: "🧮",
+  },
+  // TDA/H — attention
+  {
+    id: "adhd_attention",
+    category: "attention",
+    q: "🎯 As-tu du mal à rester concentré(e) sur une tâche sans te laisser distraire ?",
+    options: ["Non, ça va bien", "Parfois", "Souvent", "Presque toujours"],
+    weights: [0, 1, 2, 3],
+    emoji: "🧠",
+  },
+  {
+    id: "adhd_hyperactivity",
+    category: "attention",
+    q: "💨 As-tu du mal à rester tranquille, as-tu souvent besoin de bouger ?",
+    options: ["Non, je peux rester calme", "Parfois agité(e)", "Souvent difficile", "Impossible de rester immobile"],
+    weights: [0, 1, 2, 3],
+    emoji: "⚡",
+  },
+  // Bien-être général
+  {
+    id: "emotional",
+    category: "bien-être",
+    q: "😊 Comment tu te sens à l'école en général ?",
+    options: ["Très bien !", "Plutôt bien", "Pas très bien", "Très anxieux/se"],
+    weights: [0, 0, 1, 2],
+    emoji: "🏫",
+  },
+  {
+    id: "sleep",
+    category: "bien-être",
+    q: "😴 Est-ce que tu dors bien la nuit (7-9h) ?",
+    options: ["Oui, toujours", "La plupart du temps", "Pas toujours", "Rarement"],
+    weights: [0, 0, 1, 2],
+    emoji: "🌙",
+  },
+];
+
 function AssessmentModule({ child, onComplete }: { child: Child; onComplete: (score: number, xp: number) => void }) {
+  const [phase, setPhase] = useState<"intro" | "questions" | "loading" | "result">("intro");
   const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, unknown>>({});
+  const [answers, setAnswers] = useState<Record<string, { question: string; answer: string; index: number; weight: number }>>({});
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [selectedAnim, setSelectedAnim] = useState<number | null>(null);
 
-  const questions = [
-    { id: "reading_speed", q: "📖 Quand tu lis, les lettres semblent-elles parfois bouger ou se mélanger ?", options: ["Jamais", "Parfois", "Souvent", "Toujours"] },
-    { id: "writing", q: "✏️ Est-ce que tu fais beaucoup de fautes d'orthographe même sur des mots que tu connais ?", options: ["Non, rarement", "Parfois oui", "Assez souvent", "Tout le temps"] },
-    { id: "math", q: "🔢 Les chiffres et calculs te semblent-ils difficiles à retenir ?", options: ["Non, j'adore les maths", "Ça dépend des jours", "Souvent difficile", "Très difficile"] },
-    { id: "attention", q: "🎯 As-tu du mal à rester concentré(e) sur une tâche longtemps ?", options: ["Non, ça va bien", "Parfois", "Souvent", "Presque toujours"] },
-    { id: "motor", q: "✋ Trouves-tu difficile d'écrire proprement ou de faire des gestes précis ?", options: ["Non, c'est facile", "Parfois maladroit(e)", "Souvent difficile", "Très difficile"] },
-    { id: "emotional", q: "😊 Comment tu te sens à l'école en général ?", options: ["Très bien !", "Plutôt bien", "Pas très bien", "Très anxieux/se"] },
-    { id: "sleep", q: "😴 Est-ce que tu dors bien la nuit (7-9h) ?", options: ["Oui, toujours", "La plupart du temps", "Pas toujours", "Rarement"] },
-    { id: "social", q: "👥 Est-ce que tu as des amis avec qui tu t'entends bien ?", options: ["Oui, plein !", "Quelques-uns", "Un ou deux", "Pas vraiment"] },
-  ];
+  // Select questions appropriate for age
+  const questions = child.ageGroup === "maternelle"
+    ? DYS_QUESTIONS.filter((q) => !["dyslexia_order", "dysortho_sounds", "dyscalculia_numbers"].includes(q.id))
+    : DYS_QUESTIONS;
 
-  function answer(value: string) {
+  function answer(value: string, optionIndex: number) {
+    setSelectedAnim(optionIndex);
     const q = questions[step];
-    const newAnswers = { ...answers, [q.id]: { question: q.q, answer: value, index: q.options.indexOf(value) } };
-    setAnswers(newAnswers);
-    if (step >= questions.length - 1) {
-      submitAssessment(newAnswers);
-    } else {
-      setStep((s) => s + 1);
-    }
+    const weight = q.weights[optionIndex] ?? 0;
+    const newAnswers = {
+      ...answers,
+      [q.id]: { question: q.q, answer: value, index: optionIndex, weight },
+    };
+    setTimeout(() => {
+      setSelectedAnim(null);
+      setAnswers(newAnswers);
+      if (step >= questions.length - 1) {
+        submitAssessment(newAnswers);
+      } else {
+        setStep((s) => s + 1);
+      }
+    }, 500);
   }
 
-  async function submitAssessment(finalAnswers: Record<string, unknown>) {
-    setLoading(true);
+  async function submitAssessment(finalAnswers: typeof answers) {
+    setPhase("loading");
+    // Compute dys risk scores locally
+    const scores: Record<string, number[]> = {};
+    for (const [id, data] of Object.entries(finalAnswers)) {
+      const q = questions.find((q) => q.id === id);
+      if (!q) continue;
+      if (!scores[q.category]) scores[q.category] = [];
+      scores[q.category].push(data.weight);
+    }
+
+    const avgScores: Record<string, number> = {};
+    for (const [cat, ws] of Object.entries(scores)) {
+      avgScores[cat] = ws.reduce((a, b) => a + b, 0) / ws.length;
+    }
+
     try {
       const res = await fetch("/api/ai/assessment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ childId: child.id, answers: finalAnswers, assessmentType: "Bilan général" }),
+        body: JSON.stringify({
+          childId: child.id,
+          answers: finalAnswers,
+          assessmentType: "Bilan dys et apprentissage",
+          dysScores: avgScores,
+        }),
       });
       const data = await res.json();
-      setResult(data.riskLevel ? data : { riskLevel: "low", strengths: [], detectedChallenges: [], recommendations: [], summary: "Évaluation terminée !" });
+      setResult({ ...data, dysScores: avgScores });
     } catch {
-      setResult({ riskLevel: "low", strengths: [], detectedChallenges: [], recommendations: [], summary: "Évaluation terminée ! Consulte le tableau de bord parent pour les détails." });
-    } finally {
-      setLoading(false);
+      // Fallback: compute locally
+      const challenges = Object.entries(avgScores)
+        .filter(([, score]) => score >= 1.5)
+        .map(([cat]) => {
+          const labels: Record<string, string> = {
+            dyslexie: "Difficultés de lecture (indicateurs de dyslexie)",
+            dysorthographie: "Difficultés d'orthographe",
+            dyspraxie: "Difficultés motrices (indicateurs de dyspraxie)",
+            dyscalculie: "Difficultés en calcul",
+            attention: "Difficultés de concentration (indicateurs de TDA/H)",
+          };
+          return labels[cat] || cat;
+        });
+      setResult({
+        riskLevel: challenges.length > 0 ? "medium" : "low",
+        detectedChallenges: challenges,
+        strengths: Object.entries(avgScores).filter(([, s]) => s < 1).map(([c]) => c),
+        summary: challenges.length > 0
+          ? "Des indicateurs ont été détectés. Consulte le tableau de bord parent pour les recommandations."
+          : "Très beau profil ! Continue comme ça !",
+        dysScores: avgScores,
+      });
     }
+    setPhase("result");
   }
 
-  if (loading) {
+  // INTRO
+  if (phase === "intro") {
     return (
-      <div className="text-center py-12">
-        <div className="text-5xl animate-bounce mb-4">🔍</div>
-        <p className="font-bold text-slate-700">Elevo analyse ton profil…</p>
-        <p className="text-sm text-slate-500 mt-1">Ça prend quelques secondes</p>
+      <div className="space-y-6 text-center">
+        <div className="text-7xl animate-bounce">🔍</div>
+        <h3 className="text-2xl font-black text-slate-800">Bilan personnalisé</h3>
+        <p className="text-slate-600 leading-relaxed">
+          Ce bilan va m&apos;aider à mieux te connaître pour t&apos;accompagner au mieux.
+          Il n&apos;y a pas de bonne ou mauvaise réponse — sois honnête !
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { emoji: "📖", label: "Lecture", color: "bg-blue-50 border-blue-200" },
+            { emoji: "✏️", label: "Écriture", color: "bg-purple-50 border-purple-200" },
+            { emoji: "🎯", label: "Attention", color: "bg-amber-50 border-amber-200" },
+            { emoji: "😊", label: "Bien-être", color: "bg-green-50 border-green-200" },
+          ].map((item) => (
+            <div key={item.label} className={`${item.color} border-2 rounded-2xl p-4 flex flex-col items-center gap-2`}>
+              <span className="text-3xl">{item.emoji}</span>
+              <span className="font-bold text-slate-700 text-sm">{item.label}</span>
+            </div>
+          ))}
+        </div>
+        <button
+          onClick={() => setPhase("questions")}
+          className="btn-fun w-full bg-gradient-to-r from-violet-500 to-purple-600 text-white py-4 text-lg"
+        >
+          C&apos;est parti ! 🚀
+        </button>
       </div>
     );
   }
 
-  if (result) {
-    const typedResult = result as {
-      riskLevel?: string;
-      summary?: string;
-      strengths?: string[];
-      detectedChallenges?: string[];
-      recommendations?: string[];
+  // LOADING
+  if (phase === "loading") {
+    return (
+      <div className="text-center py-16 space-y-4">
+        <div className="text-5xl animate-spin">⚙️</div>
+        <p className="font-black text-slate-700 text-xl">Analyse en cours…</p>
+        <p className="text-sm text-slate-500">Je prépare ton bilan personnalisé</p>
+        <div className="flex justify-center gap-1 mt-4">
+          {[0,1,2].map((i) => (
+            <div key={i} className="w-3 h-3 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: `${i * 150}ms` }} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // RESULT
+  if (phase === "result" && result) {
+    const r = result as {
+      riskLevel?: string; summary?: string; strengths?: string[];
+      detectedChallenges?: string[]; dysScores?: Record<string, number>;
     };
+
+    const dysCategories = [
+      { key: "dyslexie", label: "Dyslexie", emoji: "📖", color: "bg-blue-100 text-blue-700" },
+      { key: "dysorthographie", label: "Dysorthographie", emoji: "✏️", color: "bg-purple-100 text-purple-700" },
+      { key: "dyspraxie", label: "Dyspraxie", emoji: "✋", color: "bg-orange-100 text-orange-700" },
+      { key: "dyscalculie", label: "Dyscalculie", emoji: "🔢", color: "bg-green-100 text-green-700" },
+      { key: "attention", label: "Attention / TDA-H", emoji: "🎯", color: "bg-amber-100 text-amber-700" },
+    ];
+
     return (
       <div className="space-y-5">
         <div className="text-center">
           <div className="text-6xl mb-3">📊</div>
-          <h3 className="text-2xl font-black text-slate-800">Ton profil Elevo</h3>
+          <h3 className="text-2xl font-black text-slate-800">Ton profil</h3>
+          {r.riskLevel === "high" && (
+            <span className="inline-block mt-2 bg-red-100 text-red-700 font-bold text-xs px-3 py-1 rounded-full">
+              ⚠️ Consulte le tableau de bord parent
+            </span>
+          )}
         </div>
-        {typedResult.summary && (
+
+        {/* Dys indicators */}
+        {r.dysScores && (
+          <div>
+            <p className="text-sm font-bold text-slate-600 mb-3">Indicateurs détectés</p>
+            <div className="space-y-2">
+              {dysCategories.map((cat) => {
+                const score = r.dysScores![cat.key] ?? 0;
+                const level = score < 0.5 ? "✅ Pas d'indicateur" : score < 1.5 ? "⚡ Léger" : "⚠️ À surveiller";
+                const barColor = score < 0.5 ? "bg-green-400" : score < 1.5 ? "bg-amber-400" : "bg-red-400";
+                return (
+                  <div key={cat.key} className={`${cat.color} rounded-2xl p-3`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{cat.emoji}</span>
+                        <span className="font-bold text-sm">{cat.label}</span>
+                      </div>
+                      <span className="text-xs font-bold">{level}</span>
+                    </div>
+                    <div className="h-2 bg-white/50 rounded-full overflow-hidden">
+                      <div className={`h-full ${barColor} rounded-full transition-all`} style={{ width: `${(score / 3) * 100}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {r.summary && (
           <div className="bg-violet-50 rounded-2xl p-4">
-            <p className="font-medium text-slate-700 text-center">{typedResult.summary}</p>
+            <p className="font-medium text-slate-700 text-center text-sm">{r.summary}</p>
           </div>
         )}
-        {typedResult.strengths && typedResult.strengths.length > 0 && (
-          <div>
-            <p className="text-sm font-bold text-green-600 mb-2">✨ Tes points forts</p>
-            <div className="space-y-1">
-              {typedResult.strengths.map((s: string) => (
-                <div key={s} className="flex items-center gap-2 bg-green-50 rounded-xl px-3 py-2 text-sm text-slate-700">
-                  <span className="text-green-500">✓</span> {s}
-                </div>
-              ))}
-            </div>
+
+        {r.detectedChallenges && r.detectedChallenges.length > 0 && (
+          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
+            <p className="text-sm font-bold text-amber-700 mb-2">💡 Points à travailler</p>
+            {r.detectedChallenges.map((c: string) => (
+              <p key={c} className="text-sm text-slate-700 flex items-start gap-2">
+                <span className="text-amber-500 mt-0.5">→</span> {c}
+              </p>
+            ))}
           </div>
         )}
-        {typedResult.detectedChallenges && typedResult.detectedChallenges.length > 0 && (
-          <div>
-            <p className="text-sm font-bold text-amber-600 mb-2">💪 À travailler ensemble</p>
-            <div className="space-y-1">
-              {typedResult.detectedChallenges.map((c: string) => (
-                <div key={c} className="flex items-center gap-2 bg-amber-50 rounded-xl px-3 py-2 text-sm text-slate-700">
-                  <span className="text-amber-500">→</span> {c}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+
+        <div className="bg-blue-50 rounded-2xl p-4">
+          <p className="text-xs font-bold text-blue-600 mb-1">ℹ️ Important</p>
+          <p className="text-xs text-slate-600">
+            Ce bilan est indicatif. Pour un diagnostic officiel, consultez un orthophoniste ou un neuropédiatre.
+            Les résultats détaillés sont visibles dans le tableau de bord parent.
+          </p>
+        </div>
+
         <button
           onClick={() => onComplete(75, 100)}
           className="btn-fun w-full bg-gradient-to-r from-violet-500 to-purple-600 text-white py-4 text-lg"
@@ -616,24 +884,39 @@ function AssessmentModule({ child, onComplete }: { child: Child; onComplete: (sc
     );
   }
 
+  // QUESTIONS
   const q = questions[step];
   return (
     <div className="space-y-6">
-      <div className="flex justify-between text-sm font-bold text-slate-500">
+      <div className="flex items-center justify-between text-sm font-bold text-slate-500">
         <span>Question {step + 1}/{questions.length}</span>
-        <span>{Math.round((step / questions.length) * 100)}%</span>
+        <span className="bg-violet-100 text-violet-600 px-2 py-0.5 rounded-full text-xs">{q.category}</span>
       </div>
-      <div className="h-2 bg-slate-100 rounded-full">
-        <div className="h-full bg-violet-500 rounded-full transition-all" style={{ width: `${(step / questions.length) * 100}%` }} />
+      <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+        <div
+          className="h-full bg-gradient-to-r from-violet-400 to-purple-500 rounded-full transition-all duration-500"
+          style={{ width: `${((step + 1) / questions.length) * 100}%` }}
+        />
       </div>
-      <p className="text-xl font-black text-slate-800 leading-snug">{q.q}</p>
+      <div className="bg-violet-50 rounded-2xl p-5 text-center">
+        <div className="text-4xl mb-3">{q.emoji}</div>
+        <p className="text-lg font-black text-slate-800 leading-snug">{q.q}</p>
+      </div>
       <div className="space-y-3">
-        {q.options.map((opt) => (
+        {q.options.map((opt, i) => (
           <button
             key={opt}
-            onClick={() => answer(opt)}
-            className="w-full text-left px-5 py-4 rounded-2xl border-2 border-slate-200 bg-white hover:border-violet-400 hover:bg-violet-50 font-semibold text-slate-700 transition-all"
+            onClick={() => answer(opt, i)}
+            disabled={selectedAnim !== null}
+            className={`w-full text-left px-5 py-4 rounded-2xl border-2 font-semibold text-slate-700 transition-all ${
+              selectedAnim === i
+                ? "bg-violet-100 border-violet-400 scale-95"
+                : "border-slate-200 bg-white hover:border-violet-400 hover:bg-violet-50 hover:scale-[1.02]"
+            }`}
           >
+            <span className="inline-block w-6 h-6 rounded-full bg-violet-100 text-violet-600 text-xs font-black text-center leading-6 mr-2">
+              {String.fromCharCode(65 + i)}
+            </span>
             {opt}
           </button>
         ))}
@@ -1454,6 +1737,7 @@ export default function ModulePage({ params }: { params: { id: string; module: s
   const [completed, setCompleted] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
   const [finalXp, setFinalXp] = useState(0);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
     fetch(`/api/children/${id}`)
@@ -1461,10 +1745,16 @@ export default function ModulePage({ params }: { params: { id: string; module: s
       .then((data) => { if (data) setChild(data); });
   }, [id, router]);
 
-  async function handleComplete(score: number, xp: number) {
+  const handleComplete = useCallback(async (score: number, xp: number) => {
     setFinalScore(score);
     setFinalXp(xp);
     setCompleted(true);
+    if (score >= 50) {
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 3000);
+    }
+    // Advance exercise rotation index so next session gets a different exercise
+    advanceExerciseIdx(id, moduleId);
     // Save session
     await fetch("/api/sessions", {
       method: "POST",
@@ -1478,7 +1768,7 @@ export default function ModulePage({ params }: { params: { id: string; module: s
         xpEarned: xp,
       }),
     });
-  }
+  }, [id, moduleId]);
 
   const meta = moduleMeta[moduleId] || { name: "Module", emoji: "📚", color: "from-violet-500 to-purple-600", bg: "bg-violet-50" };
 
@@ -1491,22 +1781,39 @@ export default function ModulePage({ params }: { params: { id: string; module: s
   }
 
   if (completed) {
+    const perfEmoji = finalScore >= 80 ? "🏆" : finalScore >= 50 ? "⭐" : "💪";
+    const perfMsg = finalScore >= 80 ? "Excellent travail !" : finalScore >= 50 ? "Bien joué !" : "Continue, tu progresses !";
     return (
       <div className="min-h-screen bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center p-6">
+        {showConfetti && <ConfettiPop />}
         <div className="card-bubble bg-white max-w-md w-full p-10 text-center">
-          <div className="text-7xl mb-4 star-pop">🏆</div>
-          <h2 className="text-3xl font-black text-slate-800 mb-2">Bravo {child.name} !</h2>
-          <p className="text-slate-500 mb-6">Tu as terminé &quot;{meta.name}&quot;</p>
+          <div className="text-8xl mb-4 star-pop animate-bounce">{perfEmoji}</div>
+          <h2 className="text-3xl font-black text-slate-800 mb-1">Bravo {child.name} !</h2>
+          <p className="text-slate-500 mb-2">{perfMsg}</p>
+          <p className="text-slate-400 text-sm mb-6">Tu as terminé &quot;{meta.name}&quot;</p>
           <div className="bg-gradient-to-r from-violet-500 to-purple-600 rounded-2xl p-5 mb-6">
-            <p className="text-4xl font-black text-white">+{finalXp} XP</p>
+            <p className="text-5xl font-black text-white">+{finalXp} XP</p>
             <p className="text-white/80 text-sm mt-1">Score : {finalScore}%</p>
+          </div>
+          {/* Score bar */}
+          <div className="mb-6">
+            <div className="h-4 bg-slate-100 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-1000 ${
+                  finalScore >= 80 ? "bg-gradient-to-r from-green-400 to-emerald-500" :
+                  finalScore >= 50 ? "bg-gradient-to-r from-amber-400 to-yellow-500" :
+                  "bg-gradient-to-r from-red-400 to-pink-500"
+                }`}
+                style={{ width: `${finalScore}%` }}
+              />
+            </div>
           </div>
           <div className="flex gap-3">
             <button
-              onClick={() => { setCompleted(false); }}
+              onClick={() => { setCompleted(false); setShowConfetti(false); }}
               className="btn-fun flex-1 bg-slate-100 text-slate-700 py-3"
             >
-              🔄 Rejouer
+              🔄 Réessayer
             </button>
             <Link
               href={`/child/${id}`}
@@ -1515,6 +1822,9 @@ export default function ModulePage({ params }: { params: { id: string; module: s
               🏠 Accueil
             </Link>
           </div>
+          <p className="text-xs text-slate-400 mt-4">
+            Prochain exercice : différent ! 🎲
+          </p>
         </div>
       </div>
     );
@@ -1539,7 +1849,7 @@ export default function ModulePage({ params }: { params: { id: string; module: s
         <div className="max-w-2xl mx-auto">
           {moduleId === "reading" && <ReadingModule child={child} onComplete={handleComplete} />}
           {moduleId === "math" && <MathModule child={child} onComplete={handleComplete} />}
-          {moduleId === "memory" && <MemoryModule onComplete={handleComplete} />}
+          {moduleId === "memory" && <MemoryModule child={child} onComplete={handleComplete} />}
           {moduleId === "emotional" && <EmotionalModule child={child} onComplete={handleComplete} />}
           {moduleId === "assessment" && <AssessmentModule child={child} onComplete={handleComplete} />}
           {moduleId === "orientation" && <OrientationModule child={child} onComplete={handleComplete} />}
