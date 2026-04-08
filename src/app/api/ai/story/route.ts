@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getFallbackExercise } from "@/lib/fallback-stories";
 import Anthropic from "@anthropic-ai/sdk";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || "" });
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -116,8 +117,15 @@ Format JSON :
     const data = JSON.parse(jsonMatch[0]);
     return NextResponse.json({ data, exerciseType: step.exerciseType, step: { id: step.id, title: step.title, order: step.order }, chapter: { id: step.chapter.id, title: step.chapter.title } });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error("Story generation error:", message, error);
-    return NextResponse.json({ error: "Erreur de génération d'histoire", details: message }, { status: 500 });
+    console.error("Story generation error, using fallback:", error instanceof Error ? error.message : error);
+    // Fallback : contenu pré-écrit quand Claude n'est pas disponible
+    const fallback = getFallbackExercise(step.exerciseType, child.ageGroup, child.name);
+    return NextResponse.json({
+      data: fallback.data,
+      exerciseType: step.exerciseType,
+      step: { id: step.id, title: step.title, order: step.order },
+      chapter: { id: step.chapter.id, title: step.chapter.title },
+      fallback: true,
+    });
   }
 }
