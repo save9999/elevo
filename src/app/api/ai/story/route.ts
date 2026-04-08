@@ -115,8 +115,9 @@ Format JSON :
 
     const data = JSON.parse(jsonMatch[0]);
     return NextResponse.json({ data, exerciseType: step.exerciseType, step: { id: step.id, title: step.title, order: step.order }, chapter: { id: step.chapter.id, title: step.chapter.title } });
-  } catch (error) {
-    console.error("Story generation error:", error);
-    return NextResponse.json({ error: "Erreur de génération d'histoire" }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("Story generation error:", message, error);
+    return NextResponse.json({ error: "Erreur de génération d'histoire", details: message }, { status: 500 });
   }
 }
