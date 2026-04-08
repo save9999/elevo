@@ -33,7 +33,14 @@ interface FallbackSocial {
   lumoComment: string;
 }
 
-type FallbackData = FallbackReading | FallbackMath | FallbackEmotional | FallbackMemory | FallbackSocial;
+interface FallbackCreativity {
+  narrative: string;
+  challenge: string;
+  questions: { q: string; options: string[]; correct: number; explanation: string }[];
+  lumoComment: string;
+}
+
+type FallbackData = FallbackReading | FallbackMath | FallbackEmotional | FallbackMemory | FallbackSocial | FallbackCreativity;
 
 // ─── READING ───────────────────────────────────
 
