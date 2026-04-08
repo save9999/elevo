@@ -7,3 +7,4 @@ prisma/dev.db-journal
 tsconfig.tsbuildinfo
 *.tsbuildinfo
 .vercel
+.env.vercel.local
