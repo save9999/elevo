@@ -70,6 +70,10 @@ model Child {
   sessions     LearningSession[]
   achievements Achievement[]
   assessments  Assessment[]
+  progress     ChildProgress[]
+  quests       DailyQuest[]
+  inventory    ChildInventory[]
+  currency     ChildCurrency?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }
@@ -124,4 +128,109 @@ model Assessment {
   result    String   @default("{}")
   risk      String
   createdAt DateTime @default(now())
+}
+
+model Chapter {
+  id          String        @id @default(cuid())
+  title       String
+  description String
+  theme       String
+  ageGroup    String
+  difficulty  Int           @default(1)
+  order       Int
+  mapPosition Json          @default("{\"x\":0,\"y\":0}")
+  mapRegion   String        @default("forest")
+  bossData    Json?
+  steps       ChapterStep[]
+  progress    ChildProgress[]
+  createdAt   DateTime      @default(now())
+
+  @@unique([ageGroup, order])
+}
+
+model ChapterStep {
+  id               String          @id @default(cuid())
+  chapterId        String
+  chapter          Chapter         @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  order            Int
+  title            String          @default("")
+  narrativeContext String          @db.Text
+  exerciseType     String
+  exerciseData     Json?
+  rewards          Json            @default("{\"stars\":10,\"xp\":30}")
+  progress         ChildProgress[]
+
+  @@unique([chapterId, order])
+}
+
+model ChildProgress {
+  id             String       @id @default(cuid())
+  childId        String
+  child          Child        @relation(fields: [childId], references: [id], onDelete: Cascade)
+  chapterId      String
+  chapter        Chapter      @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  stepId         String?
+  step           ChapterStep? @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  status         String       @default("locked")
+  score          Int?
+  starsEarned    Int?
+  narrativeState Json?
+  completedAt    DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@unique([childId, chapterId, stepId])
+}
+
+model DailyQuest {
+  id            String   @id @default(cuid())
+  childId       String
+  child         Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  date          DateTime @db.Date
+  title         String
+  description   String
+  narrativeHook String?  @db.Text
+  exerciseType  String
+  targetCount   Int      @default(1)
+  progress      Int      @default(0)
+  completed     Boolean  @default(false)
+  reward        Json     @default("{\"stars\":10,\"xp\":20}")
+  createdAt     DateTime @default(now())
+
+  @@unique([childId, date, title])
+}
+
+model ShopItem {
+  id          String           @id @default(cuid())
+  name        String
+  type        String
+  description String           @default("")
+  cost        Int
+  currency    String           @default("stars")
+  ageGroup    String?
+  rarity      String           @default("common")
+  imageData   String?          @db.Text
+  previewData Json?
+  inventory   ChildInventory[]
+  createdAt   DateTime         @default(now())
+}
+
+model ChildInventory {
+  id         String    @id @default(cuid())
+  childId    String
+  child      Child     @relation(fields: [childId], references: [id], onDelete: Cascade)
+  itemId     String
+  item       ShopItem  @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  equippedAt DateTime?
+  acquiredAt DateTime  @default(now())
+
+  @@unique([childId, itemId])
+}
+
+model ChildCurrency {
+  id            String @id @default(cuid())
+  childId       String @unique
+  child         Child  @relation(fields: [childId], references: [id], onDelete: Cascade)
+  stars         Int    @default(0)
+  crystals      Int    @default(0)
+  streakFreezes Int    @default(1)
 }
