@@ -541,9 +541,9 @@ export default function LandingPage() {
           <div className="border-t border-stone-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-stone-600">© 2026 Elevo · Propulsé par Claude AI</p>
             <div className="flex gap-6 text-sm text-stone-600">
-              <a href="#" className="hover:text-stone-400 transition-colors">Confidentialité</a>
-              <a href="#" className="hover:text-stone-400 transition-colors">CGU</a>
-              <a href="#" className="hover:text-stone-400 transition-colors">Contact</a>
+              <Link href="/confidentialite" className="hover:text-stone-400 transition-colors">Confidentialité</Link>
+              <Link href="/cgu" className="hover:text-stone-400 transition-colors">CGU</Link>
+              <Link href="/contact" className="hover:text-stone-400 transition-colors">Contact</Link>
             </div>
           </div>
         </div>

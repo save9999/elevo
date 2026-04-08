@@ -41,9 +41,19 @@ export async function POST(req: NextRequest) {
     const userId = (session.user as { id?: string }).id;
     if (!userId) return NextResponse.json({ error: "Session invalide, reconnectez-vous." }, { status: 401 });
 
-    const { name, birthDate, avatar } = await req.json();
-    if (!name || !birthDate) {
-      return NextResponse.json({ error: "Nom et date de naissance requis." }, { status: 400 });
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Données invalides." }, { status: 400 });
+    }
+
+    const { name, birthDate, avatar } = body;
+    if (!name || typeof name !== "string" || name.trim().length === 0) {
+      return NextResponse.json({ error: "Le prénom est requis." }, { status: 400 });
+    }
+    if (!birthDate) {
+      return NextResponse.json({ error: "La date de naissance est requise." }, { status: 400 });
     }
 
     const birth = new Date(birthDate);
@@ -52,22 +62,36 @@ export async function POST(req: NextRequest) {
     }
 
     const age = getAge(birth);
+    if (age < 0 || age > 25) {
+      return NextResponse.json({ error: "La date de naissance semble incorrecte." }, { status: 400 });
+    }
+
     const ageGroup = getAgeGroup(age);
+
+    // Transaction : crée l'enfant ET son profil en une seule opération
     const child = await prisma.child.create({
       data: {
         parentId: userId,
-        name,
+        name: name.trim(),
         birthDate: birth,
         ageGroup,
         avatar: avatar || "🦊",
+        profile: {
+          create: {},
+        },
       },
+      include: { profile: true },
     });
-    await prisma.childProfile.create({ data: { childId: child.id } });
+
     return NextResponse.json(child, { status: 201 });
   } catch (err) {
     console.error("POST /api/children error:", err);
+    const message = err instanceof Error ? err.message : "Erreur inconnue";
+    if (message.includes("Foreign key") || message.includes("foreign key")) {
+      return NextResponse.json({ error: "Compte parent introuvable. Reconnectez-vous." }, { status: 401 });
+    }
     return NextResponse.json(
-      { error: "Erreur serveur lors de la création du profil." },
+      { error: "Erreur serveur lors de la création du profil. Veuillez réessayer." },
       { status: 500 }
     );
   }
