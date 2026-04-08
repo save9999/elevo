@@ -86,12 +86,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(child, { status: 201 });
   } catch (err) {
     console.error("POST /api/children error:", err);
-    const message = err instanceof Error ? err.message : "Erreur inconnue";
-    if (message.includes("Foreign key") || message.includes("foreign key")) {
+    const message = err instanceof Error ? err.message : String(err);
+    const code = (err as { code?: string }).code || "";
+
+    // Erreur de connexion DB
+    if (code === "P1001" || code === "P1002" || message.includes("Can't reach")) {
+      return NextResponse.json({ error: "Base de données injoignable. Réessayez dans quelques secondes." }, { status: 503 });
+    }
+    // Table inexistante
+    if (code === "P2021" || message.includes("does not exist")) {
+      return NextResponse.json({ error: "La base de données n'est pas initialisée. Contactez le support." }, { status: 500 });
+    }
+    // Contrainte de clé étrangère
+    if (code === "P2003" || message.includes("Foreign key") || message.includes("foreign key")) {
       return NextResponse.json({ error: "Compte parent introuvable. Reconnectez-vous." }, { status: 401 });
     }
     return NextResponse.json(
-      { error: "Erreur serveur lors de la création du profil. Veuillez réessayer." },
+      { error: `Erreur serveur : ${code || "UNKNOWN"} — ${message.slice(0, 200)}` },
       { status: 500 }
     );
   }
