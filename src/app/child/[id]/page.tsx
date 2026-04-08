@@ -5,6 +5,8 @@ import Link from "next/link";
 import LumoCharacter, { getLumoMood, getLumoMessage } from "@/components/LumoCharacter";
 import { useAmbientMusic } from "@/hooks/useAmbientMusic";
 import { useNarration } from "@/hooks/useNarration";
+import WorldMap from "@/components/WorldMap";
+import StatusBar from "@/components/StatusBar";
 
 interface Child {
   id: string; name: string; avatar: string; avatarConfig: string; ageGroup: string;
@@ -57,6 +59,7 @@ export default function ChildHomePage({ params }: { params: { id: string } }) {
   const [characterTalking, setCharacterTalking] = useState(false);
   const [showPulse, setShowPulse] = useState(false);
   const [musicOn, setMusicOn] = useState(false);
+  const [chapters, setChapters] = useState<any[]>([]);
   const ageGroup = (child?.ageGroup || "primaire") as "maternelle" | "primaire" | "college-lycee";
   const { isPlaying, startMusic, stopMusic } = useAmbientMusic(ageGroup, musicOn);
   const { narrate, stop: stopNarration, speaking } = useNarration();
@@ -103,6 +106,15 @@ export default function ChildHomePage({ params }: { params: { id: string } }) {
     const t = setTimeout(() => setShowPulse(true), 3000);
     return () => clearTimeout(t);
   }, []);
+
+  // Fetch chapters for world map
+  useEffect(() => {
+    if (child) {
+      fetch(`/api/progress?childId=${child.id}`)
+        .then((r) => r.json())
+        .then((d) => { if (d.chapters) setChapters(d.chapters); });
+    }
+  }, [child]);
 
   const handleCharacterClick = useCallback(async () => {
     if (!child || characterLoading) return;
@@ -182,6 +194,17 @@ export default function ChildHomePage({ params }: { params: { id: string } }) {
 
   return (
     <div className={`min-h-screen bg-gradient-to-br ${bgGradient}`}>
+      {child && (
+        <StatusBar
+          childId={child.id}
+          name={child.name}
+          avatar={child.avatar}
+          level={child.level}
+          xp={child.xp}
+          streak={child.streak}
+          ageGroup={child.ageGroup}
+        />
+      )}
       {/* Header */}
       <header className="px-4 pt-5 pb-0">
         <div className="max-w-md mx-auto">
@@ -302,6 +325,13 @@ export default function ChildHomePage({ params }: { params: { id: string } }) {
             <span className="text-white text-xl shrink-0">→</span>
           </Link>
 
+          {/* Carte du monde */}
+          {chapters.length > 0 && (
+            <div className="px-4 mb-6">
+              <WorldMap childId={child.id} chapters={chapters} ageGroup={child.ageGroup} />
+            </div>
+          )}
+
           {/* Module grid */}
           <div className="grid grid-cols-2 gap-3">
             {availableModules.map((mod) => {
@@ -356,6 +386,28 @@ export default function ChildHomePage({ params }: { params: { id: string } }) {
           <div className="pb-6" />
         </div>
       </main>
+
+      {child && (
+        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 z-50">
+          <div className="flex justify-around max-w-md mx-auto">
+            <Link href={`/child/${child.id}`} className="flex flex-col items-center text-elevo-purple">
+              <span className="text-xl">🗺️</span><span className="text-[10px] font-bold">Carte</span>
+            </Link>
+            <Link href={`/child/${child.id}/quests`} className="flex flex-col items-center text-gray-400">
+              <span className="text-xl">🔔</span><span className="text-[10px] font-bold">Quêtes</span>
+            </Link>
+            <Link href={`/child/${child.id}/shop`} className="flex flex-col items-center text-gray-400">
+              <span className="text-xl">🛍️</span><span className="text-[10px] font-bold">Boutique</span>
+            </Link>
+            <Link href={`/child/${child.id}/inventory`} className="flex flex-col items-center text-gray-400">
+              <span className="text-xl">🎒</span><span className="text-[10px] font-bold">Sac</span>
+            </Link>
+            <Link href={`/child/${child.id}/profile`} className="flex flex-col items-center text-gray-400">
+              <span className="text-xl">👤</span><span className="text-[10px] font-bold">Profil</span>
+            </Link>
+          </div>
+        </nav>
+      )}
     </div>
   );
 }
