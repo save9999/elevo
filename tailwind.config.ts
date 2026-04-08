@@ -17,6 +17,7 @@ export default {
         wiggle: "wiggle 0.5s ease-in-out",
         "bounce-slow": "bounce 2s infinite",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        "map-pulse": "map-node-pulse 2s ease-in-out infinite",
       },
       keyframes: {
         float: { "0%,100%": { transform: "translateY(0)" }, "50%": { transform: "translateY(-10px)" } },
