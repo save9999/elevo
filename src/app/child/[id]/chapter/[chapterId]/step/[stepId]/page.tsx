@@ -135,7 +135,7 @@ export default function StepPage() {
           </div>
         )}
         <div className="flex items-end gap-3 mb-6">
-          <div className="w-12 h-12"><LumoCharacter ageGroup="primaire" mood="happy" size="sm" /></div>
+          <div className="w-12 h-12"><LumoCharacter ageGroup="primaire" mood="happy" size={48} /></div>
           <div className="bg-elevo-purple/10 rounded-2xl rounded-bl-none p-3 flex-1">
             <p className="text-sm text-elevo-purple">{data.lumoComment || "C'est parti ! Tu es prêt ?"}</p>
           </div>

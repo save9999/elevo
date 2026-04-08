@@ -90,7 +90,7 @@ export default function ChapterPage() {
 
       <div className="flex items-center gap-3 px-4 mt-4">
         <div className="w-12 h-12">
-          <LumoCharacter ageGroup={child.ageGroup} mood="happy" size="sm" />
+          <LumoCharacter ageGroup={child.ageGroup as "maternelle" | "primaire" | "college-lycee"} mood="happy" size={48} />
         </div>
         <div className="bg-white rounded-2xl rounded-bl-none p-3 shadow-sm flex-1">
           <p className="text-sm text-gray-700">
