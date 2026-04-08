@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "Elevo — L'IA qui accompagne chaque enfant";
+export const alt = "Elevo - Plateforme educative IA";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -58,7 +58,7 @@ export default function Image() {
             lineHeight: 1.3,
           }}
         >
-          L&apos;IA qui comprend chaque enfant
+          {"L'IA qui comprend chaque enfant"}
         </div>
         <div
           style={{
@@ -70,7 +70,7 @@ export default function Image() {
             lineHeight: 1.5,
           }}
         >
-          Détection des troubles d&apos;apprentissage et parcours personnalisé de 3 à 18 ans
+          {"Detection des troubles d'apprentissage et parcours personnalise de 3 a 18 ans"}
         </div>
       </div>
     ),

@@ -12,6 +12,9 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
+  icons: {
+    icon: "/favicon.svg",
+  },
   title: {
     default: "Elevo — L'IA qui accompagne chaque enfant",
     template: "%s — Elevo",
@@ -65,10 +68,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr">
-      <head>
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-      </head>
       <body className="bg-slate-50 min-h-screen antialiased">
         <SessionProvider>{children}</SessionProvider>
       </body>
