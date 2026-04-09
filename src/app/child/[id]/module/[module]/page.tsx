@@ -5,7 +5,10 @@ import Link from "next/link";
 import LumoCharacter from "@/components/LumoCharacter";
 import FunQuiz from "@/components/FunQuiz";
 import MathChallenge from "@/components/MathChallenge";
+import ExerciseShell from "@/components/ExerciseShell";
+import ConfettiBlast from "@/components/ConfettiBlast";
 import { useNarration } from "@/hooks/useNarration";
+import { useSoundEffects } from "@/hooks/useSoundEffects";
 
 // ── EXERCISE TRACKER (localStorage) ───────────────────────────────────────────
 function getExerciseIdx(childId: string, module: string): number {
@@ -19,8 +22,6 @@ function advanceExerciseIdx(childId: string, module: string): void {
   const cur = parseInt(localStorage.getItem(key) || "0", 10);
   localStorage.setItem(key, String(cur + 1));
 }
-
-import ConfettiBlast from "@/components/ConfettiBlast";
 
 interface Child {
   id: string; name: string; avatar: string; ageGroup: string; level: number; xp: number;
@@ -305,11 +306,14 @@ function MemoryModule({ child, onComplete }: { child: Child; onComplete: (score:
   const [cards, setCards] = useState(pairs.map((e, i) => ({ id: i, emoji: e, flipped: false, matched: false })));
   const [selected, setSelected] = useState<number[]>([]);
   const [moves, setMoves] = useState(0);
+  const [matchedCount, setMatchedCount] = useState(0);
   const [done, setDone] = useState(false);
+  const { play } = useSoundEffects();
 
   function flip(id: number) {
     if (selected.length === 2) return;
     if (cards[id].flipped || cards[id].matched) return;
+    play("pop");
     const next = cards.map((c) => c.id === id ? { ...c, flipped: true } : c);
     setCards(next);
     const newSel = [...selected, id];
@@ -318,11 +322,19 @@ function MemoryModule({ child, onComplete }: { child: Child; onComplete: (score:
       setMoves((m) => m + 1);
       const [a, b] = newSel;
       if (next[a].emoji === next[b].emoji) {
+        play("correct");
         const matched = next.map((c) => newSel.includes(c.id) ? { ...c, matched: true } : c);
         setCards(matched);
         setSelected([]);
-        if (matched.every((c) => c.matched)) setDone(true);
+        const newCount = matchedCount + 1;
+        setMatchedCount(newCount);
+        if (newCount >= 3) play("streak");
+        if (matched.every((c) => c.matched)) {
+          play("victory");
+          setDone(true);
+        }
       } else {
+        play("wrong");
         setTimeout(() => {
           setCards((prev) => prev.map((c) => newSel.includes(c.id) ? { ...c, flipped: false } : c));
           setSelected([]);
@@ -335,24 +347,34 @@ function MemoryModule({ child, onComplete }: { child: Child; onComplete: (score:
     const score = Math.max(0, 100 - (moves - emojis.length) * 5);
     const xp = score >= 80 ? 60 : score >= 50 ? 40 : 20;
     return (
-      <div className="text-center space-y-6">
-        <div className="text-7xl">🧠</div>
-        <h3 className="text-3xl font-black text-slate-800">Bravo ! Toutes les paires trouvées !</h3>
-        <p className="text-slate-500">{moves} coups pour tout trouver !</p>
-        <div className="bg-pink-50 rounded-2xl p-4">
-          <p className="text-2xl font-black text-pink-600">+{xp} XP gagnés ! ✨</p>
+      <ExerciseShell title="Mémoire" icon="🧠" currentStep={emojis.length} totalSteps={emojis.length} showConfetti accentColor="pink">
+        <div className="text-center space-y-6 py-4">
+          <div className="text-8xl animate-bounce" style={{ animationDuration: "1.5s" }}>🧠</div>
+          <h3 className="text-3xl font-black text-slate-800">Toutes les paires trouvées !</h3>
+          <p className="text-slate-500 font-semibold">{moves} coups — {score >= 80 ? "Incroyable !" : score >= 50 ? "Bien joué !" : "Tu feras mieux !"}</p>
+          <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-2xl font-bold text-lg shadow-lg">
+            +{xp} XP ✨
+          </div>
+          <button onClick={() => onComplete(score, xp)} className="btn-fun w-full bg-gradient-to-r from-pink-500 to-rose-500 text-white py-4 text-lg">
+            Continuer 🚀
+          </button>
         </div>
-        <button onClick={() => onComplete(score, xp)} className="btn-fun w-full bg-gradient-to-r from-pink-500 to-rose-500 text-white py-4 text-lg">
-          Continuer 🚀
-        </button>
-      </div>
+      </ExerciseShell>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between text-sm font-bold text-slate-500">
-        <span>Trouve les paires !</span>
+    <ExerciseShell title="Mémoire" icon="🧠" currentStep={matchedCount} totalSteps={emojis.length} accentColor="pink"
+      lumoMessage={matchedCount === 0 ? "Retourne les cartes et trouve les paires !" : matchedCount >= 5 ? "Tu es un champion de la mémoire ! 🔥" : undefined}
+      lumoMood={matchedCount >= 3 ? "excited" : "happy"}>
+      <style>{`
+        @keyframes card-flip { 0% { transform: rotateY(0); } 50% { transform: rotateY(90deg); } 100% { transform: rotateY(0); } }
+        .card-appear { animation: card-flip 0.4s ease-out; }
+        @keyframes card-match { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(0.95); } }
+        .card-matched { animation: card-match 0.4s ease-out; }
+      `}</style>
+      <div className="flex justify-between text-sm font-bold text-slate-500 mb-3">
+        <span>🃏 {matchedCount}/{emojis.length} paires</span>
         <span>Coups : {moves}</span>
       </div>
       <div className="grid grid-cols-4 gap-3">
@@ -360,17 +382,17 @@ function MemoryModule({ child, onComplete }: { child: Child; onComplete: (score:
           <button
             key={card.id}
             onClick={() => flip(card.id)}
-            className={`h-16 rounded-2xl text-3xl flex items-center justify-center font-bold transition-all duration-300 ${
-              card.flipped || card.matched
-                ? card.matched ? "bg-green-100 text-green-600 scale-95" : "bg-pink-100"
-                : "bg-slate-200 hover:bg-slate-300"
+            className={`h-18 aspect-square rounded-2xl text-3xl flex items-center justify-center font-bold transition-all duration-300 shadow-sm ${
+              card.matched ? "bg-gradient-to-br from-green-100 to-emerald-100 border-2 border-green-300 scale-95 card-matched" :
+              card.flipped ? "bg-gradient-to-br from-pink-100 to-violet-100 border-2 border-violet-300 card-appear" :
+              "bg-gradient-to-br from-violet-200 to-purple-200 hover:from-violet-300 hover:to-purple-300 border-2 border-violet-300/50 active:scale-90"
             }`}
           >
-            {card.flipped || card.matched ? card.emoji : "?"}
+            {card.flipped || card.matched ? card.emoji : <span className="text-violet-400 text-2xl">?</span>}
           </button>
         ))}
       </div>
-    </div>
+    </ExerciseShell>
   );
 }
 
@@ -385,75 +407,24 @@ const ALL_EMOTIONAL_SCENARIOS = [
 ];
 
 function EmotionalModule({ child, onComplete }: { child: Child; onComplete: (score: number, xp: number) => void }) {
-  // Rotate 3 scenarios per session
   const offset = getExerciseIdx(child.id, "emotional") % (ALL_EMOTIONAL_SCENARIOS.length - 2);
   const scenarios = ALL_EMOTIONAL_SCENARIOS.slice(offset, offset + 3);
 
-  const [step, setStep] = useState(0);
-  const [chosen, setChosen] = useState<number | null>(null);
-  const [showAdvice, setShowAdvice] = useState(false);
-  const [scores, setScores] = useState<boolean[]>([]);
-
-  function choose(idx: number) {
-    setChosen(idx);
-    setShowAdvice(true);
-  }
-
-  function next() {
-    setScores((prev) => [...prev, chosen === scenarios[step].best]);
-    setChosen(null);
-    setShowAdvice(false);
-    if (step >= scenarios.length - 1) {
-      const correct = scores.filter(Boolean).length + (chosen === scenarios[step].best ? 1 : 0);
-      const score = Math.round((correct / scenarios.length) * 100);
-      onComplete(score, score >= 80 ? 45 : 30);
-    } else {
-      setStep((s) => s + 1);
-    }
-  }
-
-  const s = scenarios[step];
+  const questions = scenarios.map((s) => ({
+    q: `${s.emotion} ${s.situation}\n\n${s.question}`,
+    options: s.options,
+    correct: s.best,
+    explanation: s.advice,
+  }));
 
   return (
-    <div className="space-y-5">
-      <div className="flex justify-between text-sm font-bold text-slate-500">
-        <span>Situation {step + 1}/{scenarios.length}</span>
-      </div>
-      <div className="bg-red-50 rounded-2xl p-5">
-        <div className="text-4xl text-center mb-3">{s.emotion}</div>
-        <p className="text-slate-700 font-medium text-center">{s.situation}</p>
-      </div>
-      <p className="font-black text-slate-800">{s.question}</p>
-      <div className="space-y-2">
-        {s.options.map((opt, i) => (
-          <button
-            key={i}
-            disabled={showAdvice}
-            onClick={() => choose(i)}
-            className={`w-full text-left px-4 py-3 rounded-2xl border-2 font-medium text-sm transition-all ${
-              !showAdvice ? "border-slate-200 bg-white hover:border-red-300 hover:bg-red-50 text-slate-700" :
-              i === s.best ? "border-green-400 bg-green-50 text-green-700" :
-              i === chosen ? "border-red-400 bg-red-50 text-red-700" :
-              "border-slate-100 bg-slate-50 text-slate-400"
-            }`}
-          >
-            {opt}
-          </button>
-        ))}
-      </div>
-      {showAdvice && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-          <p className="text-xs font-bold text-amber-600 mb-1">💡 Conseil d&apos;Elevo</p>
-          <p className="text-sm text-slate-700">{s.advice}</p>
-        </div>
-      )}
-      {showAdvice && (
-        <button onClick={next} className="btn-fun w-full bg-gradient-to-r from-red-400 to-pink-500 text-white py-4">
-          {step >= scenarios.length - 1 ? "Voir mon résultat 🎯" : "Situation suivante →"}
-        </button>
-      )}
-      {child && null}
-    </div>
+    <FunQuiz
+      title="Mes émotions"
+      icon="💖"
+      questions={questions}
+      accentColor="pink"
+      onComplete={(score, xp) => onComplete(score, xp)}
+    />
   );
 }
 
@@ -569,6 +540,7 @@ function AssessmentModule({ child, onComplete }: { child: Child; onComplete: (sc
   const [answers, setAnswers] = useState<Record<string, { question: string; answer: string; index: number; weight: number }>>({});
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
   const [selectedAnim, setSelectedAnim] = useState<number | null>(null);
+  const { play } = useSoundEffects();
 
   // Select questions appropriate for age
   const questions = child.ageGroup === "maternelle"
@@ -576,6 +548,7 @@ function AssessmentModule({ child, onComplete }: { child: Child; onComplete: (sc
     : DYS_QUESTIONS;
 
   function answer(value: string, optionIndex: number) {
+    play("pop");
     setSelectedAnim(optionIndex);
     const q = questions[step];
     const weight = q.weights[optionIndex] ?? 0;
@@ -929,6 +902,7 @@ function WritingModule({ child, onComplete }: { child: Child; onComplete: (score
   const [answers, setAnswers] = useState<boolean[]>([]);
   const [input, setInput] = useState("");
   const [feedback, setFeedback] = useState<"" | "correct" | "wrong">("");
+  const { play: playSound } = useSoundEffects();
 
   // ── Dictée ──
   const dictees: Record<string, { sentence: string; blanks: { word: string; hint: string }[] }[]> = {
@@ -1028,6 +1002,7 @@ function WritingModule({ child, onComplete }: { child: Child; onComplete: (score
     function checkDictee(e: React.FormEvent) {
       e.preventDefault();
       const isOk = input.trim().toLowerCase() === item.blanks[0].word.toLowerCase();
+      playSound(isOk ? "correct" : "wrong");
       setFeedback(isOk ? "correct" : "wrong");
       setTimeout(() => {
         setAnswers((a) => [...a, isOk]);
@@ -1057,34 +1032,17 @@ function WritingModule({ child, onComplete }: { child: Child; onComplete: (score
     );
   }
 
-  // ── Activité: Orthographe ──
+  // ── Activité: Orthographe (FunQuiz) ──
   if (activity === "ortho") {
     const items = orthoQuiz[ageGroup] || orthoQuiz.primaire;
-    if (step >= items.length) {
-      const correct = answers.filter(Boolean).length;
-      return <ResultCard correct={correct} total={items.length} xp={correct === items.length ? 50 : correct >= 2 ? 30 : 15} color="from-purple-500 to-violet-600" />;
-    }
-    const item = items[step];
-    function pickOrtho(idx: number) {
-      const isOk = idx === item.correct;
-      setFeedback(isOk ? "correct" : "wrong");
-      setTimeout(() => { setAnswers((a) => [...a, isOk]); setFeedback(""); setStep((s) => s + 1); }, 700);
-    }
     return (
-      <div className="space-y-5">
-        <div className="flex justify-between text-sm font-bold text-slate-500"><span>Question {step + 1}/{items.length}</span></div>
-        <p className="text-xl font-black text-slate-800">{item.q}</p>
-        <div className="grid grid-cols-2 gap-3">
-          {item.options.map((opt, i) => (
-            <button key={i} onClick={() => !feedback && pickOrtho(i)}
-              className={`px-4 py-3 rounded-2xl border-2 font-bold text-sm transition-all ${
-                !feedback ? "border-slate-200 bg-white hover:border-purple-400 hover:bg-purple-50 text-slate-700"
-                  : i === item.correct ? "border-green-400 bg-green-50 text-green-700"
-                  : feedback && i !== item.correct ? "border-slate-100 bg-slate-50 text-slate-400" : ""
-              }`}>{opt}</button>
-          ))}
-        </div>
-      </div>
+      <FunQuiz
+        title="Orthographe"
+        icon="🔤"
+        questions={items}
+        accentColor="violet"
+        onComplete={(score, xp) => onComplete(score, xp)}
+      />
     );
   }
 
@@ -1186,68 +1144,23 @@ function SocialModule({ child, onComplete }: { child: Child; onComplete: (score:
     );
   }
 
+  // Convert selected activity data to FunQuiz format
   const data = activity === "roleplay" ? rolePlay : activity === "conflict" ? conflictQuiz : ecoute;
-
-  function pickAnswer(idx: number) {
-    if (showFeedback) return;
-    setChosen(idx);
-    setShowFeedback(true);
-  }
-
-  function nextStep() {
-    const item = data[step] as { best?: number; correct?: number };
-    const correctIdx = item.best ?? item.correct ?? 0;
-    setScores((s) => [...s, chosen === correctIdx]);
-    setChosen(null); setShowFeedback(false);
-    if (step >= data.length - 1) {
-      const ok = scores.filter(Boolean).length + (chosen === correctIdx ? 1 : 0);
-      const score = Math.round((ok / data.length) * 100);
-      onComplete(score, score >= 80 ? 50 : 35);
-    } else {
-      setStep((s) => s + 1);
-    }
-  }
-
-  const item = data[step] as { situation?: string; q?: string; emoji?: string; options: string[]; best?: number; correct?: number; feedback?: string; explanation?: string; tip?: string };
-  const correctIdx = item.best ?? item.correct ?? 0;
-  const advice = item.feedback || item.explanation || item.tip || "";
+  const questions = data.map((item: any) => ({
+    q: item.situation || item.q || "",
+    options: item.options,
+    correct: item.best ?? item.correct ?? 0,
+    explanation: item.feedback || item.explanation || item.tip || "",
+  }));
 
   return (
-    <div className="space-y-5">
-      <div className="flex justify-between text-sm font-bold text-slate-500">
-        <span>Situation {step + 1}/{data.length}</span>
-        <span>{Math.round((step / data.length) * 100)}%</span>
-      </div>
-      <div className="h-2 bg-slate-100 rounded-full">
-        <div className="h-full bg-orange-400 rounded-full transition-all" style={{ width: `${(step / data.length) * 100}%` }} />
-      </div>
-      <div className="bg-orange-50 rounded-2xl p-5">
-        {item.emoji && <div className="text-4xl text-center mb-2">{item.emoji}</div>}
-        <p className="font-semibold text-slate-700 text-center">{item.situation || item.q}</p>
-      </div>
-      <div className="space-y-2">
-        {item.options.map((opt, i) => (
-          <button key={i} onClick={() => pickAnswer(i)}
-            className={`w-full text-left px-4 py-3 rounded-2xl border-2 font-medium text-sm transition-all ${
-              !showFeedback ? "border-slate-200 bg-white hover:border-orange-400 hover:bg-orange-50 text-slate-700"
-                : i === correctIdx ? "border-green-400 bg-green-50 text-green-700"
-                : i === chosen ? "border-red-300 bg-red-50 text-red-600"
-                : "border-slate-100 bg-slate-50 text-slate-400"
-            }`}>{opt}</button>
-        ))}
-      </div>
-      {showFeedback && (
-        <>
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-            <p className="text-xs font-bold text-amber-600 mb-1">💡 À retenir</p>
-            <p className="text-sm text-slate-700">{advice}</p>
-          </div>
-          <button onClick={nextStep} className="btn-fun w-full bg-gradient-to-r from-orange-400 to-amber-500 text-white py-4">
-            {step >= data.length - 1 ? "Voir mon résultat 🎯" : "Continuer →"}
-          </button>
-        </>
-      )}
-    </div>
+    <FunQuiz
+      title={activity === "roleplay" ? "Jeux de rôle" : activity === "conflict" ? "Gestion des conflits" : "L'art de l'écoute"}
+      icon={activity === "roleplay" ? "🎭" : activity === "conflict" ? "⚖️" : "👂"}
+      questions={questions}
+      accentColor="amber"
+      onComplete={(score, xp) => onComplete(score, xp)}
+    />
   );
 }
 
@@ -1361,62 +1274,23 @@ function PhysicalModule({ child, onComplete }: { child: Child; onComplete: (scor
     );
   }
 
-  // ── Quiz sommeil / nutrition ──
+  // ── Quiz sommeil / nutrition (FunQuiz) ──
   const quizData = activity === "sommeil" ? sommeilQuiz : nutritionQuiz;
-  if (step >= quizData.length) {
-    const correct = answers.filter(Boolean).length;
-    const score = Math.round((correct / quizData.length) * 100);
-    return (
-      <div className="text-center space-y-5">
-        <div className="text-6xl">{score >= 80 ? "🌟" : score >= 50 ? "⭐" : "💪"}</div>
-        <h3 className="text-2xl font-black text-slate-800">{correct}/{quizData.length} bonnes réponses !</h3>
-        <div className="bg-teal-50 rounded-2xl p-4">
-          <p className="text-2xl font-black text-teal-600">+{score >= 80 ? 50 : 30} XP ✨</p>
-        </div>
-        <button onClick={() => onComplete(score, score >= 80 ? 50 : 30)}
-          className="btn-fun w-full bg-gradient-to-r from-teal-500 to-green-500 text-white py-4 text-lg">
-          Continuer 🚀
-        </button>
-      </div>
-    );
-  }
+  const quizQuestions = quizData.map((q: any) => ({
+    q: q.q,
+    options: q.options,
+    correct: q.correct,
+    explanation: q.tip,
+  }));
 
-  const qItem = quizData[step];
-  function pickPhysical(idx: number) {
-    if (showTip) return;
-    setChosen(idx); setShowTip(true);
-    setAnswers((a) => [...a, idx === qItem.correct]);
-  }
   return (
-    <div className="space-y-5">
-      <div className="flex justify-between text-sm font-bold text-slate-500">
-        <span>Question {step + 1}/{quizData.length}</span>
-      </div>
-      <p className="text-xl font-black text-slate-800">{qItem.q}</p>
-      <div className="space-y-2">
-        {qItem.options.map((opt, i) => (
-          <button key={i} onClick={() => pickPhysical(i)}
-            className={`w-full text-left px-4 py-3 rounded-2xl border-2 font-medium text-sm transition-all ${
-              !showTip ? "border-slate-200 bg-white hover:border-teal-400 hover:bg-teal-50 text-slate-700"
-                : i === qItem.correct ? "border-green-400 bg-green-50 text-green-700"
-                : i === chosen ? "border-red-300 bg-red-50 text-red-600"
-                : "border-slate-100 bg-slate-50 text-slate-400"
-            }`}>{opt}</button>
-        ))}
-      </div>
-      {showTip && (
-        <>
-          <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4">
-            <p className="text-xs font-bold text-teal-600 mb-1">💡 Le saviez-vous ?</p>
-            <p className="text-sm text-slate-700">{qItem.tip}</p>
-          </div>
-          <button onClick={() => { setShowTip(false); setChosen(null); setStep((s) => s + 1); }}
-            className="btn-fun w-full bg-gradient-to-r from-teal-500 to-green-500 text-white py-3">
-            {step >= quizData.length - 1 ? "Voir mon résultat 🎯" : "Question suivante →"}
-          </button>
-        </>
-      )}
-    </div>
+    <FunQuiz
+      title={activity === "sommeil" ? "Sommeil" : "Nutrition"}
+      icon={activity === "sommeil" ? "😴" : "🥗"}
+      questions={quizQuestions}
+      accentColor="green"
+      onComplete={(score, xp) => onComplete(score, xp)}
+    />
   );
 }
 
@@ -1534,57 +1408,22 @@ function CreativityModule({ child, onComplete }: { child: Child; onComplete: (sc
     );
   }
 
-  // ── Culture générale ──
+  // ── Culture générale (FunQuiz) ──
   if (activity === "culture") {
-    if (step >= cultureQuiz.length) {
-      const correct = answers.filter(Boolean).length;
-      const score = Math.round((correct / cultureQuiz.length) * 100);
-      return (
-        <div className="text-center space-y-5">
-          <div className="text-6xl">{score >= 80 ? "🏆" : "⭐"}</div>
-          <h3 className="text-2xl font-black text-slate-800">{correct}/{cultureQuiz.length} correctes !</h3>
-          <div className="bg-yellow-50 rounded-2xl p-4">
-            <p className="text-2xl font-black text-yellow-600">+{score >= 80 ? 55 : 35} XP ✨</p>
-          </div>
-          <button onClick={() => onComplete(score, score >= 80 ? 55 : 35)}
-            className="btn-fun w-full bg-gradient-to-r from-yellow-400 to-orange-400 text-white py-4 text-lg">Continuer 🚀</button>
-        </div>
-      );
-    }
-    const q = cultureQuiz[step];
-    function pickCulture(idx: number) {
-      if (showTip) return;
-      setChosen(idx); setShowTip(true);
-      setAnswers((a) => [...a, idx === q.correct]);
-    }
+    const quizQuestions = cultureQuiz.map((q: any) => ({
+      q: q.q,
+      options: q.options,
+      correct: q.correct,
+      explanation: q.fun,
+    }));
     return (
-      <div className="space-y-5">
-        <div className="flex justify-between text-sm font-bold text-slate-500"><span>Question {step + 1}/{cultureQuiz.length}</span></div>
-        <p className="text-xl font-black text-slate-800">{q.q}</p>
-        <div className="grid grid-cols-2 gap-3">
-          {q.options.map((opt, i) => (
-            <button key={i} onClick={() => pickCulture(i)}
-              className={`px-3 py-3 rounded-2xl border-2 font-semibold text-sm transition-all ${
-                !showTip ? "border-slate-200 bg-white hover:border-yellow-400 hover:bg-yellow-50 text-slate-700"
-                  : i === q.correct ? "border-green-400 bg-green-50 text-green-700"
-                  : i === chosen ? "border-red-300 bg-red-50 text-red-600"
-                  : "border-slate-100 bg-slate-50 text-slate-400"
-              }`}>{opt}</button>
-          ))}
-        </div>
-        {showTip && (
-          <>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4">
-              <p className="text-xs font-bold text-yellow-600 mb-1">🤩 Le saviez-vous ?</p>
-              <p className="text-sm text-slate-700">{q.fun}</p>
-            </div>
-            <button onClick={() => { setShowTip(false); setChosen(null); setStep((s) => s + 1); }}
-              className="btn-fun w-full bg-gradient-to-r from-yellow-400 to-orange-400 text-white py-3">
-              {step >= cultureQuiz.length - 1 ? "Voir mon résultat 🎯" : "Question suivante →"}
-            </button>
-          </>
-        )}
-      </div>
+      <FunQuiz
+        title="Culture générale"
+        icon="🌍"
+        questions={quizQuestions}
+        accentColor="amber"
+        onComplete={(score, xp) => onComplete(score, xp)}
+      />
     );
   }
 

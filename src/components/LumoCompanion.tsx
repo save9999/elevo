@@ -1,4 +1,5 @@
 "use client";
+import { useId } from "react";
 
 export type LumoMood = "idle" | "happy" | "excited" | "sleeping" | "proud";
 
@@ -25,28 +26,34 @@ const GLOW_COLORS: Record<LumoMood, string> = {
 };
 
 function LumoMiniSVG({ mood }: { mood: LumoMood }) {
+  const uid = useId().replace(/:/g, "");
   const sleeping = mood === "sleeping";
   const happy = mood === "happy" || mood === "excited" || mood === "proud";
   const eyeClosed = sleeping;
 
+  const furId = `fur${uid}`;
+  const shineId = `shine${uid}`;
+  const irisId = `iris${uid}`;
+  const glowId = `glow${uid}`;
+
   return (
     <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
       <defs>
-        <radialGradient id="lc-fur" cx="42%" cy="30%" r="68%">
+        <radialGradient id={furId} cx="42%" cy="30%" r="68%">
           <stop offset="0%" stopColor="#e9d5ff" />
           <stop offset="50%" stopColor="#c084fc" />
           <stop offset="100%" stopColor="#7c3aed" />
         </radialGradient>
-        <radialGradient id="lc-shine" cx="35%" cy="25%" r="50%">
+        <radialGradient id={shineId} cx="35%" cy="25%" r="50%">
           <stop offset="0%" stopColor="white" stopOpacity="0.3" />
           <stop offset="100%" stopColor="white" stopOpacity="0" />
         </radialGradient>
-        <radialGradient id="lc-iris" cx="45%" cy="40%" r="55%">
+        <radialGradient id={irisId} cx="45%" cy="40%" r="55%">
           <stop offset="0%" stopColor="#a78bfa" />
           <stop offset="50%" stopColor="#7c3aed" />
           <stop offset="100%" stopColor="#4c1d95" />
         </radialGradient>
-        <filter id="lc-glow">
+        <filter id={glowId}>
           <feGaussianBlur stdDeviation="1.5" />
           <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
@@ -54,7 +61,7 @@ function LumoMiniSVG({ mood }: { mood: LumoMood }) {
 
       {/* Corps compact */}
       <ellipse cx="50" cy="72" rx="18" ry="15" fill="#9333ea" />
-      <ellipse cx="50" cy="72" rx="18" ry="15" fill="url(#lc-shine)" />
+      <ellipse cx="50" cy="72" rx="18" ry="15" fill={`url(#${shineId})`} />
       <ellipse cx="50" cy="74" rx="11" ry="9" fill="#faf5ff" opacity="0.2" />
 
       {/* Pattes */}
@@ -66,8 +73,8 @@ function LumoMiniSVG({ mood }: { mood: LumoMood }) {
       <ellipse cx="70" cy="68" rx="7" ry="5" fill="#a855f7" transform="rotate(15,70,68)" />
 
       {/* Tête */}
-      <circle cx="50" cy="42" r="28" fill="url(#lc-fur)" />
-      <circle cx="50" cy="42" r="28" fill="url(#lc-shine)" />
+      <circle cx="50" cy="42" r="28" fill={`url(#${furId})`} />
+      <circle cx="50" cy="42" r="28" fill={`url(#${shineId})`} />
 
       {/* Oreilles */}
       <ellipse cx="24" cy="22" rx="10" ry="14" fill="#c084fc" transform="rotate(-18,24,22)" />
@@ -85,8 +92,8 @@ function LumoMiniSVG({ mood }: { mood: LumoMood }) {
         <>
           <ellipse cx="40" cy="40" rx="7" ry="8" fill="white" />
           <ellipse cx="60" cy="40" rx="7" ry="8" fill="white" />
-          <circle cx="41" cy="40" r="5" fill="url(#lc-iris)" />
-          <circle cx="61" cy="40" r="5" fill="url(#lc-iris)" />
+          <circle cx="41" cy="40" r="5" fill={`url(#${irisId})`} />
+          <circle cx="61" cy="40" r="5" fill={`url(#${irisId})`} />
           <circle cx="41" cy="39" r="2.5" fill="#1e1b4b" />
           <circle cx="61" cy="39" r="2.5" fill="#1e1b4b" />
           <circle cx="43" cy="37" r="2" fill="white" opacity="0.95" />
@@ -117,7 +124,7 @@ function LumoMiniSVG({ mood }: { mood: LumoMood }) {
       )}
 
       {/* Étoile */}
-      <g filter="url(#lc-glow)">
+      <g filter={`url(#${glowId})`}>
         <polygon points="50,14 52,20 58,20 53,24 55,30 50,26 45,30 47,24 42,20 48,20" fill="#fbbf24" />
       </g>
 
