@@ -3,6 +3,8 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import LumoCharacter from "@/components/LumoCharacter";
+import FunQuiz from "@/components/FunQuiz";
+import MathChallenge from "@/components/MathChallenge";
 import { useNarration } from "@/hooks/useNarration";
 
 // ── EXERCISE TRACKER (localStorage) ───────────────────────────────────────────
@@ -18,28 +20,7 @@ function advanceExerciseIdx(childId: string, module: string): void {
   localStorage.setItem(key, String(cur + 1));
 }
 
-// ── CONFETTI ANIMATION ────────────────────────────────────────────────────────
-function ConfettiPop() {
-  const pieces = Array.from({ length: 20 }, (_, i) => i);
-  return (
-    <div className="pointer-events-none fixed inset-0 overflow-hidden z-50">
-      {pieces.map((i) => (
-        <div
-          key={i}
-          className="absolute w-3 h-3 rounded-sm animate-bounce"
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            backgroundColor: ["#8B5CF6","#3B82F6","#10B981","#F59E0B","#EF4444","#EC4899"][i % 6],
-            animationDelay: `${Math.random() * 0.5}s`,
-            animationDuration: `${0.5 + Math.random() * 1}s`,
-            transform: `rotate(${Math.random() * 360}deg)`,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
+import ConfettiBlast from "@/components/ConfettiBlast";
 
 interface Child {
   id: string; name: string; avatar: string; ageGroup: string; level: number; xp: number;
@@ -208,67 +189,19 @@ function ReadingModule({ child, onComplete }: { child: Child; onComplete: (score
   }
 
   if (step === "quiz") {
-    const q = story.questions[current];
     return (
-      <div className="space-y-5">
-        {/* Lumo pose la question */}
-        <div className="flex items-center gap-3 mb-1">
-          <LumoCharacter
-            ageGroup={child.ageGroup as "maternelle" | "primaire" | "college-lycee"}
-            level={child.level}
-            mood="happy"
-            size={52}
-          />
-          <div>
-            <div className="flex justify-between text-sm text-slate-500 font-bold gap-4">
-              <span>Question {current + 1}/{story.questions.length}</span>
-            </div>
-            <div className="h-2 bg-slate-100 rounded-full w-40 mt-1">
-              <div className="h-full bg-blue-400 rounded-full transition-all" style={{ width: `${(current / story.questions.length) * 100}%` }} />
-            </div>
-          </div>
-        </div>
-        <p className="text-xl font-black text-slate-800">{q.q}</p>
-        <div className="grid grid-cols-1 gap-3">
-          {q.options.map((opt, i) => (
-            <button
-              key={i}
-              onClick={() => answer(i)}
-              className={`text-left px-5 py-4 rounded-2xl font-semibold border-2 transition-all text-slate-700 ${
-                answers[current] === i
-                  ? i === q.correct
-                    ? "bg-green-100 border-green-400"
-                    : "bg-red-100 border-red-400"
-                  : "bg-white border-slate-200 hover:border-blue-300 hover:bg-blue-50"
-              }`}
-            >
-              {opt}
-            </button>
-          ))}
-        </div>
-      </div>
+      <FunQuiz
+        title="Compréhension"
+        icon="📖"
+        questions={story.questions}
+        accentColor="blue"
+        onComplete={(score, xp) => onComplete(score, xp)}
+      />
     );
   }
 
-  const correct = answers.filter((a, i) => a === story.questions[i].correct).length;
-  const score = Math.round((correct / story.questions.length) * 100);
-  const xp = score >= 80 ? 50 : score >= 50 ? 30 : 15;
-  return (
-    <div className="text-center space-y-6">
-      <div className="text-7xl">{score >= 80 ? "🏆" : score >= 50 ? "⭐" : "💪"}</div>
-      <h3 className="text-3xl font-black text-slate-800">{correct}/{story.questions.length} bonnes réponses !</h3>
-      <p className="text-slate-500">{score >= 80 ? "Excellent ! Tu as tout compris !" : score >= 50 ? "Bien joué ! Continue tes efforts !" : "Pas grave, lis à nouveau et réessaie !"}</p>
-      <div className="bg-violet-50 rounded-2xl p-4">
-        <p className="text-2xl font-black text-violet-600">+{xp} XP gagnés ! ✨</p>
-      </div>
-      <button
-        onClick={() => onComplete(score, xp)}
-        className="btn-fun w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-4 text-lg"
-      >
-        Continuer 🚀
-      </button>
-    </div>
-  );
+  // Fallback (shouldn't reach here)
+  return null;
 }
 
 // ── MATH MODULE ─────────────────────────────────────────────────────────────
@@ -340,84 +273,19 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 function MathModule({ child, onComplete }: { child: Child; onComplete: (score: number, xp: number) => void }) {
-  const [answers, setAnswers] = useState<string[]>([]);
-  const [current, setCurrent] = useState(0);
-  const [input, setInput] = useState("");
-  const [feedback, setFeedback] = useState<"" | "correct" | "wrong">("");
-  const [done, setDone] = useState(false);
-
   const [problems] = useState(() => {
     const pool = MATH_POOLS[child.ageGroup] || MATH_POOLS.primaire;
-    // Rotating offset so problems are different each session
     const offset = getExerciseIdx(child.id, "math") % Math.max(1, pool.length - 5);
     const rotated = [...pool.slice(offset), ...pool.slice(0, offset)];
     return shuffle(rotated).slice(0, 5);
   });
 
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    const isCorrect = input.trim().toLowerCase() === problems[current].answer.toLowerCase();
-    setFeedback(isCorrect ? "correct" : "wrong");
-    setTimeout(() => {
-      setAnswers((a) => [...a, input.trim()]);
-      setFeedback("");
-      setInput("");
-      if (current >= problems.length - 1) setDone(true);
-      else setCurrent((c) => c + 1);
-    }, 1000);
-  }
-
-  if (done) {
-    const correct = answers.filter((a, i) => a.toLowerCase() === problems[i].answer.toLowerCase()).length;
-    const score = Math.round((correct / problems.length) * 100);
-    const xp = score >= 80 ? 55 : score >= 50 ? 35 : 15;
-    return (
-      <div className="text-center space-y-6">
-        <div className="text-7xl">{score >= 80 ? "🧮" : score >= 50 ? "⭐" : "💪"}</div>
-        <h3 className="text-3xl font-black text-slate-800">{correct}/{problems.length} réponses correctes !</h3>
-        <div className="bg-green-50 rounded-2xl p-4">
-          <p className="text-2xl font-black text-green-600">+{xp} XP gagnés ! ✨</p>
-        </div>
-        <button onClick={() => onComplete(score, xp)} className="btn-fun w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-4 text-lg">
-          Continuer 🚀
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between text-sm text-slate-500 font-bold">
-        <span>Problème {current + 1}/{problems.length}</span>
-        <span>{Math.round((current / problems.length) * 100)}%</span>
-      </div>
-      <div className="h-2 bg-slate-100 rounded-full">
-        <div className="h-full bg-green-400 rounded-full transition-all" style={{ width: `${(current / problems.length) * 100}%` }} />
-      </div>
-      <div className={`bg-green-50 rounded-2xl p-8 text-center text-3xl font-black text-slate-800 transition-colors ${
-        feedback === "correct" ? "bg-green-100" : feedback === "wrong" ? "bg-red-100" : ""
-      }`}>
-        {problems[current].q}
-        {feedback === "correct" && <div className="text-green-500 mt-2 text-xl">✓ Correct !</div>}
-        {feedback === "wrong" && <div className="text-red-500 mt-2 text-xl">✗ Réponse : {problems[current].answer}</div>}
-      </div>
-      <form onSubmit={submit} className="flex gap-3">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Ta réponse…"
-          className="flex-1 border-2 border-green-200 rounded-2xl px-4 py-3 text-slate-800 text-lg font-bold focus:outline-none focus:border-green-400"
-          autoFocus
-        />
-        <button
-          type="submit"
-          className="btn-fun bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 text-lg"
-        >
-          ✓
-        </button>
-      </form>
-    </div>
+    <MathChallenge
+      problems={problems}
+      ageGroup={child.ageGroup}
+      onComplete={(score, xp) => onComplete(score, xp)}
+    />
   );
 }
 
@@ -1823,7 +1691,7 @@ export default function ModulePage({ params }: { params: { id: string; module: s
     const perfMsg = finalScore >= 80 ? "Excellent travail !" : finalScore >= 50 ? "Bien joué !" : "Continue, tu progresses !";
     return (
       <div className="min-h-screen bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center p-6">
-        {showConfetti && <ConfettiPop />}
+        {showConfetti && <ConfettiBlast active={showConfetti} />}
         <div className="card-bubble bg-white max-w-md w-full p-10 text-center">
           <div className="text-8xl mb-4 star-pop animate-bounce">{perfEmoji}</div>
           <h2 className="text-3xl font-black text-slate-800 mb-1">Bravo {child.name} !</h2>

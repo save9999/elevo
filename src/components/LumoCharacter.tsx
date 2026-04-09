@@ -14,196 +14,197 @@ interface LumoProps {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Bouche — partagée entre les 3 personnages
+// PETIT LUMO — Maternelle (3-6 ans)
+// Créature ronde, fourrure violette, oreilles rondes, étoile dorée,
+// coussinets, queue bouclée, grands yeux expressifs
 // ─────────────────────────────────────────────────────────────────────────────
-function Mouth({
-  cx, cy, w, mood, speaking, mouthOpen, strokeColor,
-}: {
-  cx: number; cy: number; w: number;
-  mood: LumoMood; speaking: boolean; mouthOpen: boolean; strokeColor: string;
-}) {
+function LumoMaternelle({
+  mood, blink, speaking, mouthOpen,
+}: { mood: LumoMood; blink: boolean; speaking: boolean; mouthOpen: boolean }) {
   const sleeping = mood === "sleeping";
-  const smile = mood === "happy" || mood === "excited" || mood === "proud";
-
-  if (sleeping) {
-    return <path d={`M${cx - w * 0.5},${cy} Q${cx},${cy + 4} ${cx + w * 0.5},${cy}`}
-      stroke={strokeColor} strokeWidth="2.5" fill="none" strokeLinecap="round" />;
-  }
-
-  if (speaking && mouthOpen) {
-    // Bouche ouverte qui parle
-    return (
-      <>
-        <path d={`M${cx - w * 0.5},${cy - 1} Q${cx},${cy + w * 0.55} ${cx + w * 0.5},${cy - 1}`}
-          fill="#8B1A2E" />
-        {/* Dents du haut */}
-        <path d={`M${cx - w * 0.45},${cy - 1} Q${cx},${cy + 6} ${cx + w * 0.45},${cy - 1}`}
-          fill="white" />
-        {/* Dents séparées */}
-        <line x1={cx} y1={cy - 1} x2={cx} y2={cy + 5} stroke="#E5E7EB" strokeWidth="0.8" />
-      </>
-    );
-  }
-
-  if (smile) {
-    return <path d={`M${cx - w * 0.55},${cy} Q${cx},${cy + w * 0.6} ${cx + w * 0.55},${cy}`}
-      stroke={strokeColor} strokeWidth="3" strokeLinecap="round" fill="none" />;
-  }
-
-  return <path d={`M${cx - w * 0.4},${cy} Q${cx},${cy + w * 0.4} ${cx + w * 0.4},${cy}`}
-    stroke={strokeColor} strokeWidth="2.5" strokeLinecap="round" fill="none" />;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// MATERNELLE — petit enfant (grande tête, salopette, bras courts)
-// ─────────────────────────────────────────────────────────────────────────────
-function LumoChildMaternelle({
-  mood, blink, speaking, mouthOpen, level,
-}: { mood: LumoMood; blink: boolean; speaking: boolean; mouthOpen: boolean; level: number }) {
-  const sleeping = mood === "sleeping";
-  const happy    = mood === "happy" || mood === "excited" || mood === "proud";
-  const excited  = mood === "excited";
+  const happy = mood === "happy" || mood === "excited" || mood === "proud";
+  const excited = mood === "excited";
   const eyeClosed = sleeping || blink;
 
-  const leftArmD  = excited ? "M34,113 Q8,90 6,68"  : happy ? "M34,118 Q10,108 8,132"  : "M34,122 Q12,132 10,154";
-  const rightArmD = excited ? "M86,113 Q112,90 114,68" : happy ? "M86,118 Q110,108 112,132" : "M86,122 Q108,132 110,154";
-  const lhx = excited ? 5  : happy ? 7   : 9;
-  const lhy = excited ? 65 : happy ? 130 : 155;
-  const rhx = excited ? 115 : happy ? 113 : 111;
-  const rhy = excited ? 65  : happy ? 130 : 155;
-
   return (
-    <svg viewBox="0 0 120 215" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", height: "100%" }}>
+    <svg viewBox="0 0 200 240" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", height: "100%" }}>
       <defs>
-        <radialGradient id="matSkin" cx="35%" cy="30%" r="65%">
-          <stop offset="0%" stopColor="#FEE5C0" /><stop offset="100%" stopColor="#FBBF24" />
+        <radialGradient id="s-fur" cx="45%" cy="30%" r="70%">
+          <stop offset="0%" stopColor="#f3e8ff" />
+          <stop offset="25%" stopColor="#e9d5ff" />
+          <stop offset="60%" stopColor="#d8b4fe" />
+          <stop offset="100%" stopColor="#a855f7" />
         </radialGradient>
-        <radialGradient id="matFace" cx="40%" cy="35%" r="62%">
-          <stop offset="0%" stopColor="#FFF3DC" /><stop offset="100%" stopColor="#FDDCB5" />
+        <radialGradient id="s-fur-body" cx="50%" cy="30%" r="70%">
+          <stop offset="0%" stopColor="#e9d5ff" />
+          <stop offset="50%" stopColor="#c084fc" />
+          <stop offset="100%" stopColor="#9333ea" />
         </radialGradient>
+        <radialGradient id="s-belly" cx="50%" cy="40%" r="50%">
+          <stop offset="0%" stopColor="#faf5ff" stopOpacity="0.8" />
+          <stop offset="100%" stopColor="#e9d5ff" stopOpacity="0.3" />
+        </radialGradient>
+        <radialGradient id="s-iris" cx="45%" cy="40%" r="55%">
+          <stop offset="0%" stopColor="#a78bfa" />
+          <stop offset="40%" stopColor="#7c3aed" />
+          <stop offset="100%" stopColor="#4c1d95" />
+        </radialGradient>
+        <radialGradient id="s-shine" cx="35%" cy="25%" r="50%">
+          <stop offset="0%" stopColor="white" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="white" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="s-cheek" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#fda4af" stopOpacity="0.6" />
+          <stop offset="100%" stopColor="#fda4af" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="s-shadow">
+          <stop offset="0%" stopColor="#2e1065" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="#2e1065" stopOpacity="0" />
+        </radialGradient>
+        <filter id="s-starglow">
+          <feGaussianBlur stdDeviation="3" />
+          <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
       </defs>
 
-      {/* ── Chaussures ── */}
-      <ellipse cx="46" cy="206" rx="17" ry="9" fill="#DC2626" />
-      <ellipse cx="74" cy="206" rx="17" ry="9" fill="#DC2626" />
-      <ellipse cx="43" cy="203" rx="10" ry="5" fill="#EF4444" />
-      <ellipse cx="71" cy="203" rx="10" ry="5" fill="#EF4444" />
+      {/* Ombre au sol */}
+      <ellipse cx="100" cy="228" rx="42" ry="8" fill="url(#s-shadow)" />
 
-      {/* ── Jambes ── */}
-      <rect x="39" y="160" width="14" height="48" rx="7" fill="url(#matSkin)" />
-      <rect x="67" y="160" width="14" height="48" rx="7" fill="url(#matSkin)" />
+      {/* Corps */}
+      <ellipse cx="100" cy="168" rx="36" ry="32" fill="url(#s-fur-body)" />
+      <ellipse cx="100" cy="168" rx="36" ry="32" fill="url(#s-shine)" />
+      <ellipse cx="100" cy="172" rx="22" ry="20" fill="url(#s-belly)" />
 
-      {/* ── Salopette ── */}
-      <rect x="33" y="108" width="54" height="58" rx="14" fill="#3B82F6" />
-      {/* Bavette salopette */}
-      <rect x="43" y="95" width="34" height="28" rx="9" fill="#3B82F6" />
-      {/* Bretelles */}
-      <path d="M43,108 Q40,100 43,95" stroke="#2563EB" strokeWidth="4" strokeLinecap="round" fill="none" />
-      <path d="M77,108 Q80,100 77,95" stroke="#2563EB" strokeWidth="4" strokeLinecap="round" fill="none" />
-      {/* Poche */}
-      <rect x="51" y="127" width="18" height="14" rx="6" fill="#2563EB" />
-      <line x1="60" y1="127" x2="60" y2="141" stroke="#1D4ED8" strokeWidth="1.5" />
-      {/* T-shirt visible */}
-      <rect x="37" y="108" width="46" height="18" rx="8" fill="#FEF9C3" />
+      {/* Bras */}
+      <ellipse cx="58" cy="162" rx="16" ry="11" fill="#c084fc" transform={excited ? "rotate(-35, 58, 152)" : happy ? "rotate(-20, 58, 162)" : "rotate(-10, 58, 162)"} />
+      <ellipse cx="58" cy="160" rx="14" ry="9" fill="#d8b4fe" transform={excited ? "rotate(-35, 58, 150)" : happy ? "rotate(-20, 58, 160)" : "rotate(-10, 58, 160)"} />
+      <circle cx={excited ? 44 : 48} cy={excited ? 148 : 160} r="4" fill="#e9d5ff" opacity="0.6" />
 
-      {/* ── Bras ── */}
-      <path d={leftArmD}  stroke="url(#matSkin)" strokeWidth="13" strokeLinecap="round" fill="none" />
-      <path d={rightArmD} stroke="url(#matSkin)" strokeWidth="13" strokeLinecap="round" fill="none" />
-      {/* Mains */}
-      <circle cx={lhx} cy={lhy} r="9.5" fill="url(#matSkin)" />
-      <circle cx={rhx} cy={rhy} r="9.5" fill="url(#matSkin)" />
-      {/* Doigts hints */}
-      <circle cx={lhx - 3} cy={lhy - 8} r="4" fill="url(#matSkin)" />
-      <circle cx={lhx + 4} cy={lhy - 9} r="4" fill="url(#matSkin)" />
-      <circle cx={rhx + 3} cy={rhy - 8} r="4" fill="url(#matSkin)" />
-      <circle cx={rhx - 4} cy={rhy - 9} r="4" fill="url(#matSkin)" />
+      <ellipse cx="142" cy="158" rx="16" ry="11" fill="#c084fc" transform={excited ? "rotate(35, 142, 148)" : happy ? "rotate(25, 142, 158)" : "rotate(10, 142, 158)"} />
+      <ellipse cx="142" cy="156" rx="14" ry="9" fill="#d8b4fe" transform={excited ? "rotate(35, 142, 146)" : happy ? "rotate(25, 142, 156)" : "rotate(10, 142, 156)"} />
+      <circle cx={excited ? 156 : 152} cy={excited ? 144 : 155} r="4" fill="#e9d5ff" opacity="0.6" />
 
-      {/* ── Cou ── */}
-      <rect x="54" y="97" width="12" height="17" rx="6" fill="url(#matSkin)" />
+      {/* Pieds avec coussinets */}
+      <ellipse cx="78" cy="198" rx="18" ry="12" fill="#9333ea" />
+      <ellipse cx="78" cy="196" rx="16" ry="10" fill="#a855f7" />
+      <circle cx="70" cy="196" r="3.5" fill="#d8b4fe" opacity="0.5" />
+      <circle cx="78" cy="193" r="3" fill="#d8b4fe" opacity="0.5" />
+      <circle cx="86" cy="196" r="3.5" fill="#d8b4fe" opacity="0.5" />
 
-      {/* ── Oreilles ── */}
-      <ellipse cx="22" cy="72" rx="7" ry="10" fill="url(#matSkin)" />
-      <ellipse cx="98" cy="72" rx="7" ry="10" fill="url(#matSkin)" />
-      <ellipse cx="22" cy="72" rx="4" ry="6" fill="#F9A8D4" opacity="0.4" />
-      <ellipse cx="98" cy="72" rx="4" ry="6" fill="#F9A8D4" opacity="0.4" />
+      <ellipse cx="122" cy="198" rx="18" ry="12" fill="#9333ea" />
+      <ellipse cx="122" cy="196" rx="16" ry="10" fill="#a855f7" />
+      <circle cx="114" cy="196" r="3.5" fill="#d8b4fe" opacity="0.5" />
+      <circle cx="122" cy="193" r="3" fill="#d8b4fe" opacity="0.5" />
+      <circle cx="130" cy="196" r="3.5" fill="#d8b4fe" opacity="0.5" />
 
-      {/* ── Tête ── */}
-      <ellipse cx="60" cy="68" rx="38" ry="36" fill="url(#matFace)" />
+      {/* Queue bouclée */}
+      <path d="M 136 175 Q 155 168 158 180 Q 160 190 150 188 Q 145 186 148 180"
+        fill="none" stroke="#c084fc" strokeWidth="6" strokeLinecap="round" />
+      <path d="M 136 175 Q 155 168 158 180 Q 160 190 150 188 Q 145 186 148 180"
+        fill="none" stroke="#d8b4fe" strokeWidth="3" strokeLinecap="round" />
 
-      {/* ── Cheveux ── */}
-      <ellipse cx="60" cy="34" rx="36" ry="18" fill="#92400E" />
-      <circle cx="28" cy="50" r="14" fill="#92400E" />
-      <circle cx="92" cy="50" r="14" fill="#92400E" />
-      <circle cx="42" cy="36" r="13" fill="#92400E" />
-      <circle cx="60" cy="33" r="14" fill="#7C3410" />
-      <circle cx="78" cy="36" r="13" fill="#92400E" />
-      {/* Mèche du devant */}
-      <path d="M50,40 Q60,52 55,60" stroke="#7C3410" strokeWidth="5" strokeLinecap="round" fill="none" />
+      {/* Tête */}
+      <circle cx="100" cy="90" r="58" fill="url(#s-fur)" />
+      <circle cx="100" cy="90" r="58" fill="url(#s-shine)" />
 
-      {/* ── Yeux ── */}
+      {/* Touffe de poils */}
+      <path d="M 92 34 Q 95 22 100 28 Q 105 18 108 32" fill="#d8b4fe" stroke="#c084fc" strokeWidth="1" />
+      <path d="M 96 36 Q 98 28 100 30 Q 102 24 104 35" fill="#e9d5ff" />
+
+      {/* Oreilles rondes */}
+      <ellipse cx="46" cy="42" rx="22" ry="28" fill="#c084fc" transform="rotate(-20, 46, 42)" />
+      <ellipse cx="46" cy="42" rx="18" ry="24" fill="#d8b4fe" transform="rotate(-20, 46, 42)" />
+      <ellipse cx="44" cy="40" rx="8" ry="14" fill="#f5d0fe" opacity="0.5" transform="rotate(-20, 44, 40)" />
+
+      <ellipse cx="154" cy="42" rx="22" ry="28" fill="#c084fc" transform="rotate(20, 154, 42)" />
+      <ellipse cx="154" cy="42" rx="18" ry="24" fill="#d8b4fe" transform="rotate(20, 154, 42)" />
+      <ellipse cx="156" cy="40" rx="8" ry="14" fill="#f5d0fe" opacity="0.5" transform="rotate(20, 156, 40)" />
+
+      {/* Yeux */}
       {eyeClosed ? (
         <>
-          <path d="M32,66 Q44,58 56,66" stroke="#1E293B" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-          <path d="M64,66 Q76,58 88,66" stroke="#1E293B" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-          {sleeping && <>
-            <path d="M30,62 Q44,55 58,62" stroke="#93C5FD" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.6"/>
-          </>}
+          <path d="M 64,86 Q 78,76 92,86" stroke="#4c1d95" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          <path d="M 108,86 Q 122,76 136,86" stroke="#4c1d95" strokeWidth="2.5" fill="none" strokeLinecap="round" />
         </>
       ) : (
         <>
-          <ellipse cx="44" cy="65" rx="13" ry="15" fill="white" />
-          <ellipse cx="76" cy="65" rx="13" ry="15" fill="white" />
-          {/* Iris coloré */}
-          <circle cx="44" cy="67" r="9" fill={happy ? "#2563EB" : "#1D4ED8"} />
-          <circle cx="76" cy="67" r="9" fill={happy ? "#2563EB" : "#1D4ED8"} />
-          {/* Pupille */}
-          <circle cx="44" cy="67" r="5" fill="#0F172A" />
-          <circle cx="76" cy="67" r="5" fill="#0F172A" />
-          {/* Reflets */}
-          <circle cx="41" cy="63" r="3" fill="white" />
-          <circle cx="73" cy="63" r="3" fill="white" />
-          <circle cx="46" cy="69" r="1.5" fill="white" opacity="0.6" />
-          <circle cx="78" cy="69" r="1.5" fill="white" opacity="0.6" />
-          {/* Sourcils */}
-          {happy && <>
-            <path d="M33,52 Q44,46 55,52" stroke="#92400E" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-            <path d="M65,52 Q76,46 87,52" stroke="#92400E" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-          </>}
-          {/* Cils supérieurs */}
-          <path d="M31,58 Q44,52 57,58" stroke="#0F172A" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-          <path d="M63,58 Q76,52 89,58" stroke="#0F172A" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+          <ellipse cx="78" cy="86" rx="17" ry="19" fill="white" />
+          <ellipse cx="122" cy="86" rx="17" ry="19" fill="white" />
+          <circle cx="80" cy="86" r="11" fill="url(#s-iris)" />
+          <circle cx="124" cy="86" r="11" fill="url(#s-iris)" />
+          <circle cx="80" cy="86" r="11" fill="none" stroke="#4c1d95" strokeWidth="0.8" opacity="0.3" />
+          <circle cx="124" cy="86" r="11" fill="none" stroke="#4c1d95" strokeWidth="0.8" opacity="0.3" />
+          <circle cx="81" cy="85" r="5.5" fill="#1e1b4b" />
+          <circle cx="125" cy="85" r="5.5" fill="#1e1b4b" />
+          <circle cx="85" cy="79" r="5" fill="white" opacity="0.95" />
+          <circle cx="129" cy="79" r="5" fill="white" opacity="0.95" />
+          <circle cx="76" cy="91" r="3" fill="white" opacity="0.45" />
+          <circle cx="120" cy="91" r="3" fill="white" opacity="0.45" />
+          <circle cx="83" cy="82" r="1.5" fill="white" opacity="0.7" />
+          <circle cx="127" cy="82" r="1.5" fill="white" opacity="0.7" />
         </>
       )}
 
-      {/* ── Nez ── */}
-      {!sleeping && <ellipse cx="60" cy="77" rx="5" ry="3.5" fill="#F9A8D4" opacity="0.6" />}
-
-      {/* ── Joues ── */}
-      <ellipse cx="28" cy="80" rx="10" ry="6" fill="#FCA5A5" opacity="0.55" />
-      <ellipse cx="92" cy="80" rx="10" ry="6" fill="#FCA5A5" opacity="0.55" />
-
-      {/* ── Bouche ── */}
-      <Mouth cx={60} cy={86} w={22} mood={mood} speaking={speaking} mouthOpen={mouthOpen} strokeColor="#C2526E" />
-
-      {/* ── Couronne niveau 10+ ── */}
-      {level >= 10 && (
-        <path d="M36,32 L42,20 L60,28 L78,20 L84,32 L60,38 Z" fill="#FBBF24" stroke="#D97706" strokeWidth="1" />
+      {/* Sourcils subtils */}
+      {happy && !eyeClosed && (
+        <>
+          <path d="M 64 70 Q 74 66 86 70" stroke="#9333ea" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.4" />
+          <path d="M 114 70 Q 124 66 136 70" stroke="#9333ea" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.4" />
+        </>
       )}
 
-      {/* ── ZZZ endormi ── */}
+      {/* Nez */}
+      {!sleeping && (
+        <>
+          <ellipse cx="100" cy="98" rx="5" ry="3.5" fill="#9333ea" opacity="0.6" />
+          <ellipse cx="100" cy="97" rx="3" ry="2" fill="#c084fc" opacity="0.4" />
+          <circle cx="98" cy="96.5" r="1.5" fill="white" opacity="0.4" />
+        </>
+      )}
+
+      {/* Bouche */}
+      {speaking && mouthOpen ? (
+        <>
+          <path d="M 85 105 Q 100 118 115 105" fill="#7c2d6a" />
+          <path d="M 88 106 Q 100 112 112 106" fill="white" opacity="0.6" />
+        </>
+      ) : sleeping ? (
+        <path d="M 90 106 Q 100 110 110 106" stroke="#6b21a8" strokeWidth="2" fill="none" strokeLinecap="round" />
+      ) : (
+        <>
+          <path d="M 85 105 Q 92 114 100 115 Q 108 114 115 105" stroke="#6b21a8" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          {happy && <path d="M 90 107 Q 100 116 110 107" fill="#f9a8d4" opacity="0.3" />}
+        </>
+      )}
+
+      {/* Joues */}
+      <circle cx="56" cy="100" r="14" fill="url(#s-cheek)" />
+      <circle cx="144" cy="100" r="14" fill="url(#s-cheek)" />
+
+      {/* Étoile dorée sur le front */}
+      <g filter="url(#s-starglow)">
+        <polygon points="100,38 104,48 115,49 107,56 109,67 100,61 91,67 93,56 85,49 96,48" fill="#fbbf24" />
+        <polygon points="100,42 103,49 110,50 105,54 107,61 100,57 93,61 95,54 90,50 97,49" fill="#fde68a" opacity="0.7" />
+        <circle cx="100" cy="52" r="3" fill="white" opacity="0.4" />
+      </g>
+
+      {/* ZZZ endormi */}
       {sleeping && (
         <>
-          <text x="82" y="45" fontSize="11" fill="#94A3B8" fontWeight="bold" fontFamily="sans-serif">z</text>
-          <text x="88" y="34" fontSize="14" fill="#94A3B8" fontWeight="bold" fontFamily="sans-serif">z</text>
-          <text x="95" y="21" fontSize="17" fill="#94A3B8" fontWeight="bold" fontFamily="sans-serif">z</text>
+          <text x="140" y="60" fontSize="11" fill="#a78bfa" fontWeight="bold" fontFamily="sans-serif" opacity="0.6">z</text>
+          <text x="150" y="45" fontSize="14" fill="#a78bfa" fontWeight="bold" fontFamily="sans-serif" opacity="0.7">z</text>
+          <text x="160" y="28" fontSize="18" fill="#a78bfa" fontWeight="bold" fontFamily="sans-serif" opacity="0.8">z</text>
         </>
       )}
-      {/* ── Étoiles fier / excited ── */}
-      {(mood === "proud" || mood === "excited") && (
+
+      {/* Particules excité/fier */}
+      {(mood === "excited" || mood === "proud") && (
         <>
-          <text x="4"   y="55" fontSize="14" fill="#FCD34D" fontFamily="sans-serif">✦</text>
-          <text x="104" y="50" fontSize="12" fill="#FCD34D" fontFamily="sans-serif">✦</text>
-          <text x="8"   y="35" fontSize="9"  fill="#FCD34D" fontFamily="sans-serif">✦</text>
+          <circle cx="38" cy="28" r="2.5" fill="#fbbf24" opacity="0.7" />
+          <circle cx="168" cy="38" r="2" fill="#a78bfa" opacity="0.6" />
+          <circle cx="55" cy="20" r="1.5" fill="#60a5fa" opacity="0.5" />
+          <text x="30" y="55" fontSize="8" fill="#fbbf24" opacity="0.5" fontFamily="sans-serif">✦</text>
+          <text x="172" y="60" fontSize="6" fill="#a78bfa" opacity="0.4" fontFamily="sans-serif">✦</text>
         </>
       )}
     </svg>
@@ -211,149 +212,203 @@ function LumoChildMaternelle({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PRIMAIRE — enfant de 8-10 ans (T-shirt + sac à dos visible)
+// LUMO EXPLORATEUR — Primaire (7-11 ans)
+// Oreilles pointues, écharpe dorée, cristal bleu, queue longue,
+// regard confiant, sourcils expressifs
 // ─────────────────────────────────────────────────────────────────────────────
-function LumoChildPrimaire({
-  mood, blink, speaking, mouthOpen, level,
-}: { mood: LumoMood; blink: boolean; speaking: boolean; mouthOpen: boolean; level: number }) {
+function LumoExplorateur({
+  mood, blink, speaking, mouthOpen,
+}: { mood: LumoMood; blink: boolean; speaking: boolean; mouthOpen: boolean }) {
   const sleeping = mood === "sleeping";
-  const happy    = mood === "happy" || mood === "excited" || mood === "proud";
-  const excited  = mood === "excited";
+  const happy = mood === "happy" || mood === "excited" || mood === "proud";
+  const excited = mood === "excited";
   const eyeClosed = sleeping || blink;
 
-  const leftArmD  = excited ? "M36,110 Q8,88 6,64"   : happy ? "M36,114 Q10,104 8,128" : "M36,118 Q13,130 11,152";
-  const rightArmD = excited ? "M84,110 Q112,88 114,64" : happy ? "M84,114 Q110,104 112,128" : "M84,118 Q107,130 109,152";
-  const lhx = excited ? 5  : happy ? 7   : 10;
-  const lhy = excited ? 61 : happy ? 126 : 153;
-  const rhx = excited ? 115 : happy ? 113 : 110;
-  const rhy = excited ? 61  : happy ? 126 : 153;
-
   return (
-    <svg viewBox="0 0 120 215" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", height: "100%" }}>
+    <svg viewBox="0 0 210 275" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", height: "100%" }}>
       <defs>
-        <radialGradient id="priSkin" cx="35%" cy="30%" r="65%">
-          <stop offset="0%" stopColor="#FDE8C8" /><stop offset="100%" stopColor="#E8A87C" />
+        <radialGradient id="m-fur" cx="45%" cy="28%" r="70%">
+          <stop offset="0%" stopColor="#e0e7ff" />
+          <stop offset="30%" stopColor="#c7d2fe" />
+          <stop offset="65%" stopColor="#a5b4fc" />
+          <stop offset="100%" stopColor="#6366f1" />
         </radialGradient>
-        <radialGradient id="priFace" cx="40%" cy="35%" r="62%">
-          <stop offset="0%" stopColor="#FFF0DC" /><stop offset="100%" stopColor="#F5C99B" />
+        <radialGradient id="m-body" cx="50%" cy="30%" r="68%">
+          <stop offset="0%" stopColor="#c7d2fe" />
+          <stop offset="50%" stopColor="#818cf8" />
+          <stop offset="100%" stopColor="#4f46e5" />
         </radialGradient>
+        <radialGradient id="m-belly" cx="50%" cy="40%" r="50%">
+          <stop offset="0%" stopColor="#eef2ff" stopOpacity="0.7" />
+          <stop offset="100%" stopColor="#c7d2fe" stopOpacity="0.2" />
+        </radialGradient>
+        <radialGradient id="m-iris" cx="42%" cy="38%" r="55%">
+          <stop offset="0%" stopColor="#818cf8" />
+          <stop offset="45%" stopColor="#6366f1" />
+          <stop offset="100%" stopColor="#3730a3" />
+        </radialGradient>
+        <radialGradient id="m-shine" cx="35%" cy="25%" r="50%">
+          <stop offset="0%" stopColor="white" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="white" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="m-cheek" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#fda4af" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="#fda4af" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="m-shadow">
+          <stop offset="0%" stopColor="#1e1b4b" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="#1e1b4b" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="m-scarf" x1="0%" y1="0%" x2="100%" y2="50%">
+          <stop offset="0%" stopColor="#fbbf24" />
+          <stop offset="100%" stopColor="#d97706" />
+        </linearGradient>
+        <filter id="m-glow">
+          <feGaussianBlur stdDeviation="3" />
+          <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
       </defs>
 
-      {/* ── Baskets ── */}
-      <rect x="36" y="200" width="22" height="11" rx="6" fill="#1E3A5F" />
-      <rect x="62" y="200" width="22" height="11" rx="6" fill="#1E3A5F" />
-      <rect x="36" y="198" width="22" height="8" rx="5" fill="#3B82F6" />
-      <rect x="62" y="198" width="22" height="8" rx="5" fill="#3B82F6" />
-      <line x1="40" y1="201" x2="54" y2="201" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-      <line x1="66" y1="201" x2="80" y2="201" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+      {/* Ombre */}
+      <ellipse cx="105" cy="262" rx="44" ry="7" fill="url(#m-shadow)" />
 
-      {/* ── Jeans ── */}
-      <rect x="38" y="158" width="16" height="46" rx="8" fill="#1E40AF" />
-      <rect x="66" y="158" width="16" height="46" rx="8" fill="#1E40AF" />
-      <line x1="46" y1="160" x2="46" y2="200" stroke="#1D3566" strokeWidth="1" opacity="0.5" />
-      <line x1="74" y1="160" x2="74" y2="200" stroke="#1D3566" strokeWidth="1" opacity="0.5" />
+      {/* Corps */}
+      <rect x="70" y="160" width="70" height="60" rx="30" fill="url(#m-body)" />
+      <rect x="70" y="160" width="70" height="60" rx="30" fill="url(#m-shine)" />
+      <ellipse cx="105" cy="182" rx="22" ry="20" fill="url(#m-belly)" />
 
-      {/* ── T-shirt teal ── */}
-      <rect x="33" y="105" width="54" height="58" rx="13" fill="#0D9488" />
-      {/* Étoile sur le t-shirt */}
-      <path d="M60,118 L62.5,125 L70,125 L64,130 L66.5,137 L60,132 L53.5,137 L56,130 L50,125 L57.5,125 Z"
-        fill={level >= 5 ? "#FCD34D" : "#CCFBF1"} />
-      {/* Col t-shirt */}
-      <path d="M48,108 Q60,116 72,108" stroke="#0F766E" strokeWidth="3" strokeLinecap="round" fill="none" />
+      {/* Écharpe dorée */}
+      <path d="M 70 158 Q 105 170 140 158 Q 140 172 105 176 Q 70 172 70 158" fill="url(#m-scarf)" />
+      <path d="M 70 158 Q 105 165 140 158 Q 140 166 105 169 Q 70 166 70 158" fill="#fde68a" opacity="0.4" />
+      <path d="M 128 166 Q 144 174 142 190" fill="#f59e0b" opacity="0.6" />
 
-      {/* ── Bras ── */}
-      <path d={leftArmD}  stroke="url(#priSkin)" strokeWidth="12" strokeLinecap="round" fill="none" />
-      <path d={rightArmD} stroke="url(#priSkin)" strokeWidth="12" strokeLinecap="round" fill="none" />
-      <circle cx={lhx} cy={lhy} r="9" fill="url(#priSkin)" />
-      <circle cx={rhx} cy={rhy} r="9" fill="url(#priSkin)" />
-      <circle cx={lhx - 2} cy={lhy - 7} r="3.5" fill="url(#priSkin)" />
-      <circle cx={lhx + 4} cy={lhy - 8} r="3.5" fill="url(#priSkin)" />
-      <circle cx={rhx + 2} cy={rhy - 7} r="3.5" fill="url(#priSkin)" />
-      <circle cx={rhx - 4} cy={rhy - 8} r="3.5" fill="url(#priSkin)" />
+      {/* Bras */}
+      <path d={excited ? "M 66 174 Q 36 158 28 168" : happy ? "M 66 174 Q 44 168 36 178" : "M 66 174 Q 50 172 42 184"}
+        stroke="#a5b4fc" strokeWidth="14" strokeLinecap="round" fill="none" />
+      <path d={excited ? "M 144 170 Q 174 152 182 162" : happy ? "M 144 170 Q 166 162 174 172" : "M 144 170 Q 160 166 168 178"}
+        stroke="#a5b4fc" strokeWidth="14" strokeLinecap="round" fill="none" />
 
-      {/* ── Cou ── */}
-      <rect x="55" y="96" width="10" height="15" rx="5" fill="url(#priSkin)" />
+      {/* Pieds */}
+      <path d="M 80 218 Q 72 236 80 242 Q 90 248 100 240 L 100 218" fill="#4f46e5" />
+      <ellipse cx="86" cy="240" rx="12" ry="7" fill="#6366f1" />
+      <circle cx="78" cy="240" r="3" fill="#a5b4fc" opacity="0.4" />
+      <circle cx="86" cy="237" r="2.5" fill="#a5b4fc" opacity="0.4" />
+      <circle cx="94" cy="240" r="3" fill="#a5b4fc" opacity="0.4" />
 
-      {/* ── Oreilles ── */}
-      <ellipse cx="24" cy="73" rx="6.5" ry="9" fill="url(#priSkin)" />
-      <ellipse cx="96" cy="73" rx="6.5" ry="9" fill="url(#priSkin)" />
-      <ellipse cx="24" cy="73" rx="3.5" ry="5.5" fill="#F9A8D4" opacity="0.3" />
-      <ellipse cx="96" cy="73" rx="3.5" ry="5.5" fill="#F9A8D4" opacity="0.3" />
+      <path d="M 110 218 Q 102 236 110 242 Q 120 248 130 240 L 130 218" fill="#4f46e5" />
+      <ellipse cx="116" cy="240" rx="12" ry="7" fill="#6366f1" />
+      <circle cx="108" cy="240" r="3" fill="#a5b4fc" opacity="0.4" />
+      <circle cx="116" cy="237" r="2.5" fill="#a5b4fc" opacity="0.4" />
+      <circle cx="124" cy="240" r="3" fill="#a5b4fc" opacity="0.4" />
 
-      {/* ── Tête ── */}
-      <ellipse cx="60" cy="70" rx="36" ry="32" fill="url(#priFace)" />
+      {/* Queue */}
+      <path d="M 146 192 Q 170 182 176 198 Q 180 212 168 215 Q 160 218 164 206"
+        fill="none" stroke="#818cf8" strokeWidth="7" strokeLinecap="round" />
+      <path d="M 146 192 Q 170 182 176 198 Q 180 212 168 215 Q 160 218 164 206"
+        fill="none" stroke="#a5b4fc" strokeWidth="3.5" strokeLinecap="round" />
 
-      {/* ── Cheveux (châtain moyen) ── */}
-      <ellipse cx="60" cy="40" rx="34" ry="16" fill="#78350F" />
-      <circle cx="26" cy="55" r="12" fill="#92400E" />
-      <circle cx="94" cy="55" r="12" fill="#92400E" />
-      <ellipse cx="60" cy="38" rx="28" ry="12" fill="#92400E" />
-      {/* Mèche */}
-      <path d="M46,44 Q54,56 50,64" stroke="#78350F" strokeWidth="4.5" strokeLinecap="round" fill="none" />
-      <path d="M70,46 Q68,58 66,65" stroke="#78350F" strokeWidth="3" strokeLinecap="round" fill="none" />
+      {/* Tête */}
+      <circle cx="105" cy="96" r="58" fill="url(#m-fur)" />
+      <circle cx="105" cy="96" r="58" fill="url(#m-shine)" />
 
-      {/* ── Sourcils ── */}
-      {!sleeping && (
-        <>
-          <path d={happy ? "M32,55 Q44,49 56,55" : "M33,57 Q44,53 55,57"}
-            stroke="#78350F" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-          <path d={happy ? "M64,55 Q76,49 88,55" : "M65,57 Q76,53 87,57"}
-            stroke="#78350F" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-        </>
-      )}
+      {/* Touffe */}
+      <path d="M 96 40 Q 100 26 105 34 Q 110 22 114 38" fill="#a5b4fc" stroke="#818cf8" strokeWidth="0.8" />
+      <path d="M 100 42 Q 104 32 105 36 Q 108 28 112 40" fill="#c7d2fe" />
 
-      {/* ── Yeux ── */}
+      {/* Oreilles pointues */}
+      <path d="M 54 68 Q 32 26 57 14 Q 62 30 60 62" fill="#a5b4fc" />
+      <path d="M 56 60 Q 40 32 57 20" fill="#c7d2fe" opacity="0.5" />
+      <path d="M 56 50 Q 46 36 57 26" fill="#e0e7ff" opacity="0.35" />
+
+      <path d="M 156 68 Q 178 26 153 14 Q 148 30 150 62" fill="#a5b4fc" />
+      <path d="M 154 60 Q 170 32 153 20" fill="#c7d2fe" opacity="0.5" />
+      <path d="M 154 50 Q 164 36 153 26" fill="#e0e7ff" opacity="0.35" />
+
+      {/* Yeux */}
       {eyeClosed ? (
         <>
-          <path d="M33,67 Q44,60 55,67" stroke="#1E293B" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-          <path d="M65,67 Q76,60 87,67" stroke="#1E293B" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          <path d="M 71,90 Q 85,80 99,90" stroke="#3730a3" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          <path d="M 111,90 Q 125,80 139,90" stroke="#3730a3" strokeWidth="2.5" fill="none" strokeLinecap="round" />
         </>
       ) : (
         <>
-          <ellipse cx="44" cy="67" rx="12" ry="13" fill="white" />
-          <ellipse cx="76" cy="67" rx="12" ry="13" fill="white" />
-          <circle cx="44" cy="69" r="8" fill={happy ? "#059669" : "#065F46"} />
-          <circle cx="76" cy="69" r="8" fill={happy ? "#059669" : "#065F46"} />
-          <circle cx="44" cy="69" r="4.5" fill="#0F172A" />
-          <circle cx="76" cy="69" r="4.5" fill="#0F172A" />
-          <circle cx="41" cy="65" r="2.5" fill="white" />
-          <circle cx="73" cy="65" r="2.5" fill="white" />
-          <circle cx="46" cy="71" r="1.5" fill="white" opacity="0.5" />
-          <circle cx="78" cy="71" r="1.5" fill="white" opacity="0.5" />
-          {/* Cils */}
-          <path d="M32,62 Q44,56 56,62" stroke="#0F172A" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-          <path d="M64,62 Q76,56 88,62" stroke="#0F172A" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+          <ellipse cx="85" cy="90" rx="15" ry="17" fill="white" />
+          <ellipse cx="125" cy="90" rx="15" ry="17" fill="white" />
+          <circle cx="87" cy="90" r="10" fill="url(#m-iris)" />
+          <circle cx="127" cy="90" r="10" fill="url(#m-iris)" />
+          <circle cx="87" cy="90" r="10" fill="none" stroke="#3730a3" strokeWidth="0.6" opacity="0.4" />
+          <circle cx="127" cy="90" r="10" fill="none" stroke="#3730a3" strokeWidth="0.6" opacity="0.4" />
+          <circle cx="88" cy="88" r="4.5" fill="#1e1b4b" />
+          <circle cx="128" cy="88" r="4.5" fill="#1e1b4b" />
+          <circle cx="91" cy="84" r="4" fill="white" opacity="0.95" />
+          <circle cx="131" cy="84" r="4" fill="white" opacity="0.95" />
+          <circle cx="83" cy="94" r="2" fill="white" opacity="0.35" />
+          <circle cx="123" cy="94" r="2" fill="white" opacity="0.35" />
+          <circle cx="90" cy="86" r="1.2" fill="white" opacity="0.6" />
+          <circle cx="130" cy="86" r="1.2" fill="white" opacity="0.6" />
         </>
       )}
 
-      {/* ── Nez ── */}
-      {!sleeping && <path d="M55,78 Q60,82 65,78" stroke="#C8956C" strokeWidth="1.8" strokeLinecap="round" fill="none" />}
-
-      {/* ── Joues ── */}
-      <ellipse cx="28" cy="79" rx="9" ry="5.5" fill="#FCA5A5" opacity="0.45" />
-      <ellipse cx="92" cy="79" rx="9" ry="5.5" fill="#FCA5A5" opacity="0.45" />
-
-      {/* ── Bouche ── */}
-      <Mouth cx={60} cy={86} w={20} mood={mood} speaking={speaking} mouthOpen={mouthOpen} strokeColor="#9F1239" />
-
-      {/* ── Couronne ── */}
-      {level >= 10 && (
-        <path d="M38,36 L44,24 L60,32 L76,24 L82,36 L60,42 Z" fill="#FBBF24" stroke="#D97706" strokeWidth="1" />
+      {/* Sourcils */}
+      {!sleeping && !eyeClosed && (
+        <>
+          <path d={happy ? "M 72 74 Q 84 68 96 74" : "M 73 76 Q 84 72 95 76"}
+            stroke="#4338ca" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.5" />
+          <path d={happy ? "M 114 74 Q 126 68 138 74" : "M 115 76 Q 126 72 137 76"}
+            stroke="#4338ca" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.5" />
+        </>
       )}
 
-      {/* ── ZZZ ── */}
+      {/* Nez */}
+      {!sleeping && (
+        <>
+          <ellipse cx="105" cy="102" rx="4.5" ry="3" fill="#6366f1" opacity="0.45" />
+          <circle cx="103" cy="101" r="1.5" fill="white" opacity="0.3" />
+        </>
+      )}
+
+      {/* Bouche */}
+      {speaking && mouthOpen ? (
+        <>
+          <path d="M 90 110 Q 105 122 120 110" fill="#4c2066" />
+          <path d="M 94 111 Q 105 117 116 111" fill="white" opacity="0.5" />
+        </>
+      ) : sleeping ? (
+        <path d="M 95 110 Q 105 114 115 110" stroke="#3730a3" strokeWidth="2" fill="none" strokeLinecap="round" />
+      ) : (
+        <>
+          <path d="M 90 110 Q 105 120 120 110" stroke="#3730a3" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          {happy && <path d="M 95 112 Q 105 118 115 112" fill="#818cf8" opacity="0.15" />}
+        </>
+      )}
+
+      {/* Joues */}
+      <circle cx="64" cy="104" r="10" fill="url(#m-cheek)" />
+      <circle cx="146" cy="104" r="10" fill="url(#m-cheek)" />
+
+      {/* Cristal bleu sur le front */}
+      <g filter="url(#m-glow)">
+        <polygon points="105,34 110,46 120,47 112,53 115,64 105,57 95,64 98,53 90,47 100,46" fill="#60a5fa" />
+        <polygon points="105,39 108,46 115,47 110,51 112,58 105,54 98,58 100,51 95,47 102,46" fill="#93c5fd" opacity="0.5" />
+        <circle cx="105" cy="50" r="3" fill="white" opacity="0.35" />
+      </g>
+
+      {/* ZZZ */}
       {sleeping && (
         <>
-          <text x="84" y="48" fontSize="10" fill="#94A3B8" fontWeight="bold" fontFamily="sans-serif">z</text>
-          <text x="90" y="37" fontSize="13" fill="#94A3B8" fontWeight="bold" fontFamily="sans-serif">z</text>
-          <text x="97" y="24" fontSize="16" fill="#94A3B8" fontWeight="bold" fontFamily="sans-serif">z</text>
+          <text x="145" y="62" fontSize="10" fill="#818cf8" fontWeight="bold" fontFamily="sans-serif" opacity="0.6">z</text>
+          <text x="155" y="48" fontSize="13" fill="#818cf8" fontWeight="bold" fontFamily="sans-serif" opacity="0.7">z</text>
+          <text x="165" y="32" fontSize="16" fill="#818cf8" fontWeight="bold" fontFamily="sans-serif" opacity="0.8">z</text>
         </>
       )}
-      {(mood === "proud" || mood === "excited") && (
+
+      {/* Particules */}
+      {(mood === "excited" || mood === "proud") && (
         <>
-          <text x="3"   y="55" fontSize="14" fill="#34D399" fontFamily="sans-serif">✦</text>
-          <text x="107" y="50" fontSize="12" fill="#34D399" fontFamily="sans-serif">✦</text>
-          <text x="6"   y="35" fontSize="9"  fill="#34D399" fontFamily="sans-serif">✦</text>
+          <circle cx="28" cy="35" r="2.5" fill="#60a5fa" opacity="0.6" />
+          <circle cx="182" cy="45" r="2" fill="#a78bfa" opacity="0.5" />
+          <text x="25" y="65" fontSize="9" fill="#fbbf24" opacity="0.4" fontFamily="sans-serif">✦</text>
+          <text x="178" y="68" fontSize="7" fill="#818cf8" opacity="0.3" fontFamily="sans-serif">✦</text>
         </>
       )}
     </svg>
@@ -361,155 +416,240 @@ function LumoChildPrimaire({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// COLLÈGE/LYCÉE — ado (proportions adultes, hoodie, casque autour du cou)
+// LUMO GUARDIAN — Collège/Lycée (12-18 ans)
+// Style anime mature, yeux en amande, corps structuré,
+// cape d'énergie, runes lumineuses, constellation
 // ─────────────────────────────────────────────────────────────────────────────
-function LumoChildCollege({
-  mood, blink, speaking, mouthOpen, level,
-}: { mood: LumoMood; blink: boolean; speaking: boolean; mouthOpen: boolean; level: number }) {
+function LumoGuardian({
+  mood, blink, speaking, mouthOpen,
+}: { mood: LumoMood; blink: boolean; speaking: boolean; mouthOpen: boolean }) {
   const sleeping = mood === "sleeping";
-  const happy    = mood === "happy" || mood === "excited" || mood === "proud";
-  const excited  = mood === "excited";
+  const happy = mood === "happy" || mood === "excited" || mood === "proud";
+  const excited = mood === "excited";
   const eyeClosed = sleeping || blink;
 
-  const leftArmD  = excited ? "M36,108 Q8,85 7,60"   : happy ? "M36,112 Q10,102 8,126" : "M36,116 Q13,128 12,152";
-  const rightArmD = excited ? "M84,108 Q112,85 113,60" : happy ? "M84,112 Q110,102 112,126" : "M84,116 Q107,128 108,152";
-  const lhx = excited ? 6   : happy ? 7   : 11;
-  const lhy = excited ? 57  : happy ? 124 : 153;
-  const rhx = excited ? 114 : happy ? 113 : 109;
-  const rhy = excited ? 57  : happy ? 124 : 153;
-
   return (
-    <svg viewBox="0 0 120 215" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", height: "100%" }}>
+    <svg viewBox="0 0 260 380" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", height: "100%" }}>
       <defs>
-        <radialGradient id="colSkin" cx="35%" cy="30%" r="65%">
-          <stop offset="0%" stopColor="#FDDCB5" /><stop offset="100%" stopColor="#C8956C" />
+        <radialGradient id="t-head" cx="40%" cy="28%" r="70%">
+          <stop offset="0%" stopColor="#c7d2fe" />
+          <stop offset="25%" stopColor="#818cf8" />
+          <stop offset="60%" stopColor="#4f46e5" />
+          <stop offset="100%" stopColor="#312e81" />
         </radialGradient>
-        <radialGradient id="colFace" cx="40%" cy="35%" r="62%">
-          <stop offset="0%" stopColor="#FDEBD0" /><stop offset="100%" stopColor="#D4A574" />
+        <radialGradient id="t-body" cx="48%" cy="25%" r="70%">
+          <stop offset="0%" stopColor="#818cf8" />
+          <stop offset="40%" stopColor="#4f46e5" />
+          <stop offset="100%" stopColor="#1e1b4b" />
         </radialGradient>
+        <linearGradient id="t-cape-l" x1="100%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#4f46e5" stopOpacity="0.7" />
+          <stop offset="60%" stopColor="#312e81" stopOpacity="0.3" />
+          <stop offset="100%" stopColor="#1e1b4b" stopOpacity="0.05" />
+        </linearGradient>
+        <linearGradient id="t-cape-r" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#4f46e5" stopOpacity="0.7" />
+          <stop offset="60%" stopColor="#312e81" stopOpacity="0.3" />
+          <stop offset="100%" stopColor="#1e1b4b" stopOpacity="0.05" />
+        </linearGradient>
+        <radialGradient id="t-iris" cx="45%" cy="35%" r="55%">
+          <stop offset="0%" stopColor="#60a5fa" />
+          <stop offset="30%" stopColor="#3b82f6" />
+          <stop offset="70%" stopColor="#1d4ed8" />
+          <stop offset="100%" stopColor="#1e1b4b" />
+        </radialGradient>
+        <linearGradient id="t-armor" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#a5b4fc" stopOpacity="0.3" />
+          <stop offset="50%" stopColor="#6366f1" stopOpacity="0.15" />
+          <stop offset="100%" stopColor="#312e81" stopOpacity="0.05" />
+        </linearGradient>
+        <radialGradient id="t-gem" cx="50%" cy="35%" r="45%">
+          <stop offset="0%" stopColor="#93c5fd" />
+          <stop offset="40%" stopColor="#3b82f6" />
+          <stop offset="100%" stopColor="#1e3a8a" />
+        </radialGradient>
+        <radialGradient id="t-shine" cx="35%" cy="22%" r="50%">
+          <stop offset="0%" stopColor="white" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="white" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="t-shadow">
+          <stop offset="0%" stopColor="#0a0a2a" stopOpacity="0.5" />
+          <stop offset="100%" stopColor="#0a0a2a" stopOpacity="0" />
+        </radialGradient>
+        <filter id="t-glow">
+          <feGaussianBlur stdDeviation="3" />
+          <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="t-glow2">
+          <feGaussianBlur stdDeviation="4" />
+          <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
       </defs>
 
-      {/* ── Chaussures ── */}
-      <rect x="36" y="203" width="20" height="10" rx="5" fill="#1C1917" />
-      <rect x="64" y="203" width="20" height="10" rx="5" fill="#1C1917" />
-      <rect x="36" y="200" width="20" height="7" rx="4" fill="#44403C" />
-      <rect x="64" y="200" width="20" height="7" rx="4" fill="#44403C" />
+      {/* Ombre */}
+      <ellipse cx="130" cy="368" rx="55" ry="9" fill="url(#t-shadow)" />
 
-      {/* ── Jeans slim ── */}
-      <rect x="39" y="160" width="14" height="47" rx="7" fill="#1E3A5F" />
-      <rect x="67" y="160" width="14" height="47" rx="7" fill="#1E3A5F" />
+      {/* Cape */}
+      <path d="M 88 195 Q 45 240 55 320 Q 62 348 85 340 Q 78 290 84 230 Z" fill="url(#t-cape-l)" />
+      <path d="M 172 195 Q 215 240 205 320 Q 198 348 175 340 Q 182 290 176 230 Z" fill="url(#t-cape-r)" />
 
-      {/* ── Hoodie ── */}
-      <rect x="33" y="102" width="54" height="63" rx="14" fill="#4C1D95" />
-      {/* Poche kangourou */}
-      <path d="M45,145 Q60,152 75,145 L75,158 Q60,162 45,158 Z" fill="#3B0764" />
-      {/* Zip central */}
-      <line x1="60" y1="106" x2="60" y2="150" stroke="#3B0764" strokeWidth="1.5" opacity="0.6" />
-      {/* Col hoodie */}
-      <path d="M46,106 Q60,115 74,106" stroke="#3B0764" strokeWidth="3" strokeLinecap="round" fill="none" />
-      {/* Cordon capuche */}
-      <path d="M52,110 Q50,118 48,125" stroke="#6D28D9" strokeWidth="2" strokeLinecap="round" fill="none" />
-      <path d="M68,110 Q70,118 72,125" stroke="#6D28D9" strokeWidth="2" strokeLinecap="round" fill="none" />
-      <circle cx="48" cy="125" r="2.5" fill="#6D28D9" />
-      <circle cx="72" cy="125" r="2.5" fill="#6D28D9" />
+      {/* Corps structuré */}
+      <path d="M 96 195 Q 92 210 94 245 Q 96 260 110 268 L 130 270 L 150 268 Q 164 260 166 245 Q 168 210 164 195 Q 150 185 130 183 Q 110 185 96 195" fill="url(#t-body)" />
+      <path d="M 96 195 Q 92 210 94 245 Q 96 260 110 268 L 130 270 L 150 268 Q 164 260 166 245 Q 168 210 164 195 Q 150 185 130 183 Q 110 185 96 195" fill="url(#t-shine)" />
 
-      {/* ── Casque autour du cou ── */}
-      <path d="M42,112 Q42,105 60,103 Q78,105 78,112" fill="none" stroke="#7C3AED" strokeWidth="3.5" />
-      <rect x="36" y="109" width="9" height="14" rx="4" fill="#6D28D9" />
-      <rect x="75" y="109" width="9" height="14" rx="4" fill="#6D28D9" />
+      {/* Plastron */}
+      <path d="M 110 195 Q 130 190 150 195 Q 152 220 130 235 Q 108 220 110 195" fill="url(#t-armor)" stroke="#6366f1" strokeWidth="0.5" opacity="0.6" />
 
-      {/* ── Bras ── */}
-      <path d={leftArmD}  stroke="url(#colSkin)" strokeWidth="11.5" strokeLinecap="round" fill="none" />
-      <path d={rightArmD} stroke="url(#colSkin)" strokeWidth="11.5" strokeLinecap="round" fill="none" />
-      <circle cx={lhx} cy={lhy} r="8.5" fill="url(#colSkin)" />
-      <circle cx={rhx} cy={rhy} r="8.5" fill="url(#colSkin)" />
-      <circle cx={lhx - 1} cy={lhy - 7} r="3.5" fill="url(#colSkin)" />
-      <circle cx={lhx + 4} cy={lhy - 7} r="3.5" fill="url(#colSkin)" />
-      <circle cx={rhx + 1} cy={rhy - 7} r="3.5" fill="url(#colSkin)" />
-      <circle cx={rhx - 4} cy={rhy - 7} r="3.5" fill="url(#colSkin)" />
+      {/* Cristal de poitrine */}
+      <g filter="url(#t-glow)">
+        <polygon points="130,200 135,210 133,222 130,225 127,222 125,210" fill="url(#t-gem)" />
+        <polygon points="130,204 133,210 132,219 130,221 128,219 127,210" fill="#93c5fd" opacity="0.5" />
+      </g>
 
-      {/* ── Cou ── */}
-      <rect x="55" y="94" width="10" height="14" rx="5" fill="url(#colSkin)" />
+      {/* Runes sur le corps */}
+      <path d="M 108 240 L 112 248 L 108 256" stroke="#60a5fa" strokeWidth="1" fill="none" opacity="0.25" />
+      <path d="M 152 240 L 148 248 L 152 256" stroke="#60a5fa" strokeWidth="1" fill="none" opacity="0.25" />
 
-      {/* ── Oreilles ── */}
-      <ellipse cx="27" cy="74" rx="6" ry="8" fill="url(#colSkin)" />
-      <ellipse cx="93" cy="74" rx="6" ry="8" fill="url(#colSkin)" />
+      {/* Bras */}
+      <path d={excited
+        ? "M 92 200 Q 55 180 40 190 Q 32 200 38 206"
+        : happy
+        ? "M 92 200 Q 62 192 50 204 Q 44 214 50 220"
+        : "M 92 200 Q 68 198 55 210 Q 46 222 50 228"}
+        fill="#4f46e5" stroke="#312e81" strokeWidth="0.8" />
+      <path d={excited
+        ? "M 168 196 Q 205 174 220 184 Q 228 194 222 200"
+        : happy
+        ? "M 168 196 Q 198 186 210 198 Q 218 210 212 216"
+        : "M 168 196 Q 192 192 205 204 Q 214 216 210 222"}
+        fill="#4f46e5" stroke="#312e81" strokeWidth="0.8" />
 
-      {/* ── Tête ── */}
-      <ellipse cx="60" cy="70" rx="33" ry="30" fill="url(#colFace)" />
+      {/* Runes sur les bras */}
+      <path d="M 62 218 Q 58 216 56 220" stroke="#60a5fa" strokeWidth="1.2" fill="none" opacity="0.2" />
+      <path d="M 198 212 Q 202 210 204 214" stroke="#60a5fa" strokeWidth="1.2" fill="none" opacity="0.2" />
 
-      {/* ── Cheveux ── */}
-      <ellipse cx="60" cy="42" rx="31" ry="14" fill="#1C1917" />
-      <circle cx="29" cy="57" r="10" fill="#292524" />
-      <circle cx="91" cy="57" r="10" fill="#292524" />
-      {/* Mèches stylées */}
-      <path d="M38,46 Q44,58 40,67" stroke="#292524" strokeWidth="5" strokeLinecap="round" fill="none" />
-      <path d="M60,40 Q58,52 55,62" stroke="#1C1917" strokeWidth="4" strokeLinecap="round" fill="none" />
-      <path d="M72,46 Q70,56 68,64" stroke="#292524" strokeWidth="4" strokeLinecap="round" fill="none" />
+      {/* Jambes */}
+      <path d="M 108 266 L 104 310 Q 98 330 104 338 Q 112 344 122 336 L 124 310 L 118 268" fill="#312e81" />
+      <path d="M 102 322 Q 114 318 122 322" stroke="#4f46e5" strokeWidth="1.2" fill="none" opacity="0.4" />
+      <path d="M 142 268 L 136 310 Q 130 330 136 338 Q 144 344 154 336 L 156 310 L 152 266" fill="#312e81" />
+      <path d="M 134 322 Q 146 318 154 322" stroke="#4f46e5" strokeWidth="1.2" fill="none" opacity="0.4" />
 
-      {/* ── Sourcils (plus épais, expressifs) ── */}
-      {!sleeping && (
-        <>
-          <path d={happy ? "M33,57 Q44,51 55,57" : "M34,59 Q44,55 54,59"}
-            stroke="#1C1917" strokeWidth="3" strokeLinecap="round" fill="none" />
-          <path d={happy ? "M65,57 Q76,51 87,57" : "M66,59 Q76,55 86,59"}
-            stroke="#1C1917" strokeWidth="3" strokeLinecap="round" fill="none" />
-        </>
-      )}
+      {/* Queue majestueuse */}
+      <path d="M 168 280 Q 205 265 215 290 Q 222 315 206 325 Q 195 332 198 315 Q 202 298 188 290"
+        fill="none" stroke="#312e81" strokeWidth="9" strokeLinecap="round" />
+      <path d="M 168 280 Q 205 265 215 290 Q 222 315 206 325 Q 195 332 198 315 Q 202 298 188 290"
+        fill="none" stroke="#4f46e5" strokeWidth="5" strokeLinecap="round" />
+      <path d="M 168 280 Q 205 265 215 290 Q 222 315 206 325 Q 195 332 198 315 Q 202 298 188 290"
+        fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" />
 
-      {/* ── Yeux (amande, plus sophistiqués) ── */}
+      {/* Tête */}
+      <circle cx="130" cy="118" r="62" fill="url(#t-head)" />
+      <circle cx="130" cy="118" r="62" fill="url(#t-shine)" />
+
+      {/* Mèches de cheveux */}
+      <path d="M 112 58 Q 120 38 130 48 Q 136 32 144 55 Q 150 40 148 58" fill="#4f46e5" />
+      <path d="M 118 60 Q 124 44 130 50 Q 134 38 140 56" fill="#6366f1" />
+      <path d="M 72 98 Q 58 80 64 66" stroke="#4f46e5" strokeWidth="4" fill="none" strokeLinecap="round" opacity="0.5" />
+      <path d="M 188 98 Q 202 80 196 66" stroke="#4f46e5" strokeWidth="4" fill="none" strokeLinecap="round" opacity="0.5" />
+
+      {/* Oreilles longues anime */}
+      <path d="M 72 92 Q 28 28 68 4 Q 74 24 72 84" fill="#4f46e5" />
+      <path d="M 74 80 Q 40 30 68 12 Q 72 28 73 76" fill="#6366f1" />
+      <path d="M 74 68 Q 52 36 68 18" fill="#818cf8" opacity="0.4" />
+
+      <path d="M 188 92 Q 232 28 192 4 Q 186 24 188 84" fill="#4f46e5" />
+      <path d="M 186 80 Q 220 30 192 12 Q 188 28 187 76" fill="#6366f1" />
+      <path d="M 186 68 Q 208 36 192 18" fill="#818cf8" opacity="0.4" />
+
+      {/* Yeux en amande */}
       {eyeClosed ? (
         <>
-          <path d="M33,68 Q44,62 55,68" stroke="#1E293B" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-          <path d="M65,68 Q76,62 87,68" stroke="#1E293B" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          <path d="M 98,112 Q 112,104 126,112" stroke="#1e1b4b" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          <path d="M 134,112 Q 148,104 162,112" stroke="#1e1b4b" strokeWidth="2.5" fill="none" strokeLinecap="round" />
         </>
       ) : (
         <>
-          <ellipse cx="44" cy="68" rx="12" ry="10" fill="white" />
-          <ellipse cx="76" cy="68" rx="12" ry="10" fill="white" />
-          <circle cx="44" cy="68" r="7" fill={happy ? "#6D28D9" : "#4C1D95"} />
-          <circle cx="76" cy="68" r="7" fill={happy ? "#6D28D9" : "#4C1D95"} />
-          <circle cx="44" cy="68" r="4" fill="#0F172A" />
-          <circle cx="76" cy="68" r="4" fill="#0F172A" />
-          <circle cx="41" cy="65" r="2.5" fill="white" />
-          <circle cx="73" cy="65" r="2.5" fill="white" />
-          {/* Cils */}
-          <path d="M32,63 Q44,58 56,63" stroke="#0F172A" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-          <path d="M64,63 Q76,58 88,63" stroke="#0F172A" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+          {/* Oeil gauche — amande */}
+          <path d="M 98 112 Q 110 98 124 110 Q 114 122 100 118 Z" fill="white" />
+          <circle cx="112" cy="112" r="9.5" fill="url(#t-iris)" />
+          <circle cx="112" cy="112" r="9.5" fill="none" stroke="#1e3a8a" strokeWidth="0.4" opacity="0.6" />
+          <circle cx="112" cy="112" r="7" fill="none" stroke="#60a5fa" strokeWidth="0.3" opacity="0.3" />
+          <circle cx="113" cy="111" r="4.5" fill="#0a0a2e" />
+          <circle cx="117" cy="106" r="4" fill="white" opacity="0.95" />
+          <circle cx="107" cy="116" r="2.5" fill="white" opacity="0.3" />
+
+          {/* Oeil droit — amande */}
+          <path d="M 136 110 Q 148 98 162 112 Q 152 122 138 118 Z" fill="white" />
+          <circle cx="150" cy="112" r="9.5" fill="url(#t-iris)" />
+          <circle cx="150" cy="112" r="9.5" fill="none" stroke="#1e3a8a" strokeWidth="0.4" opacity="0.6" />
+          <circle cx="150" cy="112" r="7" fill="none" stroke="#60a5fa" strokeWidth="0.3" opacity="0.3" />
+          <circle cx="151" cy="111" r="4.5" fill="#0a0a2e" />
+          <circle cx="155" cy="106" r="4" fill="white" opacity="0.95" />
+          <circle cx="145" cy="116" r="2.5" fill="white" opacity="0.3" />
         </>
       )}
 
-      {/* ── Nez ── */}
+      {/* Sourcils angulaires */}
+      {!sleeping && !eyeClosed && (
+        <>
+          <path d={happy ? "M 98 96 Q 112 88 126 97" : "M 100 98 Q 112 92 124 99"}
+            stroke="#1e1b4b" strokeWidth="2.8" fill="none" strokeLinecap="round" opacity="0.55" />
+          <path d={happy ? "M 134 97 Q 148 88 162 96" : "M 136 99 Q 148 92 160 98"}
+            stroke="#1e1b4b" strokeWidth="2.8" fill="none" strokeLinecap="round" opacity="0.55" />
+        </>
+      )}
+
+      {/* Marques tribales */}
+      <path d="M 88 118 L 94 116" stroke="#60a5fa" strokeWidth="1.5" fill="none" opacity="0.25" />
+      <path d="M 86 124 L 92 122" stroke="#60a5fa" strokeWidth="1" fill="none" opacity="0.2" />
+      <path d="M 166 118 L 172 116" stroke="#60a5fa" strokeWidth="1.5" fill="none" opacity="0.25" />
+      <path d="M 168 124 L 174 122" stroke="#60a5fa" strokeWidth="1" fill="none" opacity="0.2" />
+
+      {/* Nez */}
       {!sleeping && (
-        <path d="M55,78 Q60,83 65,78" stroke="#A0694A" strokeWidth="2" strokeLinecap="round" fill="none" />
+        <path d="M 128 128 Q 130 131 132 128" stroke="#312e81" strokeWidth="1.2" fill="none" strokeLinecap="round" opacity="0.4" />
       )}
 
-      {/* ── Bouche ── */}
-      <Mouth cx={60} cy={87} w={18} mood={mood} speaking={speaking} mouthOpen={mouthOpen} strokeColor="#7C2D3B" />
-
-      {/* ── Couronne ── */}
-      {level >= 10 && (
-        <path d="M40,38 L46,26 L60,34 L74,26 L80,38 L60,44 Z" fill="#FBBF24" stroke="#D97706" strokeWidth="1" />
+      {/* Bouche */}
+      {speaking && mouthOpen ? (
+        <>
+          <path d="M 118 138 Q 130 146 142 138" fill="#1e1040" />
+          <path d="M 122 139 Q 130 143 138 139" fill="white" opacity="0.3" />
+        </>
+      ) : sleeping ? (
+        <path d="M 122 138 Q 130 141 138 138" stroke="#1e1b4b" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.5" />
+      ) : (
+        <path d="M 120 138 Q 130 143 140 138" stroke="#1e1b4b" strokeWidth="1.8" fill="none" strokeLinecap="round" opacity="0.6" />
       )}
 
-      {/* ── Étoiles niveau 5+ ── */}
-      {level >= 5 && level < 10 && (
-        <path d="M60,38 L62,43 L68,43 L63,47 L65,52 L60,48 L55,52 L57,47 L52,43 L58,43 Z" fill="#FBBF24" />
-      )}
+      {/* PAS de joues roses pour l'ado */}
 
-      {/* ── ZZZ ── */}
+      {/* Constellation sur le front */}
+      <g filter="url(#t-glow2)">
+        <polygon points="130,48 137,62 150,64 140,74 144,88 130,80 116,88 120,74 110,64 123,62" fill="#3b82f6" />
+        <polygon points="130,54 135,64 144,65 137,72 140,82 130,76 120,82 123,72 116,65 125,64" fill="#60a5fa" opacity="0.6" />
+        <polygon points="130,59 133,65 139,66 135,70 137,77 130,73 123,77 125,70 121,66 127,65" fill="#93c5fd" opacity="0.4" />
+        <circle cx="130" cy="68" r="4" fill="#bfdbfe" opacity="0.3" />
+      </g>
+
+      {/* ZZZ */}
       {sleeping && (
         <>
-          <text x="84" y="48" fontSize="10" fill="#94A3B8" fontWeight="bold" fontFamily="sans-serif">z</text>
-          <text x="90" y="37" fontSize="13" fill="#94A3B8" fontWeight="bold" fontFamily="sans-serif">z</text>
-          <text x="97" y="24" fontSize="16" fill="#94A3B8" fontWeight="bold" fontFamily="sans-serif">z</text>
+          <text x="170" y="80" fontSize="12" fill="#6366f1" fontWeight="bold" fontFamily="sans-serif" opacity="0.5">z</text>
+          <text x="182" y="62" fontSize="15" fill="#6366f1" fontWeight="bold" fontFamily="sans-serif" opacity="0.6">z</text>
+          <text x="194" y="42" fontSize="18" fill="#6366f1" fontWeight="bold" fontFamily="sans-serif" opacity="0.7">z</text>
         </>
       )}
-      {(mood === "proud" || mood === "excited") && (
+
+      {/* Particules */}
+      {(mood === "excited" || mood === "proud") && (
         <>
-          <text x="3"   y="55" fontSize="14" fill="#A78BFA" fontFamily="sans-serif">✦</text>
-          <text x="107" y="50" fontSize="12" fill="#A78BFA" fontFamily="sans-serif">✦</text>
-          <text x="6"   y="35" fontSize="9"  fill="#A78BFA" fontFamily="sans-serif">✦</text>
+          <circle cx="30" cy="55" r="2.5" fill="#60a5fa" opacity="0.5" />
+          <circle cx="232" cy="65" r="2" fill="#818cf8" opacity="0.4" />
+          <circle cx="50" cy="160" r="1.5" fill="#a5b4fc" opacity="0.3" />
+          <circle cx="215" cy="170" r="1.5" fill="#60a5fa" opacity="0.3" />
+          <text x="25" y="80" fontSize="10" fill="#fbbf24" opacity="0.3" fontFamily="sans-serif">✦</text>
+          <text x="230" y="85" fontSize="8" fill="#a78bfa" opacity="0.3" fontFamily="sans-serif">✦</text>
         </>
       )}
     </svg>
@@ -526,7 +666,6 @@ export default function LumoCharacter({
   const [blink, setBlink] = useState(false);
   const [mouthOpen, setMouthOpen] = useState(false);
 
-  // Clignement aléatoire
   useEffect(() => {
     if (mood === "sleeping") return;
     let timeout: ReturnType<typeof setTimeout>;
@@ -540,7 +679,6 @@ export default function LumoCharacter({
     return () => clearTimeout(timeout);
   }, [mood]);
 
-  // Animation bouche qui parle
   useEffect(() => {
     if (!speaking) { setMouthOpen(false); return; }
     const interval = setInterval(() => setMouthOpen((o) => !o), 180);
@@ -553,18 +691,19 @@ export default function LumoCharacter({
     mood === "happy" || mood === "proud" ? "lumo-happy" :
     "lumo-idle";
 
-  const props = { mood, blink, speaking, mouthOpen, level };
+  const heightRatio = ageGroup === "college-lycee" ? 1.46 : ageGroup === "primaire" ? 1.31 : 1.2;
+  const props = { mood, blink, speaking, mouthOpen };
 
   return (
     <div
       className={`relative inline-block select-none ${onClick ? "cursor-pointer active:scale-95 transition-transform" : ""} ${className}`}
-      style={{ width: size, height: size * 1.15 }}
+      style={{ width: size, height: size * heightRatio }}
       onClick={onClick}
     >
       <div className={`w-full h-full ${animClass}`}>
-        {ageGroup === "maternelle"    && <LumoChildMaternelle {...props} />}
-        {ageGroup === "primaire"      && <LumoChildPrimaire   {...props} />}
-        {ageGroup === "college-lycee" && <LumoChildCollege    {...props} />}
+        {ageGroup === "maternelle"    && <LumoMaternelle {...props} />}
+        {ageGroup === "primaire"      && <LumoExplorateur {...props} />}
+        {ageGroup === "college-lycee" && <LumoGuardian {...props} />}
       </div>
     </div>
   );
