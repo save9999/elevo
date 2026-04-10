@@ -1,20 +1,38 @@
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import { prisma } from '@/lib/prisma';
+import ParentDashboardClient from './_components/ParentDashboardClient';
 
 export default async function ParentDashboardPage() {
   const session = await auth();
   if (!session?.user) {
     redirect('/login');
   }
+  const parentId = (session.user as { id: string }).id;
+
+  const children = await prisma.child.findMany({
+    where: { parentId },
+    orderBy: { createdAt: 'asc' },
+    select: {
+      id: true,
+      firstName: true,
+      birthdate: true,
+      parcours: true,
+      createdAt: true,
+    },
+  });
+
+  const parentName = session.user.name ?? session.user.email ?? 'parent';
+
   return (
-    <main className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4 p-8">
-      <p className="text-sm uppercase tracking-wider text-slate-500">Dashboard parent</p>
-      <h1 className="text-3xl font-semibold text-slate-900">
-        Bonjour {session.user.name ?? session.user.email} 👋
-      </h1>
-      <p className="text-slate-600">
-        Le dashboard parent sera construit dans le Plan 5.
-      </p>
-    </main>
+    <ParentDashboardClient
+      parentName={parentName}
+      children={children.map((c) => ({
+        id: c.id,
+        firstName: c.firstName,
+        birthdate: c.birthdate.toISOString(),
+        parcours: c.parcours,
+      }))}
+    />
   );
 }
