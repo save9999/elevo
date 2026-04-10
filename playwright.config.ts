@@ -10,6 +10,7 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:3002',
     trace: 'on-first-retry',
+    reducedMotion: 'reduce', // Stoppe l'orbite des planètes et autres animations CSS
   },
   projects: [
     {
