@@ -8,229 +8,170 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// --- Comptes ---
+
+enum UserRole {
+  PARENT
+  PRO
+  ADMIN
+}
+
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  passwordHash  String?
-  accounts      Account[]
-  sessions      Session[]
-  children      Child[]
-  createdAt     DateTime  @default(now())
-}
-
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
   id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email        String   @unique
+  passwordHash String
+  name         String?
+  role         UserRole @default(PARENT)
+  proCode      String?  @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  children   Child[] @relation("ParentChildren")
+  proClients Child[] @relation("ProSupervises")
 }
 
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-  @@unique([identifier, token])
+// --- Enfant ---
+
+enum Parcours {
+  PETITS
+  EXPLORATEURS
+  AVENTURIERS
+  LYCEENS
 }
 
 model Child {
+  id        String   @id @default(cuid())
+  parentId  String
+  parent    User     @relation("ParentChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  proId     String?
+  pro       User?    @relation("ProSupervises", fields: [proId], references: [id], onDelete: SetNull)
+
+  firstName String
+  birthdate DateTime
+  parcours  Parcours
+  avatar    Json?
+
+  xp             Int      @default(0)
+  level          Int      @default(1)
+  planetsVisited String[] @default([])
+
+  // Agrégat calculé à partir des Observation et Bilan — jamais source de vérité
+  dysProfile Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions     GameSession[]
+  observations Observation[]
+  bilans       Bilan[]
+  exerciseLogs ExerciseLog[]
+  alerts       Alert[]
+}
+
+// --- Sessions de jeu ---
+
+model GameSession {
   id           String    @id @default(cuid())
-  parentId     String
-  parent       User      @relation(fields: [parentId], references: [id], onDelete: Cascade)
-  name         String
-  birthDate    DateTime
-  ageGroup     String
-  avatar       String    @default("🦊")
-  avatarConfig String    @default("{}")
-  level        Int       @default(1)
-  xp           Int       @default(0)
-  streak       Int       @default(0)
-  lastActivity DateTime?
-  profile      ChildProfile?
-  sessions     LearningSession[]
-  achievements Achievement[]
-  assessments  Assessment[]
-  progress     ChildProgress[]
-  quests       DailyQuest[]
-  inventory    ChildInventory[]
-  currency     ChildCurrency?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  childId      String
+  child        Child     @relation(fields: [childId], references: [id], onDelete: Cascade)
+  planetSlug   String
+  activitySlug String
+  startedAt    DateTime  @default(now())
+  endedAt      DateTime?
+  score        Int?
+  metadata     Json?
+
+  observations Observation[]
 }
 
-model ChildProfile {
-  id             String   @id @default(cuid())
-  childId        String   @unique
-  child          Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
-  troubles       String   @default("[]")
-  strengths      String   @default("[]")
-  scoreReading   Int      @default(50)
-  scoreWriting   Int      @default(50)
-  scoreMath      Int      @default(50)
-  scoreMemory    Int      @default(50)
-  scoreAttention Int      @default(50)
-  scoreMotor     Int      @default(50)
-  emotionalScore Int      @default(50)
-  socialScore    Int      @default(50)
-  physicalScore  Int      @default(50)
-  personalPlan   String   @default("{}")
-  updatedAt      DateTime @updatedAt
+// --- Observations ambiantes ---
+
+enum ObservationDomain {
+  READING_SPEED
+  READING_ACCURACY
+  PHONOLOGY
+  WRITING
+  NUMERIC
+  ATTENTION
+  MEMORY
+  VISUO_SPATIAL
+  MOTOR
 }
 
-model LearningSession {
-  id        String   @id @default(cuid())
+model Observation {
+  id        String            @id @default(cuid())
   childId   String
-  child     Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
-  module    String
-  activity  String
-  score     Int
-  duration  Int
-  xpEarned  Int
-  data      String   @default("{}")
-  createdAt DateTime @default(now())
+  child     Child             @relation(fields: [childId], references: [id], onDelete: Cascade)
+  sessionId String?
+  session   GameSession?      @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  domain    ObservationDomain
+  signal    String
+  weight    Float
+  context   Json?
+  createdAt DateTime          @default(now())
 }
 
-model Achievement {
-  id         String   @id @default(cuid())
-  childId    String
-  child      Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
-  title      String
-  emoji      String
-  desc       String
-  unlockedAt DateTime @default(now())
+// --- Bilans standardisés (Cabinet) ---
+
+enum BilanMode {
+  PARENT
+  PRO
 }
 
-model Assessment {
-  id        String   @id @default(cuid())
-  childId   String
-  child     Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
-  type      String
-  result    String   @default("{}")
-  risk      String
-  createdAt DateTime @default(now())
+enum BilanTrigger {
+  PARENT_REQUEST
+  PRO_REQUEST
+  AI_SUGGESTION
 }
 
-model Chapter {
-  id          String        @id @default(cuid())
-  title       String
-  description String
-  theme       String
-  ageGroup    String
-  difficulty  Int           @default(1)
-  order       Int
-  mapPosition Json          @default("{\"x\":0,\"y\":0}")
-  mapRegion   String        @default("forest")
-  bossData    Json?
-  steps       ChapterStep[]
-  progress    ChildProgress[]
-  createdAt   DateTime      @default(now())
-
-  @@unique([ageGroup, order])
+model Bilan {
+  id              String       @id @default(cuid())
+  childId         String
+  child           Child        @relation(fields: [childId], references: [id], onDelete: Cascade)
+  protocolId      String
+  protocolVersion String
+  startedAt       DateTime     @default(now())
+  completedAt     DateTime?
+  rawAnswers      Json
+  rawScores       Json?
+  normedScores    Json?
+  interpretation  String?
+  mode            BilanMode
+  triggeredBy     BilanTrigger
 }
 
-model ChapterStep {
-  id               String          @id @default(cuid())
-  chapterId        String
-  chapter          Chapter         @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-  order            Int
-  title            String          @default("")
-  narrativeContext String          @db.Text
-  exerciseType     String
-  exerciseData     Json?
-  rewards          Json            @default("{\"stars\":10,\"xp\":30}")
-  progress         ChildProgress[]
+// --- Exercices d'orthophonie ---
 
-  @@unique([chapterId, order])
-}
-
-model ChildProgress {
-  id             String       @id @default(cuid())
-  childId        String
-  child          Child        @relation(fields: [childId], references: [id], onDelete: Cascade)
-  chapterId      String
-  chapter        Chapter      @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-  stepId         String?
-  step           ChapterStep? @relation(fields: [stepId], references: [id], onDelete: Cascade)
-  status         String       @default("locked")
-  score          Int?
-  starsEarned    Int?
-  narrativeState Json?
-  completedAt    DateTime?
-  createdAt      DateTime     @default(now())
-
-  @@unique([childId, chapterId, stepId])
-}
-
-model DailyQuest {
-  id            String   @id @default(cuid())
+model ExerciseLog {
+  id            String    @id @default(cuid())
   childId       String
-  child         Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
-  date          DateTime @db.Date
-  title         String
-  description   String
-  narrativeHook String?  @db.Text
-  exerciseType  String
-  targetCount   Int      @default(1)
-  progress      Int      @default(0)
-  completed     Boolean  @default(false)
-  reward        Json     @default("{\"stars\":10,\"xp\":20}")
-  createdAt     DateTime @default(now())
-
-  @@unique([childId, date, title])
+  child         Child     @relation(fields: [childId], references: [id], onDelete: Cascade)
+  exerciseId    String
+  targetTrouble String
+  difficulty    Int
+  startedAt     DateTime  @default(now())
+  completedAt   DateTime?
+  success       Boolean?
+  metadata      Json?
 }
 
-model ShopItem {
-  id          String           @id @default(cuid())
-  name        String
-  type        String
-  description String           @default("")
-  cost        Int
-  currency    String           @default("stars")
-  ageGroup    String?
-  rarity      String           @default("common")
-  imageData   String?          @db.Text
-  previewData Json?
-  inventory   ChildInventory[]
-  createdAt   DateTime         @default(now())
+// --- Alertes parent ---
+
+enum AlertSeverity {
+  INFO
+  ATTENTION
+  IMPORTANT
 }
 
-model ChildInventory {
-  id         String    @id @default(cuid())
-  childId    String
-  child      Child     @relation(fields: [childId], references: [id], onDelete: Cascade)
-  itemId     String
-  item       ShopItem  @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  equippedAt DateTime?
-  acquiredAt DateTime  @default(now())
-
-  @@unique([childId, itemId])
-}
-
-model ChildCurrency {
-  id            String @id @default(cuid())
-  childId       String @unique
-  child         Child  @relation(fields: [childId], references: [id], onDelete: Cascade)
-  stars         Int    @default(0)
-  crystals      Int    @default(0)
-  streakFreezes Int    @default(1)
+model Alert {
+  id             String        @id @default(cuid())
+  childId        String
+  child          Child         @relation(fields: [childId], references: [id], onDelete: Cascade)
+  severity       AlertSeverity
+  title          String
+  body           String
+  observationIds String[]
+  createdAt      DateTime      @default(now())
+  acknowledgedAt DateTime?
+  action         String?
 }
