@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import SessionProvider from '@/components/SessionProvider';
+import { CookieBanner } from '@/components/CookieBanner';
 
 const siteUrl = 'https://elevo-five.vercel.app';
 
@@ -75,6 +76,7 @@ export default function RootLayout({
     <html lang="fr">
       <body className="min-h-screen bg-slate-950 text-slate-100 antialiased">
         <SessionProvider>{children}</SessionProvider>
+        <CookieBanner />
       </body>
     </html>
   );

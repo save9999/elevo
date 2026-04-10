@@ -69,6 +69,14 @@ export default function LandingPage() {
           Elevo n&apos;établit aucun diagnostic médical. Nous encourageons toujours à
           consulter un orthophoniste pour un bilan officiel.
         </p>
+
+        <footer className="mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-slate-600">
+          <Link href="/cgu" className="hover:text-slate-300">Conditions d&apos;utilisation</Link>
+          <span aria-hidden>·</span>
+          <Link href="/confidentialite" className="hover:text-slate-300">Confidentialité &amp; RGPD</Link>
+          <span aria-hidden>·</span>
+          <a href="mailto:contact@elevo.local" className="hover:text-slate-300">Contact</a>
+        </footer>
       </div>
     </main>
   );
