@@ -1,0 +1,73 @@
+import type { Protocol } from './types';
+
+export const odedysLectureProtocol: Protocol = {
+  id: 'odedys-lecture-lite',
+  version: '1.0.0',
+  publishedAt: '2026-04-10',
+  name: 'Lecture de mots (inspiré ODEDYS)',
+  targetTrouble: 'dyslexie',
+  ageRange: { min: 7, max: 11 },
+  durationMin: 3,
+  durationMax: 5,
+  source: 'Inspiré d\'ODEDYS / Cogni-Sciences Grenoble',
+  intro: "Je vais te montrer des mots. Tu dois retrouver le bon à chaque fois.",
+  outro: 'Bravo, tu as lu beaucoup de mots !',
+  items: [
+    {
+      id: 'lect-1',
+      type: 'mcq',
+      prompt: 'Mot régulier :',
+      choices: ['CABANE', 'CABANA', 'CABENE', 'CABUNE'],
+      correct: 0,
+    },
+    {
+      id: 'lect-2',
+      type: 'mcq',
+      prompt: 'Mot irrégulier :',
+      choices: ['MONSIEUR', 'MOSIEUR', 'MONSSIEUR', 'MONSUIER'],
+      correct: 0,
+    },
+    {
+      id: 'lect-3',
+      type: 'mcq',
+      prompt: 'Pseudo-mot :',
+      choices: ['PLURFIN', 'PLURFEN', 'PLURFAN', 'PLURFUN'],
+      correct: 0,
+    },
+    {
+      id: 'lect-4',
+      type: 'mcq',
+      prompt: 'Mot régulier :',
+      choices: ['RIVIÈRE', 'RIVIAIRE', 'RIVIERE', 'RIVIÈREE'],
+      correct: 0,
+    },
+    {
+      id: 'lect-5',
+      type: 'mcq',
+      prompt: 'Mot irrégulier :',
+      choices: ['FEMME', 'FAMME', 'FÉMME', 'FEMMES'],
+      correct: 0,
+    },
+    {
+      id: 'lect-6',
+      type: 'mcq',
+      prompt: 'Pseudo-mot :',
+      choices: ['CROMPI', 'CRAMPI', 'CRUMPI', 'CRIMPI'],
+      correct: 0,
+    },
+    {
+      id: 'lect-7',
+      type: 'mcq',
+      prompt: 'Mot irrégulier :',
+      choices: ['CHORALE', 'CHORAL', 'CORALE', 'CHORALLE'],
+      correct: 0,
+    },
+    {
+      id: 'lect-8',
+      type: 'mcq',
+      prompt: 'Pseudo-mot long :',
+      choices: ['GRIVANDO', 'GRIVENDO', 'GRIVINDO', 'GRIVUNDO'],
+      correct: 0,
+    },
+  ],
+};
