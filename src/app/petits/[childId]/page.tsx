@@ -1,15 +1,23 @@
-export default function PetitsStubPage({
+import { redirect } from 'next/navigation';
+import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { PetitsStation } from '@/components/petits/PetitsStation';
+
+export default async function PetitsStationPage({
   params,
 }: {
   params: { childId: string };
 }) {
-  return (
-    <main className="min-h-screen bg-amber-50 flex flex-col items-center justify-center gap-4 p-8">
-      <h1 className="text-3xl font-semibold text-amber-900">Les Petits — bientôt disponible</h1>
-      <p className="text-amber-800">
-        Le parcours 4-6 ans arrive prochainement.
-      </p>
-      <p className="text-xs text-amber-700">childId : {params.childId}</p>
-    </main>
-  );
+  const session = await auth();
+  if (!session?.user) redirect('/login');
+  const parentId = (session.user as { id: string }).id;
+
+  const child = await prisma.child.findFirst({
+    where: { id: params.childId, parentId },
+    select: { id: true, firstName: true, parcours: true },
+  });
+  if (!child) redirect('/parent');
+  if (child.parcours !== 'PETITS') redirect('/onboarding');
+
+  return <PetitsStation childId={child.id} firstName={child.firstName} />;
 }
