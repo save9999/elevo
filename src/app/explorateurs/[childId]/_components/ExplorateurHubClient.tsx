@@ -45,7 +45,10 @@ export function ExplorateurHubClient({
 
       {/* Hub central */}
       <div className="relative z-10 flex flex-col items-center justify-center pt-4">
-        <Station onPlanetSelect={handlePlanetSelect} />
+        <Station
+          onPlanetSelect={handlePlanetSelect}
+          cabinetHref={`/explorateurs/${childId}/cabinet`}
+        />
       </div>
 
       {/* LUMO flottante en bas à droite avec phrase d'accueil */}

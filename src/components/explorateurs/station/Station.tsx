@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import clsx from 'clsx';
+import Link from 'next/link';
 import { LumoSphere } from '../lumo/LumoSphere';
 import { PlanetOrb } from './PlanetOrb';
 import { PLANETS, type Planet } from './planets-data';
@@ -17,8 +18,10 @@ import { PLANETS, type Planet } from './planets-data';
  */
 export function Station({
   onPlanetSelect,
+  cabinetHref,
 }: {
   onPlanetSelect?: (planet: Planet) => void;
+  cabinetHref?: string;
 }) {
   const [hoveredPlanet, setHoveredPlanet] = useState<Planet | null>(null);
   const radius = 240; // px — rayon de l'orbite
@@ -41,9 +44,19 @@ export function Station({
         }}
       />
 
-      {/* Station centrale = LUMO */}
+      {/* Station centrale = LUMO + accès Cabinet */}
       <div className="relative z-10 flex flex-col items-center gap-4">
-        <LumoSphere mood="idle" size="xl" />
+        {cabinetHref ? (
+          <Link
+            href={cabinetHref}
+            className="rounded-full p-2 outline-none transition hover:scale-105 focus-visible:ring-2 focus-visible:ring-indigo-400"
+            aria-label="Entrer dans le Cabinet de LUMO"
+          >
+            <LumoSphere mood="idle" size="xl" />
+          </Link>
+        ) : (
+          <LumoSphere mood="idle" size="xl" />
+        )}
         <div className="text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">
             Station Elevo
@@ -51,7 +64,9 @@ export function Station({
           <p className="mt-1 text-sm text-slate-400">
             {hoveredPlanet
               ? `${hoveredPlanet.name} · ${hoveredPlanet.domain}`
-              : 'Choisis une planète pour commencer'}
+              : cabinetHref
+                ? 'Choisis une planète, ou clique sur LUMO pour le Cabinet'
+                : 'Choisis une planète pour commencer'}
           </p>
         </div>
       </div>
