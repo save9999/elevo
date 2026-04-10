@@ -1,18 +1,32 @@
-export default function ExplorateurStationPage({
+import { redirect } from 'next/navigation';
+import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { ExplorateurHubClient } from './_components/ExplorateurHubClient';
+
+export default async function ExplorateurStationPage({
   params,
 }: {
   params: { childId: string };
 }) {
-  return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center gap-4 p-8">
-      <p className="text-sm uppercase tracking-wider text-slate-500">
-        Station Elevo — parcours Explorateurs (6-10 ans)
-      </p>
-      <h1 className="text-3xl font-semibold">Bienvenue, petit·e astronaute ✨</h1>
-      <p className="text-slate-400">
-        Ici viendra le hub Station avec LUMO et les 6 planètes.
-      </p>
-      <p className="text-xs text-slate-600">childId : {params.childId}</p>
-    </main>
-  );
+  const session = await auth();
+  if (!session?.user) {
+    redirect('/login');
+  }
+  const parentId = (session.user as { id: string }).id;
+
+  const child = await prisma.child.findFirst({
+    where: { id: params.childId, parentId },
+    select: { id: true, firstName: true, parcours: true },
+  });
+
+  if (!child) {
+    redirect('/parent');
+  }
+
+  if (child.parcours !== 'EXPLORATEURS') {
+    // L'enfant appartient à un autre parcours → rediriger
+    redirect('/onboarding');
+  }
+
+  return <ExplorateurHubClient childId={child.id} firstName={child.firstName} />;
 }
