@@ -138,7 +138,6 @@ export default function ChildHomePage({ params }: { params: { id: string } }) {
           <LumoHouse
             onRoomSelect={handleRoomSelect}
             childName={child.name}
-            lumoMood={lumoMood}
             level={child.level}
           />
         </div>

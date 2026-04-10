@@ -1,403 +1,722 @@
 "use client";
 import { useEffect, useState, useId } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
-export type TimeOfDay = "morning" | "noon" | "evening" | "night";
+export type TimeOfDay = "dawn" | "day" | "dusk" | "night";
 
 interface LumoHouseProps {
   onRoomSelect: (roomId: string) => void;
   childName: string;
-  lumoMood?: "idle" | "happy" | "excited" | "sleeping" | "proud";
   level?: number;
 }
 
 function getTimeOfDay(): TimeOfDay {
   const h = new Date().getHours();
-  if (h >= 6 && h < 11) return "morning";
-  if (h >= 11 && h < 17) return "noon";
-  if (h >= 17 && h < 20) return "evening";
+  if (h >= 5 && h < 9) return "dawn";
+  if (h >= 9 && h < 17) return "day";
+  if (h >= 17 && h < 20) return "dusk";
   return "night";
 }
 
-const SKY_GRADIENTS: Record<TimeOfDay, { from: string; to: string }> = {
-  morning: { from: "#fef3c7", to: "#93c5fd" },
-  noon: { from: "#7dd3fc", to: "#bfdbfe" },
-  evening: { from: "#fb923c", to: "#c084fc" },
-  night: { from: "#1e1b4b", to: "#312e81" },
+// Palette atmosphérique par moment de la journée
+const SKIES: Record<TimeOfDay, { top: string; mid: string; bottom: string; sun: string; ambient: string }> = {
+  dawn: {
+    top: "#fef3c7",
+    mid: "#fed7aa",
+    bottom: "#fdba74",
+    sun: "#fbbf24",
+    ambient: "#fef9e7",
+  },
+  day: {
+    top: "#bae6fd",
+    mid: "#dbeafe",
+    bottom: "#e0e7ff",
+    sun: "#fbbf24",
+    ambient: "#eff6ff",
+  },
+  dusk: {
+    top: "#1e1b4b",
+    mid: "#7c3aed",
+    bottom: "#f472b6",
+    sun: "#fb923c",
+    ambient: "#fef3c7",
+  },
+  night: {
+    top: "#0c0a1f",
+    mid: "#1e1b4b",
+    bottom: "#312e81",
+    sun: "#f0f9ff",
+    ambient: "#4338ca",
+  },
 };
 
-// Rooms layout on the house facade
-interface RoomPosition {
+// ── Layout des pièces dans la maison ──
+interface RoomNode {
   id: string;
   name: string;
-  icon: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  windowColor: string;
-  floor: "ground" | "first" | "attic" | "garden";
+  shortName: string;
+  // Position of window on house façade (viewBox 800x600)
+  winX: number;
+  winY: number;
+  winW: number;
+  winH: number;
+  // Unique tint color that'll glow inside the window at night
+  glowColor: string;
+  // Silhouette visible inside (simple decorative element)
+  silhouette: "bed" | "desk" | "easel" | "cauldron" | "sofa" | "ball" | "books" | "blackboard" | "plant";
+  // For tooltip
+  emoji: string;
+  floor: "ground" | "first" | "attic" | "annex";
 }
 
-const ROOMS: RoomPosition[] = [
-  // Ground floor
-  { id: "salon", name: "Salon cosy", icon: "💖", x: 90, y: 320, w: 120, h: 100, windowColor: "#fca5a5", floor: "ground" },
-  { id: "classe", name: "Classe", icon: "✏️", x: 220, y: 320, w: 110, h: 100, windowColor: "#a78bfa", floor: "ground" },
-  { id: "bureau", name: "Bureau", icon: "🧮", x: 340, y: 320, w: 110, h: 100, windowColor: "#86efac", floor: "ground" },
-  // First floor
-  { id: "chambre", name: "Chambre", icon: "🛏️", x: 90, y: 210, w: 120, h: 100, windowColor: "#93c5fd", floor: "first" },
-  { id: "atelier", name: "Atelier", icon: "🎨", x: 220, y: 210, w: 110, h: 100, windowColor: "#fcd34d", floor: "first" },
-  { id: "labo", name: "Laboratoire", icon: "🔬", x: 340, y: 210, w: 110, h: 100, windowColor: "#67e8f9", floor: "first" },
-  // Attic
-  { id: "grenier", name: "Grenier mystère", icon: "🧠", x: 200, y: 110, w: 140, h: 90, windowColor: "#f0abfc", floor: "attic" },
-  // Garden
-  { id: "jardin", name: "Jardin", icon: "🌱", x: 475, y: 320, w: 110, h: 100, windowColor: "#86efac", floor: "garden" },
-  { id: "cour", name: "Cour de récré", icon: "🤝", x: 475, y: 210, w: 110, h: 100, windowColor: "#fda4af", floor: "garden" },
+const ROOMS: RoomNode[] = [
+  // Ground floor (3 rooms)
+  { id: "salon", name: "Salon cosy", shortName: "Salon", winX: 170, winY: 360, winW: 90, winH: 85, glowColor: "#fca5a5", silhouette: "sofa", emoji: "🛋️", floor: "ground" },
+  { id: "classe", name: "Salle de classe", shortName: "Classe", winX: 290, winY: 360, winW: 90, winH: 85, glowColor: "#a78bfa", silhouette: "blackboard", emoji: "📚", floor: "ground" },
+  { id: "bureau", name: "Bureau d'étude", shortName: "Bureau", winX: 410, winY: 360, winW: 90, winH: 85, glowColor: "#6ee7b7", silhouette: "desk", emoji: "📐", floor: "ground" },
+
+  // First floor (3 rooms)
+  { id: "chambre", name: "Chambre", shortName: "Chambre", winX: 170, winY: 240, winW: 90, winH: 85, glowColor: "#fde047", silhouette: "bed", emoji: "🛏️", floor: "first" },
+  { id: "atelier", name: "Atelier d'art", shortName: "Atelier", winX: 290, winY: 240, winW: 90, winH: 85, glowColor: "#fb923c", silhouette: "easel", emoji: "🎨", floor: "first" },
+  { id: "labo", name: "Laboratoire", shortName: "Labo", winX: 410, winY: 240, winW: 90, winH: 85, glowColor: "#67e8f9", silhouette: "cauldron", emoji: "🔬", floor: "first" },
+
+  // Attic (1 room)
+  { id: "grenier", name: "Grenier mystère", shortName: "Grenier", winX: 305, winY: 140, winW: 90, winH: 70, glowColor: "#c084fc", silhouette: "books", emoji: "📜", floor: "attic" },
+
+  // Annex / extension (2 rooms — small building on the right)
+  { id: "cour", name: "Cour de récré", shortName: "Cour", winX: 560, winY: 260, winW: 80, winH: 75, glowColor: "#fb923c", silhouette: "ball", emoji: "⚽", floor: "annex" },
+  { id: "jardin", name: "Serre & jardin", shortName: "Jardin", winX: 560, winY: 370, winW: 80, winH: 75, glowColor: "#86efac", silhouette: "plant", emoji: "🌱", floor: "annex" },
 ];
 
-export default function LumoHouse({ onRoomSelect, childName, lumoMood = "happy", level = 1 }: LumoHouseProps) {
-  const [hoveredRoom, setHoveredRoom] = useState<string | null>(null);
-  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>("noon");
-  const [smokeOffset, setSmokeOffset] = useState(0);
-  const [birdPos, setBirdPos] = useState(0);
+// ── Silhouettes vues à travers les fenêtres (tout petits éléments déco) ──
+function RoomSilhouette({ type, cx, cy }: { type: RoomNode["silhouette"]; cx: number; cy: number }) {
+  const common = { fill: "#1c1917", opacity: 0.3 };
+  switch (type) {
+    case "bed":
+      return (
+        <>
+          <rect x={cx - 20} y={cy + 8} width="40" height="14" rx="3" {...common} />
+          <rect x={cx - 20} y={cy + 2} width="10" height="10" rx="2" {...common} />
+        </>
+      );
+    case "desk":
+      return (
+        <>
+          <rect x={cx - 18} y={cy + 6} width="36" height="5" {...common} />
+          <rect x={cx - 16} y={cy + 11} width="3" height="12" {...common} />
+          <rect x={cx + 13} y={cy + 11} width="3" height="12" {...common} />
+          <rect x={cx - 14} y={cy - 2} width="20" height="8" rx="1" {...common} />
+        </>
+      );
+    case "easel":
+      return (
+        <>
+          <rect x={cx - 14} y={cy - 6} width="28" height="20" rx="1" {...common} />
+          <line x1={cx} y1={cy + 14} x2={cx - 12} y2={cy + 25} stroke="#1c1917" strokeWidth="2" opacity="0.3" />
+          <line x1={cx} y1={cy + 14} x2={cx + 12} y2={cy + 25} stroke="#1c1917" strokeWidth="2" opacity="0.3" />
+        </>
+      );
+    case "cauldron":
+      return (
+        <>
+          <ellipse cx={cx} cy={cy + 15} rx="18" ry="5" {...common} />
+          <path d={`M ${cx - 18} ${cy + 15} Q ${cx - 18} ${cy + 2} ${cx} ${cy} Q ${cx + 18} ${cy + 2} ${cx + 18} ${cy + 15}`} fill="none" stroke="#1c1917" strokeWidth="3" opacity="0.3" />
+          <circle cx={cx - 4} cy={cy - 8} r="2" {...common} />
+          <circle cx={cx + 4} cy={cy - 12} r="1.5" {...common} />
+        </>
+      );
+    case "sofa":
+      return (
+        <>
+          <rect x={cx - 22} y={cy + 4} width="44" height="14" rx="4" {...common} />
+          <rect x={cx - 22} y={cy - 2} width="8" height="10" rx="3" {...common} />
+          <rect x={cx + 14} y={cy - 2} width="8" height="10" rx="3" {...common} />
+        </>
+      );
+    case "ball":
+      return (
+        <>
+          <circle cx={cx} cy={cy + 8} r="12" fill="none" stroke="#1c1917" strokeWidth="2" opacity="0.3" />
+          <path d={`M ${cx - 12} ${cy + 8} L ${cx + 12} ${cy + 8}`} stroke="#1c1917" strokeWidth="1.5" opacity="0.3" />
+          <path d={`M ${cx} ${cy - 4} L ${cx} ${cy + 20}`} stroke="#1c1917" strokeWidth="1.5" opacity="0.3" />
+        </>
+      );
+    case "books":
+      return (
+        <>
+          <rect x={cx - 18} y={cy + 2} width="5" height="16" {...common} />
+          <rect x={cx - 12} y={cy - 2} width="5" height="20" {...common} />
+          <rect x={cx - 6} y={cy + 4} width="5" height="14" {...common} />
+          <rect x={cx} y={cy} width="5" height="18" {...common} />
+          <rect x={cx + 6} y={cy + 6} width="5" height="12" {...common} />
+        </>
+      );
+    case "blackboard":
+      return (
+        <>
+          <rect x={cx - 22} y={cy - 8} width="44" height="24" rx="1" fill="#1c1917" opacity="0.35" />
+          <line x1={cx - 16} y1={cy - 2} x2={cx + 4} y2={cy - 2} stroke="white" strokeWidth="1" opacity="0.5" />
+          <line x1={cx - 16} y1={cy + 4} x2={cx - 2} y2={cy + 4} stroke="white" strokeWidth="1" opacity="0.5" />
+          <line x1={cx - 16} y1={cy + 10} x2={cx + 6} y2={cy + 10} stroke="white" strokeWidth="1" opacity="0.5" />
+        </>
+      );
+    case "plant":
+      return (
+        <>
+          <rect x={cx - 8} y={cy + 10} width="16" height="10" rx="1" {...common} />
+          <path d={`M ${cx} ${cy + 10} Q ${cx - 8} ${cy - 4} ${cx - 10} ${cy - 12}`} fill="none" stroke="#16a34a" strokeWidth="3" opacity="0.5" />
+          <path d={`M ${cx} ${cy + 10} Q ${cx + 8} ${cy - 2} ${cx + 12} ${cy - 10}`} fill="none" stroke="#16a34a" strokeWidth="3" opacity="0.5" />
+          <circle cx={cx - 10} cy={cy - 12} r="3" fill="#16a34a" opacity="0.6" />
+          <circle cx={cx + 12} cy={cy - 10} r="3" fill="#16a34a" opacity="0.6" />
+        </>
+      );
+    default:
+      return null;
+  }
+}
+
+export default function LumoHouse({ onRoomSelect, childName, level = 1 }: LumoHouseProps) {
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [tod, setTod] = useState<TimeOfDay>("day");
   const uid = useId().replace(/:/g, "");
 
   useEffect(() => {
-    setTimeOfDay(getTimeOfDay());
-    const interval = setInterval(() => setTimeOfDay(getTimeOfDay()), 60000);
-    return () => clearInterval(interval);
+    setTod(getTimeOfDay());
+    const i = setInterval(() => setTod(getTimeOfDay()), 60000);
+    return () => clearInterval(i);
   }, []);
 
-  // Animate smoke
-  useEffect(() => {
-    const interval = setInterval(() => setSmokeOffset((s) => (s + 1) % 100), 100);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Animate bird
-  useEffect(() => {
-    const interval = setInterval(() => setBirdPos((p) => (p + 0.5) % 120), 50);
-    return () => clearInterval(interval);
-  }, []);
-
-  const sky = SKY_GRADIENTS[timeOfDay];
-  const isNight = timeOfDay === "night";
-  const isEvening = timeOfDay === "evening";
-  const windowsLit = isNight || isEvening;
+  const sky = SKIES[tod];
+  const isDark = tod === "night" || tod === "dusk";
+  const windowsLit = isDark || tod === "dawn";
 
   return (
-    <div className="relative w-full" style={{ aspectRatio: "700 / 600" }}>
-      <svg viewBox="0 0 700 600" className="w-full h-full" style={{ imageRendering: "auto" }}>
+    <div className="relative w-full" style={{ aspectRatio: "800 / 600" }}>
+      <svg viewBox="0 0 800 600" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          {/* Sky gradient */}
-          <linearGradient id={`sky${uid}`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={sky.from} />
-            <stop offset="100%" stopColor={sky.to} />
+          {/* Sky gradient - 3 stops for depth */}
+          <linearGradient id={`sky-${uid}`} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={sky.top} />
+            <stop offset="50%" stopColor={sky.mid} />
+            <stop offset="100%" stopColor={sky.bottom} />
           </linearGradient>
-          {/* Grass */}
-          <linearGradient id={`grass${uid}`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#86efac" />
-            <stop offset="100%" stopColor="#22c55e" />
+
+          {/* Ground gradient */}
+          <linearGradient id={`ground-${uid}`} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={isDark ? "#1e1b4b" : "#86efac"} />
+            <stop offset="100%" stopColor={isDark ? "#0c0a1f" : "#14532d"} />
           </linearGradient>
-          {/* House walls */}
-          <linearGradient id={`walls${uid}`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#fde68a" />
-            <stop offset="100%" stopColor="#f59e0b" />
+
+          {/* House wall gradient - subtle shading */}
+          <linearGradient id={`wall-${uid}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={isDark ? "#3b2a20" : "#f5e6c5"} />
+            <stop offset="100%" stopColor={isDark ? "#1a0f08" : "#e7c89f"} />
           </linearGradient>
-          {/* Roof */}
-          <linearGradient id={`roof${uid}`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#ef4444" />
-            <stop offset="100%" stopColor="#991b1b" />
+
+          {/* Roof - warm reddish gradient */}
+          <linearGradient id={`roof-${uid}`} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={isDark ? "#4c1d24" : "#a33c45"} />
+            <stop offset="100%" stopColor={isDark ? "#2d1114" : "#6b1e26"} />
           </linearGradient>
-          {/* Window glow at night */}
-          <radialGradient id={`windowGlow${uid}`} cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#fef3c7" stopOpacity="0.9" />
-            <stop offset="100%" stopColor="#fbbf24" stopOpacity="0.2" />
+
+          {/* Annex wall */}
+          <linearGradient id={`annexwall-${uid}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={isDark ? "#2c1f15" : "#eaddc0"} />
+            <stop offset="100%" stopColor={isDark ? "#150c05" : "#d4b890"} />
+          </linearGradient>
+
+          {/* Window glow */}
+          <radialGradient id={`winglow-${uid}`} cx="50%" cy="50%" r="60%">
+            <stop offset="0%" stopColor="#fef3c7" stopOpacity={windowsLit ? "1" : "0.4"} />
+            <stop offset="100%" stopColor="#fbbf24" stopOpacity={windowsLit ? "0.5" : "0.1"} />
           </radialGradient>
-          {/* Sun/moon */}
-          <radialGradient id={`sun${uid}`} cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor={isNight ? "#fef3c7" : "#fef3c7"} />
-            <stop offset="100%" stopColor={isNight ? "#e5e7eb" : "#fbbf24"} />
+
+          {/* Soft ambient light around house at night */}
+          <radialGradient id={`halo-${uid}`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor={sky.ambient} stopOpacity={isDark ? "0.25" : "0"} />
+            <stop offset="100%" stopColor={sky.ambient} stopOpacity="0" />
           </radialGradient>
-          {/* Tree */}
-          <radialGradient id={`tree${uid}`} cx="40%" cy="30%" r="70%">
-            <stop offset="0%" stopColor="#86efac" />
-            <stop offset="100%" stopColor="#166534" />
+
+          {/* Sun/Moon */}
+          <radialGradient id={`celestial-${uid}`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor={tod === "night" ? "#fef9c3" : sky.sun} />
+            <stop offset="70%" stopColor={tod === "night" ? "#e5e7eb" : sky.sun} />
+            <stop offset="100%" stopColor={tod === "night" ? "#d1d5db" : "#f97316"} stopOpacity="0.4" />
           </radialGradient>
-          {/* Smoke */}
-          <radialGradient id={`smoke${uid}`} cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="white" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="white" stopOpacity="0" />
+
+          {/* Tree foliage */}
+          <radialGradient id={`foliage-${uid}`} cx="40%" cy="30%" r="70%">
+            <stop offset="0%" stopColor={isDark ? "#166534" : "#4ade80"} />
+            <stop offset="100%" stopColor={isDark ? "#052e16" : "#15803d"} />
           </radialGradient>
-          {/* Glow filter */}
-          <filter id={`glow${uid}`}>
+
+          {/* Soft glow filter */}
+          <filter id={`glow-${uid}`}>
             <feGaussianBlur stdDeviation="4" />
-            <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
+            <feMerge>
+              <feMergeNode />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
           </filter>
+
+          {/* Strong glow for hovered window */}
+          <filter id={`hoverglow-${uid}`}>
+            <feGaussianBlur stdDeviation="8" />
+            <feMerge>
+              <feMergeNode />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+
+          {/* Window highlight (vertical light ray effect) */}
+          <linearGradient id={`highlight-${uid}`} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="white" stopOpacity="0" />
+            <stop offset="40%" stopColor="white" stopOpacity="0.15" />
+            <stop offset="60%" stopColor="white" stopOpacity="0.15" />
+            <stop offset="100%" stopColor="white" stopOpacity="0" />
+          </linearGradient>
         </defs>
 
-        {/* === SKY === */}
-        <rect x="0" y="0" width="700" height="440" fill={`url(#sky${uid})`} />
+        {/* ═══ SKY ═══ */}
+        <rect x="0" y="0" width="800" height="460" fill={`url(#sky-${uid})`} />
 
-        {/* Stars at night */}
-        {isNight && Array.from({ length: 35 }).map((_, i) => {
-          const x = (i * 73) % 700;
-          const y = (i * 37) % 350;
-          const size = (i % 3) + 0.8;
+        {/* Stars (night only) */}
+        {tod === "night" && Array.from({ length: 60 }).map((_, i) => {
+          const x = (i * 41) % 800;
+          const y = (i * 19) % 380;
+          const s = (i % 3) * 0.5 + 0.5;
           return (
-            <circle key={i} cx={x} cy={y} r={size} fill="white" opacity={0.4 + (i % 3) * 0.2}>
-              <animate attributeName="opacity" values={`${0.3 + (i % 3) * 0.2};${0.7 + (i % 3) * 0.2};${0.3 + (i % 3) * 0.2}`} dur={`${2 + (i % 4)}s`} repeatCount="indefinite" />
+            <circle key={`s${i}`} cx={x} cy={y} r={s} fill="white">
+              <animate
+                attributeName="opacity"
+                values={`${0.3 + (i % 3) * 0.2};${0.8};${0.3 + (i % 3) * 0.2}`}
+                dur={`${2 + (i % 4)}s`}
+                repeatCount="indefinite"
+              />
             </circle>
           );
         })}
 
-        {/* Sun / Moon */}
-        <circle cx={isNight ? 580 : 120} cy={80} r={isNight ? 35 : 40} fill={`url(#sun${uid})`} filter={`url(#glow${uid})`}>
-          {!isNight && <animate attributeName="r" values="40;42;40" dur="4s" repeatCount="indefinite" />}
-        </circle>
-        {isNight && (
-          // Moon craters
-          <>
-            <circle cx="570" cy="75" r="3" fill="#9ca3af" opacity="0.5" />
-            <circle cx="590" cy="85" r="4" fill="#9ca3af" opacity="0.5" />
-            <circle cx="585" cy="68" r="2" fill="#9ca3af" opacity="0.5" />
-          </>
-        )}
+        {/* Distant mountains (silhouette layer for depth) */}
+        <path
+          d="M 0 360 L 80 310 L 150 340 L 220 295 L 310 330 L 380 300 L 460 340 L 540 305 L 640 335 L 720 310 L 800 340 L 800 460 L 0 460 Z"
+          fill={isDark ? "#1e1b4b" : "#a5b4fc"}
+          opacity="0.35"
+        />
+        <path
+          d="M 0 395 L 90 360 L 170 385 L 260 355 L 350 380 L 440 360 L 530 385 L 620 365 L 720 385 L 800 370 L 800 460 L 0 460 Z"
+          fill={isDark ? "#312e81" : "#818cf8"}
+          opacity="0.25"
+        />
 
-        {/* Clouds (day only) */}
-        {!isNight && (
-          <>
-            <g opacity={isEvening ? 0.7 : 0.9}>
-              <ellipse cx="250" cy="80" rx="40" ry="14" fill="white" />
-              <ellipse cx="270" cy="75" rx="28" ry="12" fill="white" />
-              <ellipse cx="235" cy="75" rx="22" ry="10" fill="white" />
-              <animate attributeName="transform" type="translate" from="0 0" to="20 0" dur="20s" repeatCount="indefinite" />
-            </g>
-            <g opacity={isEvening ? 0.6 : 0.8}>
-              <ellipse cx="450" cy="120" rx="35" ry="12" fill="white" />
-              <ellipse cx="470" cy="115" rx="24" ry="10" fill="white" />
-              <ellipse cx="435" cy="115" rx="18" ry="8" fill="white" />
-            </g>
-          </>
-        )}
+        {/* Sun/Moon */}
+        <g>
+          <circle
+            cx={tod === "night" || tod === "dusk" ? 650 : 130}
+            cy={tod === "dawn" ? 140 : tod === "day" ? 80 : 100}
+            r="50"
+            fill={`url(#celestial-${uid})`}
+            opacity="0.4"
+            filter={`url(#glow-${uid})`}
+          />
+          <circle
+            cx={tod === "night" || tod === "dusk" ? 650 : 130}
+            cy={tod === "dawn" ? 140 : tod === "day" ? 80 : 100}
+            r="32"
+            fill={`url(#celestial-${uid})`}
+          />
+          {tod === "night" && (
+            <>
+              <circle cx="640" cy="92" r="3" fill="#9ca3af" opacity="0.5" />
+              <circle cx="662" cy="105" r="4" fill="#9ca3af" opacity="0.5" />
+              <circle cx="655" cy="85" r="2" fill="#9ca3af" opacity="0.5" />
+            </>
+          )}
+        </g>
 
-        {/* Bird flying */}
-        {!isNight && (
-          <g transform={`translate(${100 + birdPos * 5}, ${60 + Math.sin(birdPos * 0.2) * 8})`}>
-            <path d="M 0 0 Q -5 -4 -10 0 M 0 0 Q 5 -4 10 0" stroke="#1f2937" strokeWidth="2" fill="none" strokeLinecap="round" />
+        {/* Clouds (day/dawn only) */}
+        {!isDark && (
+          <g opacity="0.85">
+            <ellipse cx="280" cy="75" rx="45" ry="12" fill="white">
+              <animateTransform attributeName="transform" type="translate" from="0 0" to="30 0" dur="60s" repeatCount="indefinite" />
+            </ellipse>
+            <ellipse cx="300" cy="72" rx="30" ry="10" fill="white">
+              <animateTransform attributeName="transform" type="translate" from="0 0" to="30 0" dur="60s" repeatCount="indefinite" />
+            </ellipse>
+            <ellipse cx="265" cy="70" rx="22" ry="9" fill="white">
+              <animateTransform attributeName="transform" type="translate" from="0 0" to="30 0" dur="60s" repeatCount="indefinite" />
+            </ellipse>
+
+            <ellipse cx="520" cy="130" rx="38" ry="10" fill="white" opacity="0.7" />
+            <ellipse cx="540" cy="127" rx="26" ry="9" fill="white" opacity="0.7" />
           </g>
         )}
 
-        {/* === GRASS / GROUND === */}
-        <rect x="0" y="420" width="700" height="180" fill={`url(#grass${uid})`} />
-        {/* Grass blades */}
-        {Array.from({ length: 30 }).map((_, i) => {
-          const x = (i * 23) % 700;
-          return <path key={`g${i}`} d={`M ${x} 425 L ${x - 2} 420 L ${x + 2} 420 Z`} fill="#166534" opacity="0.4" />;
+        {/* Ambient glow around house at night */}
+        {isDark && (
+          <ellipse cx="400" cy="420" rx="400" ry="180" fill={`url(#halo-${uid})`} />
+        )}
+
+        {/* ═══ GROUND ═══ */}
+        <rect x="0" y="460" width="800" height="140" fill={`url(#ground-${uid})`} />
+
+        {/* Soft ground grass texture */}
+        {Array.from({ length: 40 }).map((_, i) => {
+          const x = (i * 23) % 800;
+          return (
+            <path
+              key={`g${i}`}
+              d={`M ${x} 465 Q ${x - 1} 460 ${x - 2} 455 M ${x + 3} 465 Q ${x + 3} 461 ${x + 4} 458`}
+              stroke={isDark ? "#14532d" : "#166534"}
+              strokeWidth="0.7"
+              fill="none"
+              opacity="0.5"
+            />
+          );
         })}
-        {/* Flowers scattered */}
-        {[[50, 520], [150, 540], [380, 530], [520, 545], [620, 525]].map(([cx, cy], i) => (
-          <g key={`f${i}`}>
-            <circle cx={cx} cy={cy - 6} r="3" fill="#fde047" />
-            <circle cx={cx - 4} cy={cy - 2} r="3" fill="#fca5a5" />
-            <circle cx={cx + 4} cy={cy - 2} r="3" fill="#fca5a5" />
-            <circle cx={cx - 2} cy={cy + 2} r="3" fill="#fca5a5" />
-            <circle cx={cx + 2} cy={cy + 2} r="3" fill="#fca5a5" />
-            <circle cx={cx} cy={cy} r="2" fill="#fcd34d" />
+
+        {/* Fireflies at night */}
+        {tod === "night" && Array.from({ length: 12 }).map((_, i) => {
+          const x = 50 + (i * 67) % 700;
+          const y = 380 + (i * 13) % 100;
+          return (
+            <circle key={`ff${i}`} cx={x} cy={y} r="1.5" fill="#fde047">
+              <animate attributeName="opacity" values="0;1;0" dur={`${3 + (i % 3)}s`} repeatCount="indefinite" begin={`${i * 0.3}s`} />
+              <animate attributeName="cy" values={`${y};${y - 30};${y}`} dur={`${5 + (i % 3)}s`} repeatCount="indefinite" />
+            </circle>
+          );
+        })}
+
+        {/* ═══ TREES (decoration, left & right of house) ═══ */}
+        {/* Left tree */}
+        <g>
+          <rect x="48" y="395" width="10" height="70" fill={isDark ? "#1a0f08" : "#78350f"} rx="2" />
+          <circle cx="53" cy="400" r="42" fill={`url(#foliage-${uid})`} />
+          <circle cx="30" cy="385" r="26" fill={`url(#foliage-${uid})`} />
+          <circle cx="76" cy="385" r="26" fill={`url(#foliage-${uid})`} />
+          <circle cx="53" cy="360" r="28" fill={`url(#foliage-${uid})`} />
+          {!isDark && (
+            <>
+              <circle cx="38" cy="385" r="3" fill="#ef4444" />
+              <circle cx="65" cy="378" r="3" fill="#ef4444" />
+              <circle cx="52" cy="395" r="3" fill="#ef4444" />
+            </>
+          )}
+        </g>
+
+        {/* Right tree */}
+        <g>
+          <rect x="740" y="405" width="9" height="60" fill={isDark ? "#1a0f08" : "#78350f"} rx="2" />
+          <circle cx="744" cy="400" r="36" fill={`url(#foliage-${uid})`} />
+          <circle cx="725" cy="388" r="22" fill={`url(#foliage-${uid})`} />
+          <circle cx="763" cy="388" r="22" fill={`url(#foliage-${uid})`} />
+          {!isDark && (
+            <>
+              <circle cx="735" cy="395" r="2.5" fill="#f59e0b" />
+              <circle cx="755" cy="385" r="2.5" fill="#f59e0b" />
+            </>
+          )}
+        </g>
+
+        {/* ═══ HOUSE — MAIN ═══ */}
+
+        {/* Main building walls */}
+        <rect x="130" y="230" width="390" height="230" fill={`url(#wall-${uid})`} />
+
+        {/* Timber frame (half-timbered house look) */}
+        {!isDark && (
+          <g opacity="0.55">
+            <line x1="130" y1="340" x2="520" y2="340" stroke="#7c3f1d" strokeWidth="2.5" />
+            <line x1="220" y1="230" x2="220" y2="460" stroke="#7c3f1d" strokeWidth="2" />
+            <line x1="330" y1="230" x2="330" y2="340" stroke="#7c3f1d" strokeWidth="2" />
+            <line x1="430" y1="230" x2="430" y2="340" stroke="#7c3f1d" strokeWidth="2" />
+            {/* Diagonal cross-braces */}
+            <line x1="130" y1="340" x2="220" y2="230" stroke="#7c3f1d" strokeWidth="2" opacity="0.5" />
+            <line x1="220" y1="460" x2="330" y2="340" stroke="#7c3f1d" strokeWidth="2" opacity="0.5" />
           </g>
+        )}
+
+        {/* Main roof - triangular attic */}
+        <polygon
+          points="110,230 325,100 540,230"
+          fill={`url(#roof-${uid})`}
+        />
+        {/* Roof edge (slight 3D) */}
+        <polygon points="110,230 540,230 540,238 110,238" fill={isDark ? "#2d1114" : "#6b1e26"} />
+        {/* Roof tiles pattern */}
+        {!isDark && Array.from({ length: 10 }).map((_, i) => (
+          <line
+            key={`rt${i}`}
+            x1={130 + i * 40}
+            y1={220 - i * 6}
+            x2={160 + i * 40}
+            y2={200 - i * 6}
+            stroke="#6b1e26"
+            strokeWidth="0.7"
+            opacity="0.4"
+          />
         ))}
 
-        {/* Path to house */}
-        <path d="M 320 600 Q 320 500 310 440 L 390 440 Q 380 500 380 600 Z" fill="#d4a574" opacity="0.8" />
-        <path d="M 330 580 L 370 580" stroke="#92400e" strokeWidth="1" opacity="0.4" />
-        <path d="M 325 540 L 375 540" stroke="#92400e" strokeWidth="1" opacity="0.4" />
-        <path d="M 322 500 L 378 500" stroke="#92400e" strokeWidth="1" opacity="0.4" />
-        <path d="M 320 460 L 380 460" stroke="#92400e" strokeWidth="1" opacity="0.4" />
+        {/* Chimney with smoke */}
+        <rect x="400" y="140" width="30" height="70" fill={isDark ? "#3b2a20" : "#8a5a44"} stroke={isDark ? "#1a0f08" : "#5a3a28"} strokeWidth="1.5" />
+        <rect x="395" y="135" width="40" height="10" fill={isDark ? "#1a0f08" : "#5a3a28"} />
 
-        {/* Trees on sides */}
-        <g>
-          {/* Left tree */}
-          <rect x="30" y="380" width="12" height="50" fill="#78350f" />
-          <circle cx="36" cy="370" r="35" fill={`url(#tree${uid})`} />
-          <circle cx="20" cy="360" r="25" fill={`url(#tree${uid})`} />
-          <circle cx="52" cy="360" r="25" fill={`url(#tree${uid})`} />
-          <circle cx="36" cy="345" r="25" fill={`url(#tree${uid})`} />
-          {/* Apples */}
-          <circle cx="25" cy="360" r="3" fill="#ef4444" />
-          <circle cx="45" cy="355" r="3" fill="#ef4444" />
-          <circle cx="40" cy="375" r="3" fill="#ef4444" />
-        </g>
-        <g>
-          {/* Right tree */}
-          <rect x="655" y="385" width="10" height="45" fill="#78350f" />
-          <circle cx="660" cy="375" r="30" fill={`url(#tree${uid})`} />
-          <circle cx="645" cy="368" r="22" fill={`url(#tree${uid})`} />
-          <circle cx="675" cy="368" r="22" fill={`url(#tree${uid})`} />
-          <circle cx="650" cy="365" r="3" fill="#ef4444" />
-          <circle cx="670" cy="370" r="3" fill="#ef4444" />
+        {/* Smoke rising */}
+        <g opacity="0.55">
+          <circle cx="415" cy="130" r="8" fill="white">
+            <animate attributeName="cy" values="130;80;40" dur="6s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0.55;0.3;0" dur="6s" repeatCount="indefinite" />
+            <animate attributeName="r" values="8;14;20" dur="6s" repeatCount="indefinite" />
+          </circle>
+          <circle cx="420" cy="128" r="6" fill="white">
+            <animate attributeName="cy" values="128;70;30" dur="6s" repeatCount="indefinite" begin="1s" />
+            <animate attributeName="opacity" values="0.5;0.25;0" dur="6s" repeatCount="indefinite" begin="1s" />
+            <animate attributeName="r" values="6;12;18" dur="6s" repeatCount="indefinite" begin="1s" />
+          </circle>
+          <circle cx="412" cy="125" r="5" fill="white">
+            <animate attributeName="cy" values="125;65;25" dur="6s" repeatCount="indefinite" begin="2s" />
+            <animate attributeName="opacity" values="0.45;0.2;0" dur="6s" repeatCount="indefinite" begin="2s" />
+            <animate attributeName="r" values="5;11;16" dur="6s" repeatCount="indefinite" begin="2s" />
+          </circle>
         </g>
 
-        {/* === HOUSE === */}
+        {/* ═══ ANNEX building (right side) ═══ */}
+        <rect x="540" y="250" width="130" height="210" fill={`url(#annexwall-${uid})`} />
+        <polygon points="520,250 605,180 690,250" fill={`url(#roof-${uid})`} />
+        <polygon points="520,250 690,250 690,258 520,258" fill={isDark ? "#2d1114" : "#6b1e26"} />
+
+        {!isDark && (
+          <line x1="540" y1="355" x2="670" y2="355" stroke="#7c3f1d" strokeWidth="2" opacity="0.55" />
+        )}
+
+        {/* Door (between salon and classe, ground floor) */}
+        <rect x="230" y="395" width="50" height="65" fill={isDark ? "#1a0f08" : "#5a2d0f"} rx="3" />
+        <rect x="233" y="398" width="44" height="32" fill={isDark ? "#2d1114" : "#7c3f1d"} rx="2" />
+        <rect x="233" y="432" width="44" height="26" fill={isDark ? "#2d1114" : "#7c3f1d"} rx="2" />
+        <circle cx="272" cy="428" r="1.8" fill={isDark ? "#fde047" : "#a16207"} />
+        {/* Door lantern (glows at night) */}
         <g>
-          {/* Main body walls */}
-          <rect x="80" y="200" width="380" height="240" fill={`url(#walls${uid})`} stroke="#92400e" strokeWidth="2" />
-          {/* Wood planks texture */}
-          <line x1="80" y1="260" x2="460" y2="260" stroke="#92400e" strokeWidth="0.5" opacity="0.3" />
-          <line x1="80" y1="310" x2="460" y2="310" stroke="#92400e" strokeWidth="0.5" opacity="0.3" />
-          <line x1="80" y1="370" x2="460" y2="370" stroke="#92400e" strokeWidth="0.5" opacity="0.3" />
-
-          {/* Garden extension (right side) */}
-          <rect x="460" y="200" width="150" height="240" fill="#86efac" stroke="#16a34a" strokeWidth="2" />
-          <rect x="460" y="200" width="150" height="240" fill={`url(#grass${uid})`} opacity="0.6" />
-          {/* Garden fence */}
-          <line x1="465" y1="200" x2="465" y2="440" stroke="#78350f" strokeWidth="3" />
-          {Array.from({ length: 6 }).map((_, i) => (
-            <rect key={`fp${i}`} x={470 + i * 25} y="200" width="3" height="240" fill="#78350f" opacity="0.6" />
-          ))}
-
-          {/* Roof - main house */}
-          <polygon points="60,200 270,90 475,200" fill={`url(#roof${uid})`} stroke="#7f1d1d" strokeWidth="2" />
-          {/* Roof tiles pattern */}
-          {Array.from({ length: 8 }).map((_, i) => (
-            <line key={`rt${i}`} x1={80 + i * 50} y1={185 - i * 3} x2={100 + i * 50} y2={165 - i * 3} stroke="#7f1d1d" strokeWidth="0.5" opacity="0.4" />
-          ))}
-
-          {/* Roof - garden side */}
-          <polygon points="460,200 535,150 610,200" fill={`url(#roof${uid})`} stroke="#7f1d1d" strokeWidth="2" />
-
-          {/* Chimney */}
-          <rect x="380" y="130" width="25" height="60" fill="#b45309" stroke="#78350f" strokeWidth="1.5" />
-          <rect x="375" y="125" width="35" height="10" fill="#78350f" />
-          {/* Smoke */}
-          {[0, 1, 2].map((i) => {
-            const delay = (smokeOffset + i * 30) % 100;
-            const opacity = 1 - delay / 100;
-            return (
-              <circle key={`sm${i}`} cx={393 + (delay % 20) - 10} cy={120 - delay * 0.8} r={5 + delay * 0.15} fill={`url(#smoke${uid})`} opacity={opacity * 0.7} />
-            );
-          })}
-
-          {/* === FRONT DOOR === */}
-          <rect x="260" y="360" width="60" height="80" fill="#78350f" stroke="#451a03" strokeWidth="2" rx="4" />
-          <rect x="265" y="368" width="50" height="30" fill="#92400e" stroke="#451a03" strokeWidth="1" rx="2" />
-          <rect x="265" y="402" width="50" height="30" fill="#92400e" stroke="#451a03" strokeWidth="1" rx="2" />
-          <circle cx="310" cy="400" r="2" fill="#fbbf24" />
-          {/* Door sign */}
-          <rect x="268" y="355" width="44" height="12" fill="#fef3c7" stroke="#78350f" strokeWidth="1" rx="2" />
-          <text x="290" y="364" fontSize="8" fill="#78350f" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">LUMO</text>
+          <rect x="215" y="395" width="8" height="14" fill={isDark ? "#f59e0b" : "#d97706"} opacity={isDark ? "0.9" : "0.5"} />
+          {isDark && <circle cx="219" cy="402" r="15" fill="#fde047" opacity="0.2" />}
         </g>
 
-        {/* === ROOMS (clickable windows) === */}
+        {/* ═══ ROOMS (clickable windows) ═══ */}
         {ROOMS.map((room) => {
-          const isHovered = hoveredRoom === room.id;
-          const lit = windowsLit;
+          const isHovered = hovered === room.id;
           return (
             <g
               key={room.id}
               style={{ cursor: "pointer" }}
               onClick={() => onRoomSelect(room.id)}
-              onMouseEnter={() => setHoveredRoom(room.id)}
-              onMouseLeave={() => setHoveredRoom(null)}
+              onMouseEnter={() => setHovered(room.id)}
+              onMouseLeave={() => setHovered(null)}
             >
-              {/* Window frame */}
+              {/* Window frame (outer) */}
               <rect
-                x={room.x} y={room.y} width={room.w} height={room.h}
-                fill={lit ? `url(#windowGlow${uid})` : room.windowColor}
-                stroke="#78350f"
-                strokeWidth={isHovered ? "4" : "3"}
-                rx="4"
-                opacity={isHovered ? 1 : 0.9}
-                style={{ transition: "all 0.3s" }}
+                x={room.winX - 4}
+                y={room.winY - 4}
+                width={room.winW + 8}
+                height={room.winH + 8}
+                fill={isDark ? "#1a0f08" : "#5a2d0f"}
+                rx="3"
               />
-              {/* Window cross */}
-              <line x1={room.x + room.w / 2} y1={room.y} x2={room.x + room.w / 2} y2={room.y + room.h} stroke="#78350f" strokeWidth="2" />
-              <line x1={room.x} y1={room.y + room.h / 2} x2={room.x + room.w} y2={room.y + room.h / 2} stroke="#78350f" strokeWidth="2" />
-              {/* Hover glow */}
-              {isHovered && (
-                <rect x={room.x - 4} y={room.y - 4} width={room.w + 8} height={room.h + 8} fill="none" stroke="#fbbf24" strokeWidth="3" rx="6" filter={`url(#glow${uid})`}>
-                  <animate attributeName="stroke-opacity" values="0.4;1;0.4" dur="1.2s" repeatCount="indefinite" />
-                </rect>
+
+              {/* Window glass - glowing at night */}
+              <rect
+                x={room.winX}
+                y={room.winY}
+                width={room.winW}
+                height={room.winH}
+                fill={windowsLit ? `url(#winglow-${uid})` : room.glowColor}
+                opacity={windowsLit ? "1" : "0.5"}
+              />
+
+              {/* Window light rays effect (stronger when lit) */}
+              {windowsLit && (
+                <rect
+                  x={room.winX}
+                  y={room.winY}
+                  width={room.winW}
+                  height={room.winH}
+                  fill={`url(#highlight-${uid})`}
+                />
               )}
-              {/* Room icon */}
-              <text x={room.x + room.w / 2} y={room.y + room.h / 2 + 8} fontSize="28" textAnchor="middle" style={{ pointerEvents: "none" }}>
-                {room.icon}
-              </text>
-              {/* Room name tooltip on hover */}
+
+              {/* Window frame cross */}
+              <line
+                x1={room.winX + room.winW / 2}
+                y1={room.winY}
+                x2={room.winX + room.winW / 2}
+                y2={room.winY + room.winH}
+                stroke={isDark ? "#1a0f08" : "#5a2d0f"}
+                strokeWidth="3"
+              />
+              <line
+                x1={room.winX}
+                y1={room.winY + room.winH / 2}
+                x2={room.winX + room.winW}
+                y2={room.winY + room.winH / 2}
+                stroke={isDark ? "#1a0f08" : "#5a2d0f"}
+                strokeWidth="3"
+              />
+
+              {/* Silhouette (discrete) */}
+              <RoomSilhouette
+                type={room.silhouette}
+                cx={room.winX + room.winW / 2}
+                cy={room.winY + room.winH / 2}
+              />
+
+              {/* Window sill */}
+              <rect
+                x={room.winX - 6}
+                y={room.winY + room.winH - 2}
+                width={room.winW + 12}
+                height="6"
+                fill={isDark ? "#1a0f08" : "#5a2d0f"}
+                rx="1"
+              />
+
+              {/* Hover state: golden glowing frame + tooltip */}
               {isHovered && (
-                <g style={{ pointerEvents: "none" }}>
-                  <rect x={room.x + room.w / 2 - 55} y={room.y - 28} width="110" height="22" rx="11" fill="#1e1b4b" opacity="0.92" />
-                  <text x={room.x + room.w / 2} y={room.y - 13} fontSize="12" fill="white" textAnchor="middle" fontWeight="bold" fontFamily="sans-serif">
-                    {room.name}
-                  </text>
-                </g>
+                <>
+                  <rect
+                    x={room.winX - 6}
+                    y={room.winY - 6}
+                    width={room.winW + 12}
+                    height={room.winH + 12}
+                    fill="none"
+                    stroke="#fbbf24"
+                    strokeWidth="3"
+                    rx="4"
+                    filter={`url(#hoverglow-${uid})`}
+                  >
+                    <animate attributeName="stroke-opacity" values="0.5;1;0.5" dur="1.5s" repeatCount="indefinite" />
+                  </rect>
+                  {/* Tooltip label above */}
+                  <g style={{ pointerEvents: "none" }}>
+                    <rect
+                      x={room.winX + room.winW / 2 - 55}
+                      y={room.winY - 38}
+                      width="110"
+                      height="26"
+                      rx="13"
+                      fill="#1c1917"
+                      opacity="0.95"
+                    />
+                    <text
+                      x={room.winX + room.winW / 2}
+                      y={room.winY - 20}
+                      fontSize="13"
+                      fill="white"
+                      textAnchor="middle"
+                      fontWeight="600"
+                      fontFamily="Inter, system-ui, sans-serif"
+                      letterSpacing="-0.01em"
+                    >
+                      {room.name}
+                    </text>
+                    {/* Little triangle pointing down */}
+                    <polygon
+                      points={`${room.winX + room.winW / 2 - 6},${room.winY - 12} ${room.winX + room.winW / 2 + 6},${room.winY - 12} ${room.winX + room.winW / 2},${room.winY - 6}`}
+                      fill="#1c1917"
+                      opacity="0.95"
+                    />
+                  </g>
+                </>
               )}
             </g>
           );
         })}
 
-        {/* === LUMO OUTSIDE (on the path, waving) === */}
-        <g transform="translate(350, 500)" style={{ cursor: "pointer" }}>
-          {/* Lumo shadow */}
-          <ellipse cx="0" cy="35" rx="18" ry="4" fill="#1e1b4b" opacity="0.25" />
-          {/* Lumo body */}
+        {/* ═══ Lumo outside (small, waving) ═══ */}
+        <g transform="translate(300, 500)">
+          {/* Shadow */}
+          <ellipse cx="0" cy="32" rx="16" ry="3" fill="#000" opacity="0.25" />
           <g>
-            <animateTransform attributeName="transform" type="translate" values="0 0; 0 -3; 0 0" dur="2s" repeatCount="indefinite" />
+            <animateTransform
+              attributeName="transform"
+              type="translate"
+              values="0 0; 0 -3; 0 0"
+              dur="2.5s"
+              repeatCount="indefinite"
+            />
             {/* Body */}
-            <ellipse cx="0" cy="10" rx="16" ry="14" fill="#c084fc" />
-            <ellipse cx="0" cy="10" rx="16" ry="14" fill="white" opacity="0.15" />
+            <ellipse cx="0" cy="8" rx="14" ry="12" fill="#8b5cf6" />
             {/* Head */}
-            <circle cx="0" cy="-10" r="22" fill="#d8b4fe" />
-            <circle cx="0" cy="-10" r="22" fill="white" opacity="0.15" />
+            <circle cx="0" cy="-10" r="18" fill="#a78bfa" />
             {/* Ears */}
-            <ellipse cx="-16" cy="-22" rx="8" ry="11" fill="#c084fc" transform="rotate(-20,-16,-22)" />
-            <ellipse cx="16" cy="-22" rx="8" ry="11" fill="#c084fc" transform="rotate(20,16,-22)" />
+            <ellipse cx="-14" cy="-20" rx="6" ry="9" fill="#8b5cf6" transform="rotate(-20,-14,-20)" />
+            <ellipse cx="14" cy="-20" rx="6" ry="9" fill="#8b5cf6" transform="rotate(20,14,-20)" />
             {/* Eyes */}
-            <ellipse cx="-7" cy="-12" rx="4" ry="5" fill="white" />
-            <ellipse cx="7" cy="-12" rx="4" ry="5" fill="white" />
-            <circle cx="-7" cy="-11" r="2.5" fill="#4c1d95" />
-            <circle cx="7" cy="-11" r="2.5" fill="#4c1d95" />
-            <circle cx="-6" cy="-13" r="1" fill="white" />
-            <circle cx="8" cy="-13" r="1" fill="white" />
+            <circle cx="-5" cy="-12" r="2.5" fill="#1c1917" />
+            <circle cx="5" cy="-12" r="2.5" fill="#1c1917" />
+            <circle cx="-4" cy="-13" r="0.8" fill="white" />
+            <circle cx="6" cy="-13" r="0.8" fill="white" />
             {/* Smile */}
-            <path d="M -6 -3 Q 0 3 6 -3" stroke="#4c1d95" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-            {/* Cheeks */}
-            <circle cx="-14" cy="-5" r="3" fill="#fda4af" opacity="0.5" />
-            <circle cx="14" cy="-5" r="3" fill="#fda4af" opacity="0.5" />
-            {/* Star */}
-            <polygon points="0,-30 1.5,-26 5,-26 2,-23 3,-19 0,-21 -3,-19 -2,-23 -5,-26 -1.5,-26" fill="#fbbf24" />
+            <path d="M -5 -6 Q 0 -2 5 -6" stroke="#1c1917" strokeWidth="1.5" fill="none" strokeLinecap="round" />
             {/* Waving arm */}
-            <ellipse cx="-20" cy="5" rx="5" ry="3" fill="#c084fc" transform="rotate(-30,-20,5)">
-              <animateTransform attributeName="transform" type="rotate" values="-30 -20 5; -50 -20 5; -30 -20 5" dur="1.5s" repeatCount="indefinite" />
+            <ellipse cx="-18" cy="2" rx="4" ry="3" fill="#8b5cf6" transform="rotate(-30,-18,2)">
+              <animateTransform
+                attributeName="transform"
+                type="rotate"
+                values="-30 -18 2; -60 -18 2; -30 -18 2"
+                dur="1.6s"
+                repeatCount="indefinite"
+              />
             </ellipse>
-            <ellipse cx="20" cy="5" rx="5" ry="3" fill="#c084fc" transform="rotate(15,20,5)" />
-            {/* Feet */}
-            <ellipse cx="-7" cy="28" rx="7" ry="4" fill="#9333ea" />
-            <ellipse cx="7" cy="28" rx="7" ry="4" fill="#9333ea" />
-          </g>
-          {/* Speech bubble */}
-          <g transform="translate(30, -25)">
-            <rect x="0" y="0" width="120" height="28" rx="14" fill="white" stroke="#c084fc" strokeWidth="2" />
-            <path d="M 10 28 L 5 38 L 20 28 Z" fill="white" stroke="#c084fc" strokeWidth="2" />
-            <text x="60" y="18" fontSize="11" fill="#4c1d95" textAnchor="middle" fontWeight="bold" fontFamily="sans-serif">
-              Salut {childName.split(" ")[0].slice(0, 8)} !
-            </text>
+            <ellipse cx="18" cy="2" rx="4" ry="3" fill="#8b5cf6" transform="rotate(15,18,2)" />
+            {/* Star on head */}
+            <polygon
+              points="0,-30 1.5,-26 5,-26 2,-23 3,-19 0,-21 -3,-19 -2,-23 -5,-26 -1.5,-26"
+              fill="#fbbf24"
+              filter={`url(#glow-${uid})`}
+            />
           </g>
         </g>
 
-        {/* Level badge (top right) */}
-        <g transform="translate(620, 30)">
-          <circle cx="0" cy="0" r="25" fill="#fbbf24" stroke="#f59e0b" strokeWidth="3" />
-          <text x="0" y="-3" fontSize="8" fill="#78350f" textAnchor="middle" fontWeight="bold" fontFamily="sans-serif">NIV.</text>
-          <text x="0" y="10" fontSize="14" fill="#78350f" textAnchor="middle" fontWeight="900" fontFamily="sans-serif">{level}</text>
+        {/* Welcome sign (small) */}
+        <g transform="translate(340, 490)">
+          <rect x="0" y="0" width="140" height="24" rx="12" fill="white" stroke="#e7e5e4" strokeWidth="1.5" opacity="0.95" />
+          <text x="70" y="16" fontSize="11" fill="#44403c" textAnchor="middle" fontWeight="600" fontFamily="Inter, system-ui, sans-serif">
+            Bonjour {childName.split(" ")[0].slice(0, 12)} !
+          </text>
         </g>
       </svg>
 
-      {/* Time of day indicator */}
-      <div className="absolute top-3 left-3 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-sm text-xs font-bold text-slate-700 flex items-center gap-1.5 shadow-sm">
-        {timeOfDay === "morning" && "🌅 Matin"}
-        {timeOfDay === "noon" && "☀️ Après-midi"}
-        {timeOfDay === "evening" && "🌆 Soir"}
-        {timeOfDay === "night" && "🌙 Nuit"}
+      {/* Time of day badge */}
+      <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-md shadow-sm border border-neutral-200/60 text-xs font-medium text-neutral-700">
+        <span className="w-1.5 h-1.5 rounded-full bg-accent-500 animate-pulse" />
+        {tod === "dawn" && "Matin"}
+        {tod === "day" && "Après-midi"}
+        {tod === "dusk" && "Soir"}
+        {tod === "night" && "Nuit"}
       </div>
+
+      {/* Level badge */}
+      <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-900 text-white text-xs font-semibold shadow-md">
+        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 15.27L16.18 19l-1.64-7.03L20 7.24l-7.19-.61L10 0 7.19 6.63 0 7.24l5.46 4.73L3.82 19z"/>
+        </svg>
+        Niveau {level}
+      </div>
+
+      {/* Hovered room label (bottom) */}
+      <AnimatePresence>
+        {hovered && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.2 }}
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md rounded-full px-4 py-2 shadow-lg border border-neutral-200/60"
+          >
+            <span className="text-xs font-medium text-neutral-600">
+              Clique pour entrer dans <strong className="text-neutral-900">{ROOMS.find((r) => r.id === hovered)?.name}</strong>
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
