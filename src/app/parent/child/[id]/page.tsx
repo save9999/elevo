@@ -114,7 +114,7 @@ export default function ChildDetailPage({ params }: { params: { id: string } }) 
       ]
     : [];
 
-  const sessionsByModule = child.sessions.reduce<Record<string, { total: number; count: number }>>(
+  const sessionsByModule = (child.sessions || []).reduce<Record<string, { total: number; count: number }>>(
     (acc, s) => {
       if (!acc[s.module]) acc[s.module] = { total: 0, count: 0 };
       acc[s.module].total += s.score;
@@ -171,7 +171,7 @@ export default function ChildDetailPage({ params }: { params: { id: string } }) 
             { label: "Niveau", value: child.level, emoji: "⭐", color: "from-yellow-400 to-orange-400" },
             { label: "XP Total", value: child.xp, emoji: "✨", color: "from-violet-400 to-purple-500" },
             { label: "Série 🔥", value: `${child.streak}j`, emoji: "🔥", color: "from-orange-400 to-red-400" },
-            { label: "Succès", value: child.achievements.length, emoji: "🏆", color: "from-green-400 to-teal-400" },
+            { label: "Succès", value: child.achievements?.length ?? 0, emoji: "🏆", color: "from-green-400 to-teal-400" },
           ].map((s) => (
             <div key={s.label} className="card-bubble bg-white p-5 text-center">
               <div className={`text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r ${s.color}`}>
@@ -346,11 +346,11 @@ export default function ChildDetailPage({ params }: { params: { id: string } }) 
         </div>
 
         {/* Assessments */}
-        {child.assessments.length > 0 && (
+        {(child.assessments?.length ?? 0) > 0 && (
           <div className="card-bubble bg-white p-6">
             <h2 className="font-black text-slate-800 mb-4">Historique des évaluations</h2>
             <div className="space-y-3">
-              {child.assessments.map((a) => {
+              {(child.assessments || []).map((a) => {
                 let result: { summary?: string } = {};
                 try { result = JSON.parse(a.result); } catch { /* ignore */ }
                 return (
@@ -373,7 +373,7 @@ export default function ChildDetailPage({ params }: { params: { id: string } }) 
         )}
 
         {/* Recent sessions */}
-        {child.sessions.length > 0 && (
+        {(child.sessions?.length ?? 0) > 0 && (
           <div className="card-bubble bg-white p-6">
             <h2 className="font-black text-slate-800 mb-4">Sessions récentes</h2>
             <div className="space-y-2">
@@ -396,11 +396,11 @@ export default function ChildDetailPage({ params }: { params: { id: string } }) 
         )}
 
         {/* Achievements */}
-        {child.achievements.length > 0 && (
+        {(child.achievements?.length ?? 0) > 0 && (
           <div className="card-bubble bg-white p-6">
             <h2 className="font-black text-slate-800 mb-4">Succès débloqués 🏆</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {child.achievements.map((a) => (
+              {(child.achievements || []).map((a) => (
                 <div key={a.id} className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 flex items-center gap-3">
                   <span className="text-3xl">{a.emoji}</span>
                   <div>

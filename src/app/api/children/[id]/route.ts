@@ -8,7 +8,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const child = await prisma.child.findUnique({
     where: { id: params.id },
-    include: { profile: true, achievements: { orderBy: { unlockedAt: "desc" }, take: 10 } },
+    include: {
+      profile: true,
+      achievements: { orderBy: { unlockedAt: "desc" }, take: 10 },
+      sessions: { orderBy: { createdAt: "desc" }, take: 50 },
+      assessments: { orderBy: { createdAt: "desc" }, take: 10 },
+    },
   });
 
   if (!child) return NextResponse.json({ error: "Enfant introuvé" }, { status: 404 });

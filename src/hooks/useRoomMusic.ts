@@ -13,30 +13,9 @@ export type RoomId = "chambre" | "bureau" | "atelier" | "jardin" | "salon" | "co
 // avec le nom de la pièce (ex: /public/music/chambre.mp3) et il sera chargé
 // automatiquement.
 
-// URLs publiques CC0 hot-linkables depuis freepd.com (domaine public)
-// https://freepd.com — Musique libre de droits par Kevin MacLeod
-const EXTERNAL_TRACKS: Record<RoomId, string> = {
-  // Accueil chaleureux et familier
-  maison: "https://freepd.com/music/Happy%20Bee.mp3",
-  // Berceuse douce pour la chambre
-  chambre: "https://freepd.com/music/Life%20Full%20of%20Wonder.mp3",
-  // Rythmé, focus pour le bureau
-  bureau: "https://freepd.com/music/The%20Path.mp3",
-  // Créatif pour l'atelier
-  atelier: "https://freepd.com/music/Fluffing%20a%20Duck.mp3",
-  // Nature pour le jardin
-  jardin: "https://freepd.com/music/Deliberate%20Thought.mp3",
-  // Cosy pour le salon
-  salon: "https://freepd.com/music/Peaceful%20Mind.mp3",
-  // Joyeux rythmé pour la cour
-  cour: "https://freepd.com/music/Monkeys%20Spinning%20Monkeys.mp3",
-  // Mystérieux pour le grenier
-  grenier: "https://freepd.com/music/Investigations.mp3",
-  // Classique pour la classe
-  classe: "https://freepd.com/music/Sincerely.mp3",
-  // Intrigant sci-fi pour le labo
-  labo: "https://freepd.com/music/Bit%20Shift.mp3",
-};
+// Pas d'URL externe: le CORS bloque la plupart des CDN publics (FreePD, etc.)
+// La seule solution fiable = fichiers locaux dans /public/music/
+// Si aucun fichier n'est présent, l'app reste silencieuse (mieux que du bruit)
 
 const LOCAL_TRACKS: Record<RoomId, string> = {
   maison: "/music/maison.mp3",
@@ -77,31 +56,24 @@ export function useRoomMusic(roomId: RoomId, enabled: boolean) {
   const startMusic = useCallback(async () => {
     if (isPlaying) return;
 
-    // Try local file first
+    // Only try local file
     const localUrl = LOCAL_TRACKS[roomId];
-    let source = "";
-    if (await sourceExists(localUrl)) {
-      source = localUrl;
-    } else {
-      // Try external CDN
-      source = EXTERNAL_TRACKS[roomId];
+    if (!(await sourceExists(localUrl))) {
+      // No file present — stay silent (no more CORS / 404 errors in console)
+      setHasSource(false);
+      return;
     }
 
     try {
-      const audio = new Audio(source);
+      const audio = new Audio(localUrl);
       audio.loop = true;
       audio.volume = 0.4;
-      audio.crossOrigin = "anonymous";
 
       audio.addEventListener("canplay", () => setHasSource(true));
-      audio.addEventListener("error", () => {
-        setHasSource(false);
-        // Silence is better than bad audio
-        console.info(`[Music] No audio available for room "${roomId}". Drop a file at ${localUrl} to enable.`);
-      });
+      audio.addEventListener("error", () => setHasSource(false));
 
-      await audio.play().catch((err) => {
-        console.info(`[Music] Autoplay blocked or source unavailable: ${err.message}`);
+      await audio.play().catch(() => {
+        // Autoplay blocked — that's fine, user will press play
       });
       audioRef.current = audio;
       setIsPlaying(true);
