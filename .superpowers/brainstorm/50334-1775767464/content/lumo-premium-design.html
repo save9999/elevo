@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lumo — Character Design Premium</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: #0a0a1a;
+    color: #e0e0f0;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .hero {
+    text-align: center;
+    padding: 40px 20px 20px;
+  }
+
+  .hero h1 {
+    font-size: 28px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #a78bfa, #60a5fa, #34d399);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+
+  .hero p {
+    color: #8888aa;
+    font-size: 14px;
+  }
+
+  .stage {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 50px;
+    padding: 40px 20px 60px;
+    flex-wrap: wrap;
+  }
+
+  .character-card {
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .character-card:hover {
+    transform: translateY(-12px) scale(1.03);
+  }
+
+  .character-card .age-label {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #a78bfa;
+    margin-top: 16px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .character-card .age-sub {
+    text-align: center;
+    font-size: 11px;
+    color: #666688;
+    margin-top: 2px;
+  }
+
+  /* Glow behind characters */
+  .glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(40px);
+    opacity: 0.4;
+    z-index: 0;
+    animation: pulse 4s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.1); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  @keyframes floatSlow {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+
+  @keyframes sparkle {
+    0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+    50% { opacity: 1; transform: scale(1) rotate(180deg); }
+  }
+
+  @keyframes blink {
+    0%, 92%, 100% { transform: scaleY(1); }
+    96% { transform: scaleY(0.05); }
+  }
+
+  .char-svg {
+    position: relative;
+    z-index: 1;
+    animation: float 3.5s ease-in-out infinite;
+  }
+
+  .char-mid .char-svg { animation: float 4s ease-in-out infinite; }
+  .char-big .char-svg { animation: floatSlow 5s ease-in-out infinite; }
+
+  /* Eyes blink */
+  .eye-group {
+    animation: blink 4s ease-in-out infinite;
+    transform-origin: center;
+  }
+
+  .char-mid .eye-group { animation-delay: 0.5s; }
+  .char-big .eye-group { animation-delay: 1.2s; }
+
+  /* Bottom info */
+  .info-bar {
+    background: linear-gradient(to right, rgba(124,58,237,0.1), rgba(96,165,250,0.1));
+    border-top: 1px solid rgba(124,58,237,0.2);
+    padding: 30px 20px;
+    text-align: center;
+  }
+
+  .traits {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+
+  .trait {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 14px 20px;
+    min-width: 140px;
+  }
+
+  .trait h4 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #a78bfa;
+    margin-bottom: 4px;
+  }
+
+  .trait p {
+    font-size: 13px;
+    color: #ccc;
+  }
+
+  .options-section {
+    padding: 30px 20px 40px;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .options-section h2 {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 6px;
+    color: #e0e0f0;
+  }
+
+  .options-section .subtitle {
+    text-align: center;
+    color: #8888aa;
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+
+  .option-card {
+    background: rgba(255,255,255,0.04);
+    border: 2px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .option-card:hover {
+    background: rgba(124,58,237,0.1);
+    border-color: rgba(124,58,237,0.4);
+    transform: translateX(4px);
+  }
+
+  .option-card.selected {
+    background: rgba(124,58,237,0.15);
+    border-color: #7c3aed;
+    box-shadow: 0 0 20px rgba(124,58,237,0.2);
+  }
+
+  .option-letter {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 18px;
+    color: white;
+    flex-shrink: 0;
+  }
+
+  .option-content h3 {
+    font-size: 16px;
+    font-weight: 800;
+    margin-bottom: 3px;
+  }
+
+  .option-content p {
+    font-size: 13px;
+    color: #9999bb;
+    line-height: 1.4;
+  }
+
+  .selected-indicator {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #7c3aed;
+    color: white;
+    padding: 10px 24px;
+    border-radius: 100px;
+    font-weight: 700;
+    font-size: 14px;
+    box-shadow: 0 4px 20px rgba(124,58,237,0.5);
+    z-index: 100;
+    display: none;
+  }
+
+  .selected-indicator.visible { display: block; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>Lumo — Character Design 2026</h1>
+  <p>Compagnon éducatif évolutif — Style illustrateur professionnel</p>
+</div>
+
+<div class="stage">
+  <!-- PETIT LUMO (3-6 ans) -->
+  <div class="character-card char-small">
+    <div class="glow" style="width:120px; height:120px; background:#c084fc; top:30px; left:10px;"></div>
+    <div class="char-svg">
+      <svg width="150" height="180" viewBox="0 0 150 180">
+        <defs>
+          <!-- Dégradé corps -->
+          <radialGradient id="bodyGrad1" cx="50%" cy="35%" r="65%">
+            <stop offset="0%" stop-color="#ddd6fe"/>
+            <stop offset="50%" stop-color="#c4b5fd"/>
+            <stop offset="100%" stop-color="#8b5cf6"/>
+          </radialGradient>
+          <!-- Dégradé tête -->
+          <radialGradient id="headGrad1" cx="45%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#ede9fe"/>
+            <stop offset="40%" stop-color="#ddd6fe"/>
+            <stop offset="100%" stop-color="#a78bfa"/>
+          </radialGradient>
+          <!-- Reflet lumière -->
+          <radialGradient id="shineGrad" cx="35%" cy="20%" r="50%">
+            <stop offset="0%" stop-color="white" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="white" stop-opacity="0"/>
+          </radialGradient>
+          <!-- Ombre sol -->
+          <radialGradient id="shadowGrad">
+            <stop offset="0%" stop-color="#1a1a3a" stop-opacity="0.4"/>
+            <stop offset="100%" stop-color="#1a1a3a" stop-opacity="0"/>
+          </radialGradient>
+          <!-- Lueur étoile -->
+          <filter id="starGlow">
+            <feGaussianBlur stdDeviation="2" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <!-- Lueur douce -->
+          <filter id="softGlow">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- Ombre au sol -->
+        <ellipse cx="75" cy="172" rx="35" ry="6" fill="url(#shadowGrad)"/>
+
+        <!-- Corps arrondi bébé -->
+        <ellipse cx="75" cy="130" rx="30" ry="28" fill="url(#bodyGrad1)"/>
+        <ellipse cx="75" cy="130" rx="30" ry="28" fill="url(#shineGrad)"/>
+
+        <!-- Petits bras potelés -->
+        <ellipse cx="40" cy="124" rx="13" ry="9" fill="#c4b5fd" transform="rotate(-15, 40, 124)"/>
+        <ellipse cx="40" cy="124" rx="13" ry="9" fill="url(#shineGrad)" transform="rotate(-15, 40, 124)"/>
+        <ellipse cx="110" cy="120" rx="13" ry="9" fill="#c4b5fd" transform="rotate(20, 110, 120)"/>
+
+        <!-- Pieds ronds -->
+        <ellipse cx="60" cy="157" rx="14" ry="9" fill="#8b5cf6"/>
+        <ellipse cx="60" cy="155" rx="12" ry="6" fill="#a78bfa"/>
+        <ellipse cx="90" cy="157" rx="14" ry="9" fill="#8b5cf6"/>
+        <ellipse cx="90" cy="155" rx="12" ry="6" fill="#a78bfa"/>
+
+        <!-- TÊTE (très grosse, ratio bébé) -->
+        <circle cx="75" cy="68" r="48" fill="url(#headGrad1)"/>
+        <circle cx="75" cy="68" r="48" fill="url(#shineGrad)"/>
+
+        <!-- Oreilles rondes -->
+        <circle cx="28" cy="48" r="14" fill="#c4b5fd"/>
+        <circle cx="28" cy="48" r="10" fill="#ddd6fe"/>
+        <circle cx="28" cy="48" r="7" fill="#f5d0fe" opacity="0.5"/>
+        <circle cx="122" cy="48" r="14" fill="#c4b5fd"/>
+        <circle cx="122" cy="48" r="10" fill="#ddd6fe"/>
+        <circle cx="122" cy="48" r="7" fill="#f5d0fe" opacity="0.5"/>
+
+        <!-- Yeux (très grands, lumineux) -->
+        <g class="eye-group">
+          <ellipse cx="57" cy="62" rx="14" ry="16" fill="white"/>
+          <ellipse cx="57" cy="62" rx="14" ry="16" fill="white" opacity="0.9"/>
+          <ellipse cx="93" cy="62" rx="14" ry="16" fill="white"/>
+          <!-- Iris dégradé -->
+          <circle cx="59" cy="62" r="9" fill="#6d28d9"/>
+          <circle cx="59" cy="60" r="7" fill="#7c3aed"/>
+          <circle cx="59" cy="58" r="4" fill="#a78bfa"/>
+          <circle cx="95" cy="62" r="9" fill="#6d28d9"/>
+          <circle cx="95" cy="60" r="7" fill="#7c3aed"/>
+          <circle cx="95" cy="58" r="4" fill="#a78bfa"/>
+          <!-- Pupilles -->
+          <circle cx="60" cy="60" r="4" fill="#1e1b4b"/>
+          <circle cx="96" cy="60" r="4" fill="#1e1b4b"/>
+          <!-- Reflets vifs -->
+          <circle cx="63" cy="56" r="3.5" fill="white" opacity="0.95"/>
+          <circle cx="99" cy="56" r="3.5" fill="white" opacity="0.95"/>
+          <circle cx="56" cy="65" r="2" fill="white" opacity="0.6"/>
+          <circle cx="92" cy="65" r="2" fill="white" opacity="0.6"/>
+        </g>
+
+        <!-- Nez mini -->
+        <ellipse cx="75" cy="72" rx="3" ry="2" fill="#a78bfa" opacity="0.6"/>
+
+        <!-- Bouche souriante -->
+        <path d="M 63 79 Q 75 90 87 79" stroke="#5b21b6" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M 67 80 Q 75 87 83 80" fill="#7c3aed" opacity="0.3"/>
+
+        <!-- Joues blush avec dégradé -->
+        <circle cx="40" cy="76" r="9" fill="#f9a8d4" opacity="0.35"/>
+        <circle cx="110" cy="76" r="9" fill="#f9a8d4" opacity="0.35"/>
+
+        <!-- Étoile sur le front -->
+        <g filter="url(#starGlow)">
+          <polygon points="75,22 78,30 86,31 80,36 82,44 75,40 68,44 70,36 64,31 72,30" fill="#fbbf24" opacity="0.9"/>
+        </g>
+
+        <!-- Petites particules lumineuses -->
+        <circle cx="30" cy="30" r="2" fill="#fbbf24" opacity="0.6">
+          <animate attributeName="opacity" values="0.6;0;0.6" dur="2.5s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="125" cy="35" r="1.5" fill="#60a5fa" opacity="0.5">
+          <animate attributeName="opacity" values="0.5;0;0.5" dur="3s" repeatCount="indefinite" begin="0.8s"/>
+        </circle>
+        <circle cx="45" cy="18" r="1.5" fill="#34d399" opacity="0.5">
+          <animate attributeName="opacity" values="0.5;0;0.5" dur="2.8s" repeatCount="indefinite" begin="1.5s"/>
+        </circle>
+      </svg>
+    </div>
+    <div class="age-label">Petit Lumo</div>
+    <div class="age-sub">Maternelle — 3 à 6 ans</div>
+  </div>
+
+  <!-- MOYEN LUMO (7-11 ans) -->
+  <div class="character-card char-mid">
+    <div class="glow" style="width:140px; height:140px; background:#818cf8; top:20px; left:15px;"></div>
+    <div class="char-svg">
+      <svg width="170" height="210" viewBox="0 0 170 210">
+        <defs>
+          <radialGradient id="bodyGrad2" cx="50%" cy="35%" r="65%">
+            <stop offset="0%" stop-color="#c7d2fe"/>
+            <stop offset="50%" stop-color="#a5b4fc"/>
+            <stop offset="100%" stop-color="#6366f1"/>
+          </radialGradient>
+          <radialGradient id="headGrad2" cx="45%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#e0e7ff"/>
+            <stop offset="40%" stop-color="#c7d2fe"/>
+            <stop offset="100%" stop-color="#818cf8"/>
+          </radialGradient>
+          <radialGradient id="shadowGrad2">
+            <stop offset="0%" stop-color="#1a1a3a" stop-opacity="0.4"/>
+            <stop offset="100%" stop-color="#1a1a3a" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="starGlow2">
+            <feGaussianBlur stdDeviation="2.5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- Ombre -->
+        <ellipse cx="85" cy="202" rx="40" ry="7" fill="url(#shadowGrad2)"/>
+
+        <!-- Corps plus allongé -->
+        <rect x="52" y="120" width="66" height="52" rx="28" fill="url(#bodyGrad2)"/>
+        <rect x="52" y="120" width="66" height="52" rx="28" fill="url(#shineGrad)"/>
+
+        <!-- Écharpe / accessoire -->
+        <path d="M 55 118 Q 85 128 115 118 Q 115 132 85 136 Q 55 132 55 118" fill="#f59e0b" opacity="0.85"/>
+        <path d="M 55 118 Q 85 125 115 118 Q 115 126 85 129 Q 55 126 55 118" fill="#fbbf24" opacity="0.6"/>
+
+        <!-- Bras avec mains -->
+        <path d="M 48 132 Q 30 128 25 138 Q 22 145 28 148 L 35 146 Q 38 150 42 147" fill="#a5b4fc" stroke="#818cf8" stroke-width="1"/>
+        <path d="M 122 128 Q 140 124 145 134 Q 148 141 142 144 L 135 142 Q 132 146 128 143" fill="#a5b4fc" stroke="#818cf8" stroke-width="1"/>
+
+        <!-- Pieds plus définis -->
+        <path d="M 60 170 Q 55 185 60 190 Q 68 194 76 188 L 76 170" fill="#6366f1"/>
+        <path d="M 60 186 Q 65 190 73 188" stroke="#4f46e5" stroke-width="1.5" fill="none"/>
+        <path d="M 94 170 Q 89 185 94 190 Q 102 194 110 188 L 110 170" fill="#6366f1"/>
+        <path d="M 94 186 Q 99 190 107 188" stroke="#4f46e5" stroke-width="1.5" fill="none"/>
+
+        <!-- TÊTE -->
+        <circle cx="85" cy="72" r="52" fill="url(#headGrad2)"/>
+        <circle cx="85" cy="72" r="52" fill="url(#shineGrad)"/>
+
+        <!-- Oreilles pointues (plus matures) -->
+        <path d="M 30 60 Q 22 35 38 30 Q 40 42 38 58" fill="#a5b4fc"/>
+        <path d="M 33 55 Q 28 40 38 36" fill="#c7d2fe" opacity="0.6"/>
+        <path d="M 140 60 Q 148 35 132 30 Q 130 42 132 58" fill="#a5b4fc"/>
+        <path d="M 137 55 Q 142 40 132 36" fill="#c7d2fe" opacity="0.6"/>
+
+        <!-- Yeux (confiants, déterminés) -->
+        <g class="eye-group">
+          <ellipse cx="68" cy="66" rx="14" ry="15" fill="white"/>
+          <ellipse cx="102" cy="66" rx="14" ry="15" fill="white"/>
+          <!-- Iris indigo -->
+          <circle cx="70" cy="66" r="9" fill="#4338ca"/>
+          <circle cx="70" cy="64" r="7" fill="#6366f1"/>
+          <circle cx="70" cy="62" r="4" fill="#818cf8"/>
+          <circle cx="104" cy="66" r="9" fill="#4338ca"/>
+          <circle cx="104" cy="64" r="7" fill="#6366f1"/>
+          <circle cx="104" cy="62" r="4" fill="#818cf8"/>
+          <!-- Pupilles -->
+          <circle cx="71" cy="64" r="4" fill="#1e1b4b"/>
+          <circle cx="105" cy="64" r="4" fill="#1e1b4b"/>
+          <!-- Reflets -->
+          <circle cx="74" cy="60" r="3.5" fill="white" opacity="0.95"/>
+          <circle cx="108" cy="60" r="3.5" fill="white" opacity="0.95"/>
+          <circle cx="67" cy="68" r="2" fill="white" opacity="0.5"/>
+          <circle cx="101" cy="68" r="2" fill="white" opacity="0.5"/>
+        </g>
+
+        <!-- Sourcils expressifs -->
+        <path d="M 56 50 Q 65 46 78 50" stroke="#4338ca" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M 92 50 Q 105 46 114 50" stroke="#4338ca" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+        <!-- Nez -->
+        <ellipse cx="85" cy="76" rx="3" ry="2.5" fill="#818cf8" opacity="0.5"/>
+
+        <!-- Sourire confiant -->
+        <path d="M 72 84 Q 85 95 98 84" stroke="#4338ca" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M 76 85 Q 85 92 94 85" fill="#4f46e5" opacity="0.2"/>
+
+        <!-- Joues -->
+        <circle cx="50" cy="80" r="8" fill="#f9a8d4" opacity="0.25"/>
+        <circle cx="120" cy="80" r="8" fill="#f9a8d4" opacity="0.25"/>
+
+        <!-- Cristal sur le front (évolution de l'étoile) -->
+        <g filter="url(#starGlow2)">
+          <polygon points="85,18 89,28 99,28 91,34 94,44 85,38 76,44 79,34 71,28 81,28" fill="#60a5fa" opacity="0.9"/>
+          <polygon points="85,24 87,28 92,28 88,32 90,37 85,34 80,37 82,32 78,28 83,28" fill="#93c5fd" opacity="0.6"/>
+        </g>
+
+        <!-- Particules -->
+        <circle cx="25" cy="25" r="2" fill="#60a5fa" opacity="0.6">
+          <animate attributeName="opacity" values="0.6;0;0.6" dur="3s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="148" cy="40" r="2.5" fill="#a78bfa" opacity="0.5">
+          <animate attributeName="opacity" values="0.5;0;0.5" dur="2.5s" repeatCount="indefinite" begin="1s"/>
+        </circle>
+        <circle cx="50" cy="15" r="1.5" fill="#fbbf24" opacity="0.4">
+          <animate attributeName="opacity" values="0.4;0;0.4" dur="3.2s" repeatCount="indefinite" begin="0.5s"/>
+        </circle>
+      </svg>
+    </div>
+    <div class="age-label">Lumo Explorateur</div>
+    <div class="age-sub">Primaire — 7 à 11 ans</div>
+  </div>
+
+  <!-- GRAND LUMO (12-18 ans) -->
+  <div class="character-card char-big">
+    <div class="glow" style="width:160px; height:160px; background:#6366f1; top:10px; left:20px;"></div>
+    <div class="char-svg">
+      <svg width="200" height="260" viewBox="0 0 200 260">
+        <defs>
+          <radialGradient id="bodyGrad3" cx="50%" cy="30%" r="65%">
+            <stop offset="0%" stop-color="#c7d2fe"/>
+            <stop offset="40%" stop-color="#a5b4fc"/>
+            <stop offset="100%" stop-color="#4f46e5"/>
+          </radialGradient>
+          <radialGradient id="headGrad3" cx="42%" cy="28%" r="70%">
+            <stop offset="0%" stop-color="#e0e7ff"/>
+            <stop offset="35%" stop-color="#c7d2fe"/>
+            <stop offset="100%" stop-color="#6366f1"/>
+          </radialGradient>
+          <linearGradient id="capeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.8"/>
+            <stop offset="100%" stop-color="#4f46e5" stop-opacity="0.4"/>
+          </linearGradient>
+          <radialGradient id="shadowGrad3">
+            <stop offset="0%" stop-color="#1a1a3a" stop-opacity="0.5"/>
+            <stop offset="100%" stop-color="#1a1a3a" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="starGlow3">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="auraGlow">
+            <feGaussianBlur stdDeviation="6" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- Ombre -->
+        <ellipse cx="100" cy="252" rx="50" ry="8" fill="url(#shadowGrad3)"/>
+
+        <!-- Cape / aura -->
+        <path d="M 55 130 Q 30 160 40 220 Q 50 240 70 235 Q 65 200 70 160 Z" fill="url(#capeGrad)"/>
+        <path d="M 145 130 Q 170 160 160 220 Q 150 240 130 235 Q 135 200 130 160 Z" fill="url(#capeGrad)"/>
+
+        <!-- Corps élancé -->
+        <rect x="62" y="130" width="76" height="70" rx="32" fill="url(#bodyGrad3)"/>
+        <rect x="62" y="130" width="76" height="70" rx="32" fill="url(#shineGrad)"/>
+
+        <!-- Plastron lumineux -->
+        <path d="M 82 138 Q 100 135 118 138 Q 118 158 100 165 Q 82 158 82 138" fill="#818cf8" opacity="0.3"/>
+        <path d="M 88 142 Q 100 140 112 142 Q 112 154 100 158 Q 88 154 88 142" fill="#a5b4fc" opacity="0.2"/>
+
+        <!-- Bras longs et élégants -->
+        <path d="M 58 140 Q 35 138 28 150 Q 24 158 30 163 Q 36 166 40 162 Q 38 158 42 152" fill="#a5b4fc" stroke="#818cf8" stroke-width="1"/>
+        <path d="M 142 136 Q 165 130 172 142 Q 176 150 170 155 Q 164 158 160 154 Q 162 150 158 144" fill="#a5b4fc" stroke="#818cf8" stroke-width="1"/>
+
+        <!-- Pieds -->
+        <path d="M 72 198 Q 66 215 72 222 Q 82 228 92 220 L 92 198" fill="#4f46e5"/>
+        <path d="M 72 218 Q 78 224 88 220" stroke="#4338ca" stroke-width="1.5" fill="none"/>
+        <path d="M 108 198 Q 102 215 108 222 Q 118 228 128 220 L 128 198" fill="#4f46e5"/>
+        <path d="M 108 218 Q 114 224 124 220" stroke="#4338ca" stroke-width="1.5" fill="none"/>
+
+        <!-- TÊTE (proportions ado, toujours grande mais moins bébé) -->
+        <circle cx="100" cy="78" r="56" fill="url(#headGrad3)"/>
+        <circle cx="100" cy="78" r="56" fill="url(#shineGrad)"/>
+
+        <!-- Oreilles élégantes allongées -->
+        <path d="M 40 68 Q 25 30 48 20 Q 52 35 50 62" fill="#818cf8"/>
+        <path d="M 44 60 Q 34 38 48 28" fill="#a5b4fc" opacity="0.5"/>
+        <path d="M 160 68 Q 175 30 152 20 Q 148 35 150 62" fill="#818cf8"/>
+        <path d="M 156 60 Q 166 38 152 28" fill="#a5b4fc" opacity="0.5"/>
+
+        <!-- Yeux (matures, profonds) -->
+        <g class="eye-group">
+          <ellipse cx="82" cy="72" rx="14" ry="15" fill="white"/>
+          <ellipse cx="118" cy="72" rx="14" ry="15" fill="white"/>
+          <!-- Iris profond -->
+          <circle cx="84" cy="72" r="9" fill="#312e81"/>
+          <circle cx="84" cy="70" r="7" fill="#4338ca"/>
+          <circle cx="84" cy="68" r="4" fill="#6366f1"/>
+          <circle cx="84" cy="66" r="2" fill="#818cf8"/>
+          <circle cx="120" cy="72" r="9" fill="#312e81"/>
+          <circle cx="120" cy="70" r="7" fill="#4338ca"/>
+          <circle cx="120" cy="68" r="4" fill="#6366f1"/>
+          <circle cx="120" cy="66" r="2" fill="#818cf8"/>
+          <!-- Pupilles -->
+          <circle cx="85" cy="70" r="3.5" fill="#0f0a2a"/>
+          <circle cx="121" cy="70" r="3.5" fill="#0f0a2a"/>
+          <!-- Reflets multiples -->
+          <circle cx="88" cy="66" r="3.5" fill="white" opacity="0.95"/>
+          <circle cx="124" cy="66" r="3.5" fill="white" opacity="0.95"/>
+          <circle cx="81" cy="74" r="2" fill="white" opacity="0.4"/>
+          <circle cx="117" cy="74" r="2" fill="white" opacity="0.4"/>
+        </g>
+
+        <!-- Sourcils fins -->
+        <path d="M 68 55 Q 80 50 94 55" stroke="#312e81" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M 106 55 Q 120 50 132 55" stroke="#312e81" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+        <!-- Nez -->
+        <ellipse cx="100" cy="82" rx="3" ry="2.5" fill="#6366f1" opacity="0.4"/>
+
+        <!-- Sourire assuré -->
+        <path d="M 86 90 Q 100 100 114 90" stroke="#312e81" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+        <!-- Joues subtiles -->
+        <circle cx="62" cy="86" r="8" fill="#f9a8d4" opacity="0.15"/>
+        <circle cx="138" cy="86" r="8" fill="#f9a8d4" opacity="0.15"/>
+
+        <!-- Cristal complexe sur le front (évolution finale) -->
+        <g filter="url(#starGlow3)">
+          <polygon points="100,16 105,30 118,28 108,38 114,50 100,42 86,50 92,38 82,28 95,30" fill="#818cf8" opacity="0.9"/>
+          <polygon points="100,22 103,30 112,29 106,35 109,43 100,38 91,43 94,35 88,29 97,30" fill="#a5b4fc" opacity="0.7"/>
+          <circle cx="100" cy="33" r="4" fill="#e0e7ff" opacity="0.5"/>
+        </g>
+
+        <!-- Aura énergie -->
+        <circle cx="100" cy="78" r="62" fill="none" stroke="#818cf8" stroke-width="0.5" opacity="0.2" filter="url(#auraGlow)">
+          <animate attributeName="r" values="62;66;62" dur="4s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.2;0.1;0.2" dur="4s" repeatCount="indefinite"/>
+        </circle>
+
+        <!-- Particules -->
+        <circle cx="20" cy="40" r="2.5" fill="#818cf8" opacity="0.5">
+          <animate attributeName="opacity" values="0.5;0;0.5" dur="3.5s" repeatCount="indefinite"/>
+          <animate attributeName="cy" values="40;34;40" dur="3.5s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="180" cy="50" r="2" fill="#a78bfa" opacity="0.4">
+          <animate attributeName="opacity" values="0.4;0;0.4" dur="3s" repeatCount="indefinite" begin="1.2s"/>
+          <animate attributeName="cy" values="50;44;50" dur="3s" repeatCount="indefinite" begin="1.2s"/>
+        </circle>
+        <circle cx="40" cy="10" r="2" fill="#fbbf24" opacity="0.3">
+          <animate attributeName="opacity" values="0.3;0;0.3" dur="4s" repeatCount="indefinite" begin="0.7s"/>
+        </circle>
+        <circle cx="165" cy="15" r="1.5" fill="#34d399" opacity="0.4">
+          <animate attributeName="opacity" values="0.4;0;0.4" dur="2.8s" repeatCount="indefinite" begin="2s"/>
+        </circle>
+      </svg>
+    </div>
+    <div class="age-label">Lumo Guardian</div>
+    <div class="age-sub">Collège & Lycée — 12 à 18 ans</div>
+  </div>
+</div>
+
+<!-- Traits du personnage -->
+<div class="info-bar">
+  <h3 style="font-size: 18px; font-weight: 800;">Identité de Lumo</h3>
+  <div class="traits">
+    <div class="trait">
+      <h4>Personnalité</h4>
+      <p>Curieux, bienveillant, un peu espiègle</p>
+    </div>
+    <div class="trait">
+      <h4>Évolution</h4>
+      <p>Grandit avec l'enfant, gagne en sagesse</p>
+    </div>
+    <div class="trait">
+      <h4>Signature</h4>
+      <p>Étoile → Cristal sur le front</p>
+    </div>
+    <div class="trait">
+      <h4>Palette</h4>
+      <p>Violet → Indigo (maturité progressive)</p>
+    </div>
+  </div>
+</div>
+
+<!-- Choix -->
+<div class="options-section">
+  <h2>Ce design te convient ?</h2>
+  <p class="subtitle">On peut ajuster la direction avant de continuer</p>
+
+  <div class="option-card" data-choice="perfect" onclick="selectOption(this)">
+    <div class="option-letter">A</div>
+    <div class="option-content">
+      <h3>C'est parfait, on continue</h3>
+      <p>Le style Lumo évolutif me plaît, passons aux exercices et à la musique</p>
+    </div>
+  </div>
+
+  <div class="option-card" data-choice="warmer" onclick="selectOption(this)">
+    <div class="option-letter">B</div>
+    <div class="option-content">
+      <h3>Plus chaleureux / coloré</h3>
+      <p>J'aime la direction mais je veux des couleurs plus chaudes, plus Adibou (orange, jaune, vert)</p>
+    </div>
+  </div>
+
+  <div class="option-card" data-choice="rounder" onclick="selectOption(this)">
+    <div class="option-letter">C</div>
+    <div class="option-content">
+      <h3>Plus rond / mignon</h3>
+      <p>Le grand Lumo est trop "sérieux", je veux qu'il reste cute même pour les ados</p>
+    </div>
+  </div>
+
+  <div class="option-card" data-choice="different" onclick="selectOption(this)">
+    <div class="option-letter">D</div>
+    <div class="option-content">
+      <h3>Autre direction</h3>
+      <p>Je vais décrire ce que j'ai en tête dans le terminal</p>
+    </div>
+  </div>
+</div>
+
+<div class="selected-indicator" id="indicator"></div>
+
+<script>
+  function selectOption(el) {
+    document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    const choice = el.dataset.choice;
+    const text = el.querySelector('h3').textContent;
+    const indicator = document.getElementById('indicator');
+    indicator.textContent = '✓ ' + text;
+    indicator.classList.add('visible');
+
+    // Send event
+    fetch('/event', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({type: 'click', choice, text, timestamp: Date.now()})
+    }).catch(() => {});
+  }
+</script>
+
+</body>
+</html>
