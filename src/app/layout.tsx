@@ -1,64 +1,69 @@
-import type { Metadata, Viewport } from "next";
-import "./globals.css";
-import SessionProvider from "@/components/SessionProvider";
+import type { Metadata, Viewport } from 'next';
+import './globals.css';
+import SessionProvider from '@/components/SessionProvider';
 
-const siteUrl = "https://elevo-five.vercel.app";
+const siteUrl = 'https://elevo-five.vercel.app';
 
 export const viewport: Viewport = {
-  width: "device-width",
+  width: 'device-width',
   initialScale: 1,
-  themeColor: "#7C3AED",
+  themeColor: '#0f172a',
 };
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   icons: {
-    icon: "/favicon.svg",
+    icon: '/favicon.svg',
   },
   title: {
-    default: "Elevo — L'IA qui accompagne chaque enfant",
-    template: "%s — Elevo",
+    default: 'Elevo — La Station éducative IA pour enfants',
+    template: '%s — Elevo',
   },
   description:
-    "Elevo détecte les troubles d'apprentissage (dyslexie, TDAH, dyscalculie) et crée un parcours personnalisé pour chaque enfant de 3 à 18 ans. Scolaire, cognitif, émotionnel.",
+    "Elevo accompagne les enfants de 4 à 18 ans avec un parcours éducatif adaptatif, un repérage bienveillant des signes de troubles dys (dyslexie, dyscalculie, dysorthographie) et des exercices d'orthophonie ludiques pilotés par LUMO, une IA holographique.",
   keywords: [
-    "éducation IA", "troubles apprentissage", "dyslexie", "TDAH", "dyscalculie",
-    "soutien scolaire", "enfant", "apprentissage adaptatif", "plateforme éducative",
-    "intelligence artificielle éducation", "Elevo", "maternelle", "primaire", "collège", "lycée",
+    'Elevo',
+    'éducation IA',
+    'dyslexie',
+    'dyscalculie',
+    'dysorthographie',
+    'orthophonie',
+    'repérage troubles dys',
+    "aide aux devoirs",
+    'enfant 4-18 ans',
+    'soutien scolaire adaptatif',
   ],
-  authors: [{ name: "Elevo" }],
-  creator: "Elevo",
-  publisher: "Elevo",
+  authors: [{ name: 'Elevo' }],
+  creator: 'Elevo',
+  publisher: 'Elevo',
   robots: {
     index: true,
     follow: true,
-    googleBot: { index: true, follow: true, "max-video-preview": -1, "max-image-preview": "large", "max-snippet": -1 },
   },
   openGraph: {
-    type: "website",
-    locale: "fr_FR",
+    type: 'website',
+    locale: 'fr_FR',
     url: siteUrl,
-    siteName: "Elevo",
-    title: "Elevo — L'IA qui accompagne chaque enfant",
-    description: "Détection des troubles d'apprentissage et parcours personnalisé IA pour les enfants de 3 à 18 ans.",
+    siteName: 'Elevo',
+    title: 'Elevo — La Station éducative IA pour enfants',
+    description:
+      "Parcours adaptatif de 4 à 18 ans, repérage bienveillant des troubles dys, exercices d'orthophonie. LUMO, l'IA qui accompagne chaque enfant.",
     images: [
       {
-        url: "/opengraph-image",
+        url: '/opengraph-image',
         width: 1200,
         height: 630,
-        alt: "Elevo — Plateforme éducative IA pour enfants",
+        alt: 'Elevo — La Station éducative IA',
       },
     ],
   },
   twitter: {
-    card: "summary_large_image",
-    title: "Elevo — L'IA qui accompagne chaque enfant",
-    description: "Détection des troubles d'apprentissage et parcours IA personnalisé de 3 à 18 ans.",
-    images: ["/opengraph-image"],
+    card: 'summary_large_image',
+    title: 'Elevo — La Station éducative IA',
+    description:
+      "Parcours adaptatif 4-18 ans, repérage des troubles dys, orthophonie ludique.",
   },
-  alternates: {
-    canonical: siteUrl,
-  },
+  alternates: { canonical: siteUrl },
 };
 
 export default function RootLayout({
@@ -68,7 +73,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr">
-      <body className="bg-slate-50 min-h-screen antialiased">
+      <body className="min-h-screen bg-slate-950 text-slate-100 antialiased">
         <SessionProvider>{children}</SessionProvider>
       </body>
     </html>
