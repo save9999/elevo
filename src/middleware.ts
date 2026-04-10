@@ -1,12 +1,13 @@
-export { auth as middleware } from "@/lib/auth";
+export { auth as middleware } from '@/lib/auth';
 
 export const config = {
   matcher: [
-    "/parent/:path*",
-    "/child/:path*",
-    "/api/children/:path*",
-    "/api/sessions/:path*",
-    "/api/ai/:path*",
-    "/api/user/:path*",
+    '/onboarding/:path*',
+    '/parent/:path*',
+    '/pro/:path*',
+    '/explorateurs/:path*',
+    '/petits/:path*',
+    '/aventuriers/:path*',
+    '/lyceens/:path*',
   ],
 };
