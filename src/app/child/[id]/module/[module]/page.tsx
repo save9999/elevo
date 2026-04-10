@@ -7,6 +7,10 @@ import FunQuiz from "@/components/FunQuiz";
 import MathChallenge from "@/components/MathChallenge";
 import ExerciseShell from "@/components/ExerciseShell";
 import ConfettiBlast from "@/components/ConfettiBlast";
+import CuisineGame from "@/components/games/CuisineGame";
+import LetterFishingGame from "@/components/games/LetterFishingGame";
+import TracingGame from "@/components/games/TracingGame";
+import MemorySimonGame from "@/components/games/MemorySimonGame";
 import { rewardLumoStats } from "@/components/LumoStats";
 import { useNarration } from "@/hooks/useNarration";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
@@ -275,12 +279,20 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 function MathModule({ child, onComplete }: { child: Child; onComplete: (score: number, xp: number) => void }) {
+  // Rotate between math challenge and cuisine game
+  const rotationIdx = getExerciseIdx(child.id, "math");
+  const useCuisine = rotationIdx % 2 === 0;
+
   const [problems] = useState(() => {
     const pool = MATH_POOLS[child.ageGroup] || MATH_POOLS.primaire;
-    const offset = getExerciseIdx(child.id, "math") % Math.max(1, pool.length - 5);
+    const offset = rotationIdx % Math.max(1, pool.length - 5);
     const rotated = [...pool.slice(offset), ...pool.slice(0, offset)];
     return shuffle(rotated).slice(0, 5);
   });
+
+  if (useCuisine) {
+    return <CuisineGame ageGroup={child.ageGroup} onComplete={onComplete} />;
+  }
 
   return (
     <MathChallenge
@@ -301,7 +313,11 @@ const MEMORY_POOLS = [
 ];
 
 function MemoryModule({ child, onComplete }: { child: Child; onComplete: (score: number, xp: number) => void }) {
-  const poolIdx = getExerciseIdx(child.id, "memory") % MEMORY_POOLS.length;
+  const rotationIdx = getExerciseIdx(child.id, "memory");
+  // Alternate between Simon game and cards game
+  const useSimon = rotationIdx % 2 === 1;
+
+  const poolIdx = rotationIdx % MEMORY_POOLS.length;
   const emojis = MEMORY_POOLS[poolIdx];
   const pairs = [...emojis, ...emojis].sort(() => Math.random() - 0.5);
   const [cards, setCards] = useState(pairs.map((e, i) => ({ id: i, emoji: e, flipped: false, matched: false })));
@@ -362,6 +378,11 @@ function MemoryModule({ child, onComplete }: { child: Child; onComplete: (score:
         </div>
       </ExerciseShell>
     );
+  }
+
+  // Switch to Simon game on alternate sessions
+  if (useSimon) {
+    return <MemorySimonGame ageGroup={child.ageGroup} onComplete={onComplete} />;
   }
 
   return (
@@ -1613,13 +1634,23 @@ export default function ModulePage({ params }: { params: { id: string; module: s
       {/* Content */}
       <main className="bg-slate-50 rounded-t-[2rem] min-h-[calc(100vh-80px)] px-4 py-8">
         <div className="max-w-2xl mx-auto">
-          {moduleId === "reading" && <ReadingModule child={child} onComplete={handleComplete} />}
+          {/* Reading: alternate between reading module and letter fishing game */}
+          {moduleId === "reading" && (
+            getExerciseIdx(id, "reading") % 2 === 0
+              ? <ReadingModule child={child} onComplete={handleComplete} />
+              : <LetterFishingGame ageGroup={child.ageGroup} onComplete={handleComplete} />
+          )}
           {moduleId === "math" && <MathModule child={child} onComplete={handleComplete} />}
           {moduleId === "memory" && <MemoryModule child={child} onComplete={handleComplete} />}
           {moduleId === "emotional" && <EmotionalModule child={child} onComplete={handleComplete} />}
           {moduleId === "assessment" && <AssessmentModule child={child} onComplete={handleComplete} />}
           {moduleId === "orientation" && <OrientationModule child={child} onComplete={handleComplete} />}
-          {moduleId === "writing" && <WritingModule child={child} onComplete={handleComplete} />}
+          {/* Writing: alternate between writing module and tracing game */}
+          {moduleId === "writing" && (
+            getExerciseIdx(id, "writing") % 2 === 0
+              ? <WritingModule child={child} onComplete={handleComplete} />
+              : <TracingGame ageGroup={child.ageGroup} onComplete={handleComplete} />
+          )}
           {moduleId === "social" && <SocialModule child={child} onComplete={handleComplete} />}
           {moduleId === "physical" && <PhysicalModule child={child} onComplete={handleComplete} />}
           {moduleId === "creativity" && <CreativityModule child={child} onComplete={handleComplete} />}
