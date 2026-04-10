@@ -1,10 +1,23 @@
 node_modules
 .env
 .env.local
+.env.vercel
+.env.vercel.local
+.env.backup*
 .next
 prisma/dev.db
 prisma/dev.db-journal
 tsconfig.tsbuildinfo
 *.tsbuildinfo
 .vercel
-.env.vercel.local
+
+# Tooling local (brainstorming, serena, audit scripts)
+.superpowers/
+.serena/
+audit-*.ts
+audit-screenshots/
+
+# Test artefacts
+playwright-report/
+test-results/
+coverage/
