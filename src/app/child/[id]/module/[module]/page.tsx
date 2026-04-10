@@ -7,6 +7,7 @@ import FunQuiz from "@/components/FunQuiz";
 import MathChallenge from "@/components/MathChallenge";
 import ExerciseShell from "@/components/ExerciseShell";
 import ConfettiBlast from "@/components/ConfettiBlast";
+import { rewardLumoStats } from "@/components/LumoStats";
 import { useNarration } from "@/hooks/useNarration";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 
@@ -1498,7 +1499,27 @@ export default function ModulePage({ params }: { params: { id: string; module: s
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 3000);
     }
-    // Advance exercise rotation index so next session gets a different exercise
+    // Reward Lumo's stats based on module + score
+    const rewards: Record<string, { faim?: number; joie?: number; energie?: number }> = {
+      reading: { joie: 8, energie: 3 },
+      math: { energie: 10, joie: 3 },
+      memory: { energie: 8, joie: 5 },
+      emotional: { joie: 15 },
+      social: { joie: 12, energie: 3 },
+      physical: { energie: 15, faim: 5 },
+      creativity: { joie: 10, energie: 5 },
+      writing: { joie: 6, energie: 5 },
+      orientation: { joie: 5, energie: 5 },
+      assessment: { joie: 5 },
+    };
+    const baseReward = rewards[moduleId] || { joie: 5 };
+    const multiplier = score >= 80 ? 1.5 : score >= 50 ? 1 : 0.5;
+    rewardLumoStats(id, {
+      faim: (baseReward.faim || 0) * multiplier + (score >= 50 ? 5 : 0),  // eating always gives food
+      joie: (baseReward.joie || 0) * multiplier,
+      energie: (baseReward.energie || 0) * multiplier,
+    });
+    // Advance exercise rotation index
     advanceExerciseIdx(id, moduleId);
     // Save session
     await fetch("/api/sessions", {

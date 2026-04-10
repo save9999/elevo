@@ -1,12 +1,12 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import LumoCharacter, { getLumoMood, getLumoMessage } from "@/components/LumoCharacter";
-import { useAmbientMusic } from "@/hooks/useAmbientMusic";
-import { useNarration } from "@/hooks/useNarration";
-import WorldMap from "@/components/WorldMap";
-import StatusBar from "@/components/StatusBar";
+import LumoHouse from "@/components/LumoHouse";
+import LumoStats, { computeLumoStats, type LumoStatsData } from "@/components/LumoStats";
+import { getLumoMood } from "@/components/LumoCompanion";
+import { useRoomMusic } from "@/hooks/useRoomMusic";
+import { useSoundEffects } from "@/hooks/useSoundEffects";
 
 interface Child {
   id: string; name: string; avatar: string; avatarConfig: string; ageGroup: string;
@@ -20,58 +20,19 @@ interface Child {
   sessions?: { module: string; createdAt: string }[];
 }
 
-const modules = [
-  { id: "assessment", name: "Mon évaluation", desc: "Découvre tes super-pouvoirs !", emoji: "🔍", color: "from-violet-500 to-purple-600", bg: "bg-violet-50", border: "border-violet-200", ageGroups: ["maternelle", "primaire", "college-lycee"] },
-  { id: "reading", name: "Lecture & Langage", desc: "Lis, comprends, explore les mots !", emoji: "📖", color: "from-blue-500 to-cyan-500", bg: "bg-blue-50", border: "border-blue-200", ageGroups: ["maternelle", "primaire", "college-lycee"] },
-  { id: "math", name: "Maths & Logique", desc: "Compte, calcule et résous des énigmes !", emoji: "🔢", color: "from-green-500 to-emerald-500", bg: "bg-green-50", border: "border-green-200", ageGroups: ["maternelle", "primaire", "college-lycee"] },
-  { id: "memory", name: "Mémoire & Attention", desc: "Entraîne ton cerveau comme un champion !", emoji: "🧠", color: "from-pink-500 to-rose-500", bg: "bg-pink-50", border: "border-pink-200", ageGroups: ["maternelle", "primaire", "college-lycee"] },
-  { id: "emotional", name: "Mes émotions", desc: "Comprends et gère tes sentiments.", emoji: "❤️", color: "from-red-400 to-pink-500", bg: "bg-red-50", border: "border-red-200", ageGroups: ["maternelle", "primaire", "college-lycee"] },
-  { id: "social", name: "Relations & Amitié", desc: "Mieux se comprendre et s'entraider.", emoji: "🤝", color: "from-orange-400 to-amber-500", bg: "bg-orange-50", border: "border-orange-200", ageGroups: ["primaire", "college-lycee"] },
-  { id: "physical", name: "Bien-être & Corps", desc: "Sommeil, alimentation, sport : prends soin de toi !", emoji: "💪", color: "from-teal-500 to-green-500", bg: "bg-teal-50", border: "border-teal-200", ageGroups: ["primaire", "college-lycee"] },
-  { id: "creativity", name: "Créativité & Culture", desc: "Exprime-toi, invente, découvre le monde !", emoji: "🎨", color: "from-yellow-400 to-orange-400", bg: "bg-yellow-50", border: "border-yellow-200", ageGroups: ["maternelle", "primaire", "college-lycee"] },
-  { id: "orientation", name: "Mon avenir", desc: "Découvre tes passions et tes métiers !", emoji: "🚀", color: "from-indigo-500 to-blue-600", bg: "bg-indigo-50", border: "border-indigo-200", ageGroups: ["college-lycee"] },
-];
-
-function XPBar({ xp, level }: { xp: number; level: number }) {
-  const xpPerLevel = 500;
-  const currentXp = xp % xpPerLevel;
-  const pct = Math.min((currentXp / xpPerLevel) * 100, 100);
-  return (
-    <div className="flex items-center gap-3">
-      <span className="text-sm font-black text-white/90">Niv.{level}</span>
-      <div className="flex-1 h-4 bg-white/20 rounded-full overflow-hidden">
-        <div className="xp-bar h-full rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
-      </div>
-      <span className="text-xs font-bold text-white/80">{currentXp}/{xpPerLevel}</span>
-    </div>
-  );
-}
-
 export default function ChildHomePage({ params }: { params: { id: string } }) {
   const { id } = params;
   const router = useRouter();
   const [child, setChild] = useState<Child | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadTimeout, setLoadTimeout] = useState(false);
-  const [lumoMsg, setLumoMsg] = useState("");
-  const [msgKey, setMsgKey] = useState(0);
-  const [characterLoading, setCharacterLoading] = useState(false);
-  const [characterTalking, setCharacterTalking] = useState(false);
-  const [showPulse, setShowPulse] = useState(false);
-  const [musicOn, setMusicOn] = useState(false);
-  const [chapters, setChapters] = useState<any[]>([]);
-  const ageGroup = (child?.ageGroup || "primaire") as "maternelle" | "primaire" | "college-lycee";
-  const { isPlaying, startMusic, stopMusic } = useAmbientMusic(ageGroup, musicOn);
-  const { narrate, stop: stopNarration, speaking } = useNarration();
-
-  // Parse avatar config
-  const avatarConfig = (() => {
-    try { return JSON.parse(child?.avatarConfig || "{}"); } catch { return {}; }
-  })();
-  const characterName = avatarConfig.characterName || "Lumo";
+  const [currency, setCurrency] = useState({ stars: 0, crystals: 0 });
+  const [stats, setStats] = useState<LumoStatsData>({ faim: 80, joie: 85, energie: 90 });
+  const [musicEnabled, setMusicEnabled] = useState(false);
+  const { startMusic, stopMusic, isPlaying } = useRoomMusic("maison", musicEnabled);
+  const { play } = useSoundEffects();
 
   useEffect(() => {
-    // Timeout de sécurité : si chargement > 8s, afficher un bouton de secours
     const timer = setTimeout(() => setLoadTimeout(true), 8000);
     fetch(`/api/children/${id}`)
       .then((r) => {
@@ -82,93 +43,50 @@ export default function ChildHomePage({ params }: { params: { id: string } }) {
         clearTimeout(timer);
         if (!data) { setLoading(false); return; }
         setChild(data);
-        setLumoMsg(getLumoMessage(data));
         setLoading(false);
+        // Compute Lumo stats from localStorage
+        setStats(computeLumoStats(id));
       })
       .catch(() => { clearTimeout(timer); router.push("/parent"); });
     return () => clearTimeout(timer);
-  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [id, router]);
 
-  // Auto-change message every 12 seconds
-  useEffect(() => {
-    if (!child) return;
-    const interval = setInterval(() => {
-      if (!characterTalking) {
-        setLumoMsg(getLumoMessage(child));
-        setMsgKey((k) => k + 1);
-      }
-    }, 12000);
-    return () => clearInterval(interval);
-  }, [child, characterTalking]);
-
-  // Pulse effect to invite clicking on character
-  useEffect(() => {
-    const t = setTimeout(() => setShowPulse(true), 3000);
-    return () => clearTimeout(t);
-  }, []);
-
-  // Fetch chapters for world map
   useEffect(() => {
     if (child) {
       fetch(`/api/progress?childId=${child.id}`)
         .then((r) => r.json())
-        .then((d) => { if (d.chapters) setChapters(d.chapters); });
+        .then((d) => {
+          if (d.currency) setCurrency(d.currency);
+        })
+        .catch(() => {});
     }
   }, [child]);
 
-  const handleCharacterClick = useCallback(async () => {
-    if (!child || characterLoading) return;
-    setCharacterLoading(true);
-    setCharacterTalking(true);
-    setShowPulse(false);
+  const handleRoomSelect = (roomId: string) => {
+    play("woosh");
+    router.push(`/child/${id}/room/${roomId}`);
+  };
 
-    // Get last module played
-    const lastModule = child.sessions?.[0]?.module || null;
-    const hour = new Date().getHours();
-    const timeOfDay = hour < 12 ? "matin" : hour < 18 ? "après-midi" : "soir";
-
-    try {
-      const res = await fetch("/api/ai/character", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          childName: child.name,
-          ageGroup: child.ageGroup,
-          level: child.level,
-          streak: child.streak,
-          lastModule,
-          xp: child.xp,
-          avatarName: characterName,
-          timeOfDay,
-        }),
-      });
-      const data = await res.json();
-      setLumoMsg(data.message || getLumoMessage(child));
-      setMsgKey((k) => k + 1);
-    } catch {
-      setLumoMsg(getLumoMessage(child));
-      setMsgKey((k) => k + 1);
-    } finally {
-      setCharacterLoading(false);
-      // Stop "talking" after 5 seconds
-      setTimeout(() => setCharacterTalking(false), 5000);
+  const toggleMusic = () => {
+    if (musicEnabled) {
+      setMusicEnabled(false);
+      stopMusic();
+    } else {
+      setMusicEnabled(true);
+      startMusic();
     }
-  }, [child, characterLoading, characterName]);
+  };
 
   if (loading || !child) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-500 to-purple-600">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-400 to-indigo-500">
         <div className="text-center text-white">
-          <div className="text-7xl animate-bounce mb-4">🌟</div>
-          <p className="font-bold text-xl">Chargement…</p>
+          <div className="text-6xl animate-bounce mb-4">🏠</div>
+          <p className="font-bold text-xl">La maison de Lumo se prépare…</p>
           {loadTimeout && (
-            <div className="mt-6 space-y-3">
-              <p className="text-white/70 text-sm">Ça prend plus de temps que prévu…</p>
-              <button
-                onClick={() => router.push("/parent")}
-                className="bg-white text-purple-700 font-black px-6 py-3 rounded-2xl hover:scale-105 transition-transform"
-              >
-                ← Retour au tableau de bord
+            <div className="mt-6">
+              <button onClick={() => router.push("/parent")} className="bg-white text-purple-700 font-black px-6 py-3 rounded-2xl">
+                ← Retour
               </button>
             </div>
           )}
@@ -177,237 +95,112 @@ export default function ChildHomePage({ params }: { params: { id: string } }) {
     );
   }
 
-  const availableModules = modules.filter((m) => m.ageGroups.includes(child.ageGroup));
-  const troubles = (() => { try { return JSON.parse(child.profile?.troubles || "[]"); } catch { return []; } })();
+  const xpInLevel = child.xp % 500;
   const lumoMood = getLumoMood(child);
 
-  const bgGradient =
-    child.ageGroup === "maternelle" ? "from-amber-500 via-orange-500 to-yellow-500" :
-    child.ageGroup === "primaire" ? "from-emerald-600 via-teal-600 to-cyan-600" :
-    "from-violet-600 via-purple-600 to-indigo-700";
-
-  // Module icons for session count display
-  const sessionsByModule = (child.sessions || []).reduce((acc, s) => {
-    acc[s.module] = (acc[s.module] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${bgGradient}`}>
-      {child && (
-        <StatusBar
-          childId={child.id}
-          name={child.name}
-          avatar={child.avatar}
-          level={child.level}
-          xp={child.xp}
-          streak={child.streak}
-          ageGroup={child.ageGroup}
-        />
-      )}
-      {/* Header */}
-      <header className="px-4 pt-5 pb-0">
-        <div className="max-w-md mx-auto">
-          {/* Barre nav top */}
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="font-black text-white text-lg">{child.name}</span>
-              <span className="bg-white/20 text-white text-xs font-bold px-2 py-0.5 rounded-full">Niv.{child.level}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {child.streak > 0 && (
-                <div className="bg-white/20 backdrop-blur rounded-xl px-2.5 py-1.5 flex items-center gap-1">
-                  <span className="text-base">🔥</span>
-                  <span className="text-xs font-black text-white">{child.streak}j</span>
-                </div>
-              )}
-              <Link href={`/child/${id}/profile`} className="bg-white/20 backdrop-blur rounded-xl px-2.5 py-1.5 text-sm font-bold text-white hover:bg-white/30 transition-colors">🏆</Link>
-              <Link href={`/child/${id}/avatar`} className="bg-white/20 backdrop-blur rounded-xl px-2.5 py-1.5 text-sm font-bold text-white hover:bg-white/30 transition-colors">🎨</Link>
-              <button
-                onClick={() => {
-                  if (musicOn) { stopMusic(); setMusicOn(false); }
-                  else { setMusicOn(true); startMusic(); }
-                }}
-                className="bg-white/20 backdrop-blur rounded-xl px-2.5 py-1.5 text-sm font-bold text-white hover:bg-white/30 transition-colors"
-                title={musicOn ? "Couper la musique" : "Musique d'ambiance"}
-              >{isPlaying ? "🔊" : "🔇"}</button>
-              <Link href="/parent" className="bg-white/20 backdrop-blur rounded-xl px-2.5 py-1.5 text-xs font-bold text-white hover:bg-white/30 transition-colors">👨‍👩‍👧</Link>
-            </div>
+    <div className="min-h-screen bg-gradient-to-b from-sky-200 via-sky-100 to-green-100 pb-20">
+      {/* Top bar — ultra compact */}
+      <div className="px-3 pt-3 pb-2 flex items-center justify-between max-w-2xl mx-auto">
+        <Link href="/parent" className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-sm flex items-center justify-center text-slate-600 font-bold active:scale-90 transition-transform">
+          ←
+        </Link>
+        <div className="flex items-center gap-2">
+          {/* Currency */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-sm">
+            <span className="text-sm">⭐</span>
+            <span className="text-xs font-black text-slate-700">{currency.stars}</span>
           </div>
-
-          {/* Zone personnage */}
-          <div className="flex flex-col items-center pt-2 pb-4">
-            {/* Bulle de dialogue */}
-            <div
-              key={msgKey}
-              className="speech-bubble relative bg-white rounded-2xl rounded-bl-sm px-4 py-2.5 shadow-lg mb-1 max-w-[280px] text-center"
-            >
-              {characterLoading ? (
-                <div className="flex items-center gap-1 justify-center py-1">
-                  <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-                </div>
-              ) : (
-                <p className="text-sm font-semibold text-slate-700 leading-snug">{lumoMsg}</p>
-              )}
-              <div className="absolute -bottom-2 left-8 w-4 h-4 bg-white" style={{ clipPath: "polygon(0 0, 100% 0, 0 100%)" }} />
-            </div>
-
-            {/* Personnage cliquable - interaction IA */}
-            <div className="relative">
-              {showPulse && !characterLoading && (
-                <div className="absolute inset-0 rounded-full bg-white/30 animate-ping" style={{ animationDuration: "2s" }} />
-              )}
-              <div
-                onClick={handleCharacterClick}
-                className={`cursor-pointer select-none transition-transform ${characterLoading ? "opacity-70" : "hover:scale-105 active:scale-95"}`}
-              >
-                <LumoCharacter
-                  ageGroup={child.ageGroup as "maternelle" | "primaire" | "college-lycee"}
-                  level={child.level}
-                  mood={characterTalking ? "excited" : lumoMood}
-                  speaking={characterTalking}
-                  size={170}
-                />
-              </div>
-            </div>
-
-            <p className="text-white/60 text-xs mt-1 font-medium">
-              Appuie sur {characterName} pour lui parler ! 💬
-            </p>
+          <div className="bg-white/80 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-sm">
+            <span className="text-sm">💎</span>
+            <span className="text-xs font-black text-slate-700">{currency.crystals}</span>
           </div>
-
-          {/* XP Bar */}
-          <XPBar xp={child.xp} level={child.level} />
-        </div>
-      </header>
-
-      {/* Main content */}
-      <main className="bg-slate-50 rounded-t-[2rem] min-h-[calc(100vh-200px)] px-4 pt-7 pb-10">
-        <div className="max-w-md mx-auto">
-          {/* Alert troubles */}
-          {troubles.length > 0 && (
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-5 flex items-start gap-3">
-              <span className="text-2xl">💡</span>
-              <div>
-                <p className="font-bold text-amber-800 text-sm">On travaille ensemble !</p>
-                <p className="text-amber-700 text-sm">
-                  {characterName} a préparé des exercices spéciaux pour t&apos;aider avec {troubles[0]}.
-                </p>
-              </div>
+          {child.streak > 0 && (
+            <div className="bg-orange-400/90 rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-sm">
+              <span className="text-sm">🔥</span>
+              <span className="text-xs font-black text-white">{child.streak}</span>
             </div>
           )}
-
-          <h2 className="font-black text-xl text-slate-800 mb-4">Que veux-tu faire ? 🎯</h2>
-
-          {/* Lumo interaction card */}
-          <Link
-            href={`/child/${id}/lumo`}
-            className={`card-bubble mb-5 p-4 flex items-center gap-4 bg-gradient-to-r ${
-              child.ageGroup === "maternelle" ? "from-amber-400 to-orange-500" :
-              child.ageGroup === "primaire" ? "from-emerald-500 to-teal-600" :
-              "from-violet-500 to-purple-700"
-            }`}
+          {/* Music toggle */}
+          <button
+            onClick={toggleMusic}
+            className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-sm flex items-center justify-center text-lg active:scale-90 transition-transform"
+            aria-label={isPlaying ? "Couper la musique" : "Activer la musique"}
           >
-            <div className="shrink-0">
-              <LumoCharacter
-                ageGroup={child.ageGroup as "maternelle" | "primaire" | "college-lycee"}
-                level={child.level}
-                mood="happy"
-                size={64}
-              />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-black text-white">Jouer avec {characterName} !</p>
-              <p className="text-white/80 text-xs mt-0.5">Parler, explorer, grandir ensemble</p>
-            </div>
-            <span className="text-white text-xl shrink-0">→</span>
-          </Link>
+            {isPlaying ? "🔊" : "🔇"}
+          </button>
+        </div>
+      </div>
 
-          {/* Carte du monde */}
-          {chapters.length > 0 && (
-            <div className="px-4 mb-6">
-              <WorldMap childId={child.id} chapters={chapters} ageGroup={child.ageGroup} />
-            </div>
-          )}
+      {/* Main LumoHouse */}
+      <main className="px-3 max-w-2xl mx-auto">
+        <div className="bg-white/40 backdrop-blur-sm rounded-3xl p-2 shadow-xl">
+          <LumoHouse
+            onRoomSelect={handleRoomSelect}
+            childName={child.name}
+            lumoMood={lumoMood}
+            level={child.level}
+          />
+        </div>
 
-          {/* Module grid */}
-          <div className="grid grid-cols-2 gap-3">
-            {availableModules.map((mod) => {
-              const sessionCount = sessionsByModule[mod.id] || 0;
-              return (
-                <Link
-                  key={mod.id}
-                  href={`/child/${child.id}/module/${mod.id}`}
-                  className={`card-bubble border-2 ${mod.border} ${mod.bg} p-4 flex flex-col gap-2.5 group relative overflow-hidden`}
-                >
-                  {/* Session count badge */}
-                  {sessionCount > 0 && (
-                    <div className="absolute top-2 right-2 bg-slate-700/10 rounded-lg px-1.5 py-0.5">
-                      <span className="text-xs font-bold text-slate-500">×{sessionCount}</span>
-                    </div>
-                  )}
-                  <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${mod.color} flex items-center justify-center text-xl shadow-md group-hover:scale-110 transition-transform`}>
-                    {mod.emoji}
-                  </div>
-                  <div>
-                    <h3 className="font-black text-slate-800 text-xs leading-tight">{mod.name}</h3>
-                    <p className="text-xs text-slate-500 mt-0.5 leading-tight">{mod.desc}</p>
-                  </div>
-                  {/* "NEW" indicator if never played */}
-                  {sessionCount === 0 && (
-                    <div className="absolute top-2 right-2">
-                      <span className="text-xs font-black text-white bg-gradient-to-r from-violet-500 to-purple-600 rounded-lg px-1.5 py-0.5">NEW</span>
-                    </div>
-                  )}
-                </Link>
-              );
-            })}
+        {/* Welcome message */}
+        <div className="mt-3 bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border-2 border-violet-100">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg">👋</span>
+            <span className="font-black text-slate-800 text-sm">
+              Bienvenue {child.name.split(" ")[0]} !
+            </span>
           </div>
+          <p className="text-xs text-slate-600 font-medium">
+            Clique sur une pièce de la maison pour jouer avec moi !
+          </p>
+        </div>
 
-          {/* Chat IA */}
-          <div className="mt-4">
-            <Link
-              href={`/child/${child.id}/chat`}
-              className="card-bubble bg-white border-2 border-slate-100 p-4 flex items-center gap-4"
-            >
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-xl shadow-md">
-                🤖
-              </div>
-              <div className="flex-1">
-                <p className="font-black text-slate-800 text-sm">Elevo IA</p>
-                <p className="text-xs text-slate-500">Pose n&apos;importe quelle question !</p>
-              </div>
-              <span className="text-slate-400 text-xl">→</span>
-            </Link>
+        {/* XP bar */}
+        <div className="mt-3 bg-white/80 backdrop-blur-sm rounded-2xl p-3 shadow-sm">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs font-black text-slate-700">Niveau {child.level}</span>
+            <span className="text-xs font-bold text-slate-500">{xpInLevel}/500 XP</span>
           </div>
+          <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 rounded-full transition-all duration-700"
+              style={{ width: `${(xpInLevel / 500) * 100}%` }}
+            />
+          </div>
+        </div>
 
-          <div className="pb-6" />
+        {/* Lumo stats */}
+        <div className="mt-3">
+          <LumoStats stats={stats} />
         </div>
       </main>
 
-      {child && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 z-50">
-          <div className="flex justify-around max-w-md mx-auto">
-            <Link href={`/child/${child.id}`} className="flex flex-col items-center text-elevo-purple">
-              <span className="text-xl">🗺️</span><span className="text-[10px] font-bold">Carte</span>
-            </Link>
-            <Link href={`/child/${child.id}/quests`} className="flex flex-col items-center text-gray-400">
-              <span className="text-xl">🔔</span><span className="text-[10px] font-bold">Quêtes</span>
-            </Link>
-            <Link href={`/child/${child.id}/shop`} className="flex flex-col items-center text-gray-400">
-              <span className="text-xl">🛍️</span><span className="text-[10px] font-bold">Boutique</span>
-            </Link>
-            <Link href={`/child/${child.id}/inventory`} className="flex flex-col items-center text-gray-400">
-              <span className="text-xl">🎒</span><span className="text-[10px] font-bold">Sac</span>
-            </Link>
-            <Link href={`/child/${child.id}/profile`} className="flex flex-col items-center text-gray-400">
-              <span className="text-xl">👤</span><span className="text-[10px] font-bold">Profil</span>
-            </Link>
-          </div>
-        </nav>
-      )}
+      {/* Bottom nav */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-slate-100 px-4 py-2 z-50 shadow-[0_-2px_20px_rgba(0,0,0,0.05)]">
+        <div className="flex justify-around max-w-md mx-auto">
+          <Link href={`/child/${child.id}`} className="flex flex-col items-center gap-0.5 text-violet-600">
+            <span className="text-xl">🏠</span>
+            <span className="text-[10px] font-bold">Maison</span>
+          </Link>
+          <Link href={`/child/${child.id}/quests`} className="flex flex-col items-center gap-0.5 text-slate-400 hover:text-slate-600 transition-colors">
+            <span className="text-xl">⚔️</span>
+            <span className="text-[10px] font-bold">Quêtes</span>
+          </Link>
+          <Link href={`/child/${child.id}/shop`} className="flex flex-col items-center gap-0.5 text-slate-400 hover:text-slate-600 transition-colors">
+            <span className="text-xl">🛍️</span>
+            <span className="text-[10px] font-bold">Boutique</span>
+          </Link>
+          <Link href={`/child/${child.id}/inventory`} className="flex flex-col items-center gap-0.5 text-slate-400 hover:text-slate-600 transition-colors">
+            <span className="text-xl">🎒</span>
+            <span className="text-[10px] font-bold">Sac</span>
+          </Link>
+          <Link href={`/child/${child.id}/lumo`} className="flex flex-col items-center gap-0.5 text-slate-400 hover:text-slate-600 transition-colors">
+            <span className="text-xl">💬</span>
+            <span className="text-[10px] font-bold">Lumo</span>
+          </Link>
+        </div>
+      </nav>
     </div>
   );
 }
