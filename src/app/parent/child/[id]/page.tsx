@@ -182,6 +182,38 @@ export default function ChildDetailPage({ params }: { params: { id: string } }) 
           ))}
         </div>
 
+        {/* Dys assessment banner */}
+        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-4">
+              <div className="text-5xl">🔍</div>
+              <div>
+                <h3 className="text-xl font-black">Bilan d&apos;apprentissage</h3>
+                <p className="text-sm text-white/90 mt-1">
+                  4 tests scientifiques pour détecter d&apos;éventuelles difficultés dys
+                </p>
+                <p className="text-xs text-white/70 mt-0.5">
+                  Lecture · Phonologie · Nombre · Orthographe — ~10 min
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Link
+                href={`/parent/child/${child.id}/dys-report`}
+                className="btn-fun bg-white/20 backdrop-blur text-white border border-white/30 px-4 py-2.5 text-sm hover:bg-white/30 transition-colors"
+              >
+                📊 Voir le rapport
+              </Link>
+              <Link
+                href={`/child/${child.id}/dys-assessment`}
+                className="btn-fun bg-white text-indigo-700 px-4 py-2.5 text-sm font-black hover:scale-105 transition-transform"
+              >
+                ▶ Lancer le bilan
+              </Link>
+            </div>
+          </div>
+        </div>
+
         {/* Radar + Troubles/Forces */}
         <div className="grid md:grid-cols-2 gap-6">
           <div className="card-bubble bg-white p-6">
