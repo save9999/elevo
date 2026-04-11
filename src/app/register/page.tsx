@@ -1,152 +1,208 @@
-"use client";
-import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { Mail, Lock, User, ArrowRight, AlertCircle, CheckCircle2 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
-  const [error, setError] = useState("");
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
+    setError('');
     setLoading(true);
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    const data = await res.json();
-    setLoading(false);
-    if (!res.ok) {
-      setError(data.error || "Erreur lors de la création du compte.");
-    } else {
-      router.push("/login?registered=1");
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data?.error ?? 'Inscription impossible.');
+        setLoading(false);
+        return;
+      }
+      // Auto sign in after register
+      const sign = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+      if (sign?.error) {
+        router.push('/login');
+        return;
+      }
+      router.push('/parent');
+    } catch {
+      setError('Une erreur est survenue.');
+      setLoading(false);
     }
   }
 
-  const benefits = [
-    "Bilan dys en 10 minutes",
-    "Accès à tous les mini-jeux",
-    "Rapports détaillés pour parents",
-  ];
-
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden bg-neutral-50">
-      <div className="absolute inset-0 gradient-mesh" />
-      <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-primary-200/30 blur-[120px] drift" />
-      <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-accent-200/20 blur-[100px] drift-slow" />
-      <div className="grain-overlay" />
+    <main
+      className="relative flex min-h-screen items-center justify-center grain px-6 py-12"
+      style={{ background: 'var(--bg-base)' }}
+    >
+      <div
+        className="pointer-events-none absolute -right-40 top-0 h-[500px] w-[500px] rounded-full opacity-[0.06] blur-[120px]"
+        style={{ background: 'var(--accent)' }}
+      />
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full max-w-[420px] relative"
-      >
-        <div className="text-center mb-10">
-          <Link href="/" className="inline-flex items-center gap-2.5 mb-8 group">
-            <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center text-white font-display font-bold text-lg shadow-md group-hover:shadow-lg transition-shadow">
-              E
-            </div>
-            <span className="font-display font-semibold text-xl text-neutral-900 tracking-tight">Elevo</span>
+      <div className="relative z-20 w-full max-w-md">
+        <div className="mb-12 text-center">
+          <Link href="/" className="inline-flex items-center gap-3">
+            <Mark />
+            <span className="text-base font-semibold">Elevo</span>
           </Link>
-          <h1 className="text-3xl font-display font-semibold text-neutral-900 tracking-tight mb-2">
-            Créez votre compte
+        </div>
+
+        <div className="mb-10">
+          <p className="eyebrow">
+            <span className="divider" /> Créer un compte
+          </p>
+          <h1 className="mt-4 text-4xl font-bold tracking-tight">
+            Démarrer avec Elevo.
           </h1>
-          <p className="text-neutral-500 text-sm">
-            Commencez l&apos;aventure Elevo avec votre enfant.
+          <p className="mt-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
+            Gratuit, sans carte bancaire. Vos enfants peuvent commencer en moins
+            d&apos;une minute.
           </p>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-          className="bg-white border border-neutral-200/80 rounded-2xl p-8 shadow-md"
-        >
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <Input
-              label="Votre prénom"
-              type="text"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              required
-              placeholder="Marie"
-              leftIcon={<User className="w-4 h-4" />}
-            />
-            <Input
-              label="Email"
-              type="email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              required
-              placeholder="parent@famille.fr"
-              leftIcon={<Mail className="w-4 h-4" />}
-            />
-            <Input
-              label="Mot de passe"
-              type="password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              required
-              minLength={6}
-              placeholder="Min. 6 caractères"
-              leftIcon={<Lock className="w-4 h-4" />}
-              hint="Au moins 6 caractères"
-            />
-
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-start gap-2 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg px-3.5 py-2.5 text-sm"
-              >
-                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                <span>{error}</span>
-              </motion.div>
-            )}
-
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              loading={loading}
-              fullWidth
-              rightIcon={!loading && <ArrowRight className="w-4 h-4" />}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <label className="block">
+            <span
+              className="mb-2 block text-xs font-medium uppercase tracking-wider"
+              style={{ color: 'var(--text-tertiary)' }}
             >
-              {loading ? "Création..." : "Créer mon compte"}
-            </Button>
-          </form>
+              Votre prénom
+            </span>
+            <input
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Marie"
+              className="w-full rounded-md border bg-transparent px-4 py-3 text-base focus:border-[var(--accent)] focus:outline-none"
+              style={{
+                borderColor: 'var(--border-default)',
+                color: 'var(--text-primary)',
+              }}
+            />
+          </label>
+          <label className="block">
+            <span
+              className="mb-2 block text-xs font-medium uppercase tracking-wider"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              Email
+            </span>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="marie@famille.fr"
+              className="w-full rounded-md border bg-transparent px-4 py-3 text-base focus:border-[var(--accent)] focus:outline-none"
+              style={{
+                borderColor: 'var(--border-default)',
+                color: 'var(--text-primary)',
+              }}
+            />
+          </label>
+          <label className="block">
+            <span
+              className="mb-2 block text-xs font-medium uppercase tracking-wider"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              Mot de passe
+            </span>
+            <input
+              type="password"
+              required
+              minLength={8}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="8 caractères minimum"
+              className="w-full rounded-md border bg-transparent px-4 py-3 text-base focus:border-[var(--accent)] focus:outline-none"
+              style={{
+                borderColor: 'var(--border-default)',
+                color: 'var(--text-primary)',
+              }}
+            />
+          </label>
 
-          {/* Benefits */}
-          <div className="mt-6 pt-6 border-t border-neutral-100 space-y-2">
-            {benefits.map((b) => (
-              <div key={b} className="flex items-center gap-2 text-xs text-neutral-600">
-                <CheckCircle2 className="w-3.5 h-3.5 text-primary-500 shrink-0" />
-                <span>{b}</span>
-              </div>
-            ))}
-          </div>
+          {error && (
+            <p
+              className="rounded-md border px-4 py-3 text-sm"
+              style={{
+                borderColor: 'rgba(239, 68, 68, 0.4)',
+                background: 'rgba(239, 68, 68, 0.08)',
+                color: '#fca5a5',
+              }}
+            >
+              {error}
+            </p>
+          )}
 
-          <p className="text-center text-sm text-neutral-500 mt-6">
-            Déjà un compte ?{" "}
-            <Link href="/login" className="font-semibold text-primary-600 hover:text-primary-700 transition-colors">
-              Se connecter
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-md px-6 py-3.5 text-sm font-semibold transition hover:translate-y-[-1px] disabled:opacity-60"
+            style={{
+              background: 'var(--accent)',
+              color: 'var(--bg-base)',
+              boxShadow: '0 10px 30px -10px var(--accent-glow)',
+            }}
+          >
+            {loading ? 'Création…' : 'Créer mon compte'}
+          </button>
+
+          <p className="text-xs leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
+            En créant un compte, vous acceptez nos{' '}
+            <Link href="/cgu" style={{ color: 'var(--accent-bright)' }}>
+              conditions d&apos;utilisation
+            </Link>{' '}
+            et notre{' '}
+            <Link href="/confidentialite" style={{ color: 'var(--accent-bright)' }}>
+              politique de confidentialité
             </Link>
+            .
           </p>
-        </motion.div>
+        </form>
 
-        <p className="text-center text-xs text-neutral-400 mt-6">
-          Gratuit · Sans carte bancaire · Résultats en 10 min
+        <p className="mt-8 text-center text-sm" style={{ color: 'var(--text-secondary)' }}>
+          Déjà un compte ?{' '}
+          <Link href="/login" className="font-semibold" style={{ color: 'var(--accent-bright)' }}>
+            Se connecter
+          </Link>
         </p>
-      </motion.div>
-    </div>
+      </div>
+    </main>
+  );
+}
+
+function Mark() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <rect
+        x="1"
+        y="1"
+        width="18"
+        height="18"
+        rx="4"
+        stroke="var(--accent)"
+        strokeWidth="1.5"
+      />
+      <circle cx="10" cy="10" r="3" fill="var(--accent)" />
+    </svg>
   );
 }

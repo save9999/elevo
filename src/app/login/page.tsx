@@ -1,136 +1,156 @@
-"use client";
-import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
-import { motion } from "framer-motion";
-import { Mail, Lock, ArrowRight, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
+    setError('');
     setLoading(true);
-    const res = await signIn("credentials", { email, password, redirect: false });
+    const res = await signIn('credentials', { email, password, redirect: false });
     setLoading(false);
     if (res?.error) {
-      setError("Email ou mot de passe incorrect.");
+      setError('Email ou mot de passe incorrect.');
     } else {
-      router.push("/parent");
+      router.push('/parent');
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden bg-neutral-50">
-      {/* Ambient background */}
-      <div className="absolute inset-0 gradient-mesh" />
-      <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-primary-200/30 blur-[120px] drift" />
-      <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full bg-accent-200/20 blur-[100px] drift-slow" />
-      <div className="grain-overlay" />
+    <main
+      className="relative flex min-h-screen items-center justify-center grain px-6"
+      style={{ background: 'var(--bg-base)' }}
+    >
+      <div
+        className="pointer-events-none absolute -left-40 top-0 h-[500px] w-[500px] rounded-full opacity-[0.06] blur-[120px]"
+        style={{ background: 'var(--accent)' }}
+      />
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full max-w-[420px] relative"
-      >
-        {/* Logo + Header */}
-        <div className="text-center mb-10">
-          <Link href="/" className="inline-flex items-center gap-2.5 mb-8 group">
-            <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center text-white font-display font-bold text-lg shadow-md group-hover:shadow-lg transition-shadow">
-              E
-            </div>
-            <span className="font-display font-semibold text-xl text-neutral-900 tracking-tight">Elevo</span>
+      <div className="relative z-20 w-full max-w-md">
+        {/* Logo + back link */}
+        <div className="mb-12 text-center">
+          <Link href="/" className="inline-flex items-center gap-3">
+            <Mark />
+            <span className="text-base font-semibold">Elevo</span>
           </Link>
-          <h1 className="text-3xl font-display font-semibold text-neutral-900 tracking-tight mb-2">
-            Bon retour
+        </div>
+
+        {/* Header */}
+        <div className="mb-10">
+          <p className="eyebrow">
+            <span className="divider" /> Se connecter
+          </p>
+          <h1 className="mt-4 text-4xl font-bold tracking-tight">
+            Bon retour parmi nous.
           </h1>
-          <p className="text-neutral-500 text-sm">
-            Connectez-vous pour accéder au tableau de bord.
+          <p className="mt-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
+            Connectez-vous à votre espace parent.
           </p>
         </div>
 
-        {/* Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-          className="bg-white border border-neutral-200/80 rounded-2xl p-8 shadow-md"
-        >
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <Input
-              label="Email"
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <label className="block">
+            <span
+              className="mb-2 block text-xs font-medium uppercase tracking-wider"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              Email
+            </span>
+            <input
               type="email"
+              required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
               placeholder="parent@famille.fr"
-              leftIcon={<Mail className="w-4 h-4" />}
+              className="w-full rounded-md border bg-transparent px-4 py-3 text-base focus:border-[var(--accent)] focus:outline-none"
+              style={{
+                borderColor: 'var(--border-default)',
+                color: 'var(--text-primary)',
+              }}
             />
-
-            <Input
-              label="Mot de passe"
+          </label>
+          <label className="block">
+            <span
+              className="mb-2 block text-xs font-medium uppercase tracking-wider"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              Mot de passe
+            </span>
+            <input
               type="password"
+              required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
               placeholder="••••••••"
-              leftIcon={<Lock className="w-4 h-4" />}
+              className="w-full rounded-md border bg-transparent px-4 py-3 text-base focus:border-[var(--accent)] focus:outline-none"
+              style={{
+                borderColor: 'var(--border-default)',
+                color: 'var(--text-primary)',
+              }}
             />
+          </label>
 
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-start gap-2 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg px-3.5 py-2.5 text-sm"
-              >
-                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                <span>{error}</span>
-              </motion.div>
-            )}
-
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              loading={loading}
-              fullWidth
-              rightIcon={!loading && <ArrowRight className="w-4 h-4" />}
+          {error && (
+            <p
+              className="rounded-md border px-4 py-3 text-sm"
+              style={{
+                borderColor: 'rgba(239, 68, 68, 0.4)',
+                background: 'rgba(239, 68, 68, 0.08)',
+                color: '#fca5a5',
+              }}
             >
-              {loading ? "Connexion..." : "Se connecter"}
-            </Button>
-          </form>
+              {error}
+            </p>
+          )}
 
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-neutral-200" />
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="px-3 bg-white text-neutral-400 font-medium">ou</span>
-            </div>
-          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-md px-6 py-3.5 text-sm font-semibold transition hover:translate-y-[-1px] disabled:opacity-60"
+            style={{
+              background: 'var(--accent)',
+              color: 'var(--bg-base)',
+              boxShadow: '0 10px 30px -10px var(--accent-glow)',
+            }}
+          >
+            {loading ? 'Connexion…' : 'Se connecter'}
+          </button>
+        </form>
 
-          <p className="text-center text-sm text-neutral-500">
-            Pas encore de compte ?{" "}
-            <Link href="/register" className="font-semibold text-primary-600 hover:text-primary-700 transition-colors">
-              Créer un compte
-            </Link>
-          </p>
-        </motion.div>
-
-        {/* Bottom note */}
-        <p className="text-center text-xs text-neutral-400 mt-6">
-          Sécurisé · RGPD · Gratuit pour tester
+        <p className="mt-8 text-center text-sm" style={{ color: 'var(--text-secondary)' }}>
+          Pas encore de compte ?{' '}
+          <Link href="/register" className="font-semibold" style={{ color: 'var(--accent-bright)' }}>
+            Créer un compte
+          </Link>
         </p>
-      </motion.div>
-    </div>
+      </div>
+    </main>
+  );
+}
+
+function Mark() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <rect
+        x="1"
+        y="1"
+        width="18"
+        height="18"
+        rx="4"
+        stroke="var(--accent)"
+        strokeWidth="1.5"
+      />
+      <circle cx="10" cy="10" r="3" fill="var(--accent)" />
+    </svg>
   );
 }

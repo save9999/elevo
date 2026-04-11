@@ -3,7 +3,6 @@
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { LumoSpeaker } from '../explorateurs/lumo/LumoSpeaker';
-import { CosmicBackground } from '../cosmic/CosmicBackground';
 import { IllustratedPlanet, type PlanetKind } from '../cosmic/IllustratedPlanet';
 
 const PETITS_PLANETS: Array<{
@@ -11,29 +10,10 @@ const PETITS_PLANETS: Array<{
   name: string;
   tagline: string;
   kind: PlanetKind;
-  accent: string;
 }> = [
-  {
-    slug: 'alphabos',
-    name: 'Lettres',
-    tagline: 'Apprends les lettres avec moi',
-    kind: 'lettres',
-    accent: 'var(--cyan)',
-  },
-  {
-    slug: 'numeris',
-    name: 'Nombres',
-    tagline: 'Compte et joue avec les chiffres',
-    kind: 'nombres',
-    accent: 'var(--gold)',
-  },
-  {
-    slug: 'memoria',
-    name: 'Mémoire',
-    tagline: 'Retiens les couleurs et les formes',
-    kind: 'memoire',
-    accent: 'var(--magenta)',
-  },
+  { slug: 'alphabos', name: 'Lettres', tagline: 'Découvrir les lettres', kind: 'lettres' },
+  { slug: 'numeris', name: 'Nombres', tagline: 'Compter et reconnaître', kind: 'nombres' },
+  { slug: 'memoria', name: 'Mémoire', tagline: 'Retenir des séquences', kind: 'memoire' },
 ];
 
 export function PetitsStation({
@@ -46,111 +26,119 @@ export function PetitsStation({
   const router = useRouter();
 
   return (
-    <main className="relative min-h-screen overflow-hidden grain">
-      <CosmicBackground variant="warm" />
+    <main
+      className="relative min-h-screen overflow-hidden grain"
+      style={{ background: 'var(--bg-base)' }}
+    >
+      <div
+        className="pointer-events-none absolute -left-40 top-0 h-[600px] w-[600px] rounded-full opacity-[0.06] blur-[140px]"
+        style={{ background: 'var(--accent)' }}
+      />
+      <div
+        className="pointer-events-none absolute -right-40 bottom-0 h-[500px] w-[500px] rounded-full opacity-[0.04] blur-[120px]"
+        style={{ background: 'var(--accent)' }}
+      />
 
-      {/* Top bar */}
-      <header className="relative z-30 mx-auto flex max-w-6xl items-center justify-between px-8 py-6">
-        <Link
-          href="/parent"
-          className="flex items-center gap-2 rounded-full border px-5 py-3 text-sm transition hover:border-[var(--gold)]"
-          style={{ borderColor: 'var(--ink-500)', color: 'var(--paper-muted)' }}
-        >
-          ← Espace parent
-        </Link>
-        <div
-          className="rounded-full px-5 py-3 text-sm"
-          style={{
-            background: 'rgba(251, 191, 36, 0.12)',
-            border: '1px solid rgba(251, 191, 36, 0.3)',
-            color: 'var(--gold-bright)',
-          }}
-        >
-          ✦ Bonjour {firstName}
-        </div>
-      </header>
-
-      {/* LUMO + intro */}
-      <section className="relative z-20 mx-auto max-w-6xl px-8 pt-8 text-center">
-        <div className="flex flex-col items-center gap-6">
-          <div className="reveal reveal-1">
-            <LumoSpeaker
-              text={`Bonjour ${firstName} ! Choisis une planète pour jouer avec moi.`}
-              size="xl"
-            />
-          </div>
-          <p className="eyebrow reveal reveal-2">
-            <span className="deco-rule" /> Trois planètes à explorer
-          </p>
-          <h1
-            className="reveal reveal-3 text-[clamp(2.5rem,6vw,5rem)] leading-[0.95]"
-            style={{ color: 'var(--paper)' }}
+      {/* Top nav */}
+      <nav
+        className="relative z-30 border-b"
+        style={{ borderColor: 'var(--border-subtle)' }}
+      >
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-8 py-5">
+          <Link
+            href="/parent"
+            className="flex items-center gap-2 text-sm transition hover:text-[var(--text-primary)]"
+            style={{ color: 'var(--text-secondary)' }}
           >
-            <span className="block">Quelle planète</span>
-            <span
-              className="block italic"
-              style={{
-                background:
-                  'linear-gradient(120deg, var(--gold) 20%, var(--magenta) 70%, var(--cyan) 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}
-            >
-              veux-tu visiter ?
-            </span>
+            ← Espace parent
+          </Link>
+          <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+            Parcours <span style={{ color: 'var(--accent-bright)' }}>Petits</span> ·{' '}
+            {firstName}
+          </p>
+        </div>
+      </nav>
+
+      <div className="relative z-20 mx-auto max-w-6xl px-8 py-16">
+        {/* Header */}
+        <header className="mb-16 max-w-2xl">
+          <p className="eyebrow reveal reveal-1">
+            <span className="divider" />4 — 6 ans
+          </p>
+          <h1 className="reveal reveal-2 mt-6 text-5xl font-bold tracking-tight sm:text-6xl">
+            Bonjour {firstName}.
           </h1>
-        </div>
-      </section>
+          <p
+            className="reveal reveal-3 mt-4 text-base"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            Choisis une planète pour commencer à jouer.
+          </p>
+        </header>
 
-      {/* 3 planètes en grille */}
-      <section className="relative z-10 mx-auto mt-16 max-w-6xl px-8 pb-24">
-        <div className="grid gap-8 sm:grid-cols-3">
-          {PETITS_PLANETS.map((p, i) => (
-            <button
-              key={p.slug}
-              type="button"
-              onClick={() => router.push(`/petits/${childId}/planet/${p.slug}`)}
-              className={`reveal reveal-${i + 4} group relative flex flex-col items-center gap-4 rounded-3xl border p-8 transition hover:translate-y-[-6px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cyan)]`}
-              style={{
-                borderColor: 'var(--ink-700)',
-                background:
-                  'linear-gradient(180deg, rgba(28,33,72,0.6) 0%, rgba(10,14,39,0.4) 100%)',
-                backdropFilter: 'blur(8px)',
-              }}
-              aria-label={`Planète ${p.name}`}
-            >
-              {/* Glow background */}
-              <div
-                className="absolute -top-8 left-1/2 h-32 w-32 -translate-x-1/2 rounded-full opacity-40 blur-3xl transition group-hover:opacity-70"
-                style={{ background: p.accent }}
-              />
-
-              <div className="relative">
-                <IllustratedPlanet kind={p.kind} size={180} />
-              </div>
-              <div className="mt-2 text-center">
-                <h3
-                  className="editorial-italic text-3xl"
-                  style={{ color: 'var(--paper)' }}
-                >
-                  {p.name}
-                </h3>
-                <p className="mt-2 text-sm" style={{ color: 'var(--paper-muted)' }}>
-                  {p.tagline}
-                </p>
-              </div>
-
-              <span
-                className="mt-2 text-xs uppercase tracking-[0.2em] opacity-0 transition group-hover:opacity-100"
-                style={{ color: p.accent }}
+        {/* 3 planètes */}
+        <section>
+          <p className="eyebrow mb-6">
+            <span className="divider" /> Trois planètes
+          </p>
+          <div
+            className="grid gap-px overflow-hidden rounded-xl border sm:grid-cols-3"
+            style={{
+              borderColor: 'var(--border-default)',
+              backgroundColor: 'var(--border-default)',
+            }}
+          >
+            {PETITS_PLANETS.map((p, i) => (
+              <button
+                key={p.slug}
+                type="button"
+                onClick={() => router.push(`/petits/${childId}/planet/${p.slug}`)}
+                className={`reveal group relative flex flex-col items-center gap-6 p-10 text-center transition hover:bg-[var(--bg-elevated)] focus:outline-none focus-visible:bg-[var(--bg-elevated)]`}
+                style={{
+                  background: 'var(--bg-surface)',
+                  animationDelay: `${(i + 4) * 80}ms`,
+                }}
+                aria-label={`Planète ${p.name}`}
               >
-                Embarquer →
-              </span>
-            </button>
-          ))}
-        </div>
-      </section>
+                <div className="transition-transform group-hover:scale-105">
+                  <IllustratedPlanet kind={p.kind} size={160} />
+                </div>
+                <div>
+                  <p
+                    className="font-mono text-xs uppercase tracking-wider"
+                    style={{ color: 'var(--text-tertiary)' }}
+                  >
+                    {String(i + 1).padStart(2, '0')} · Planète
+                  </p>
+                  <h3 className="mt-2 text-2xl font-semibold tracking-tight">
+                    {p.name}
+                  </h3>
+                  <p
+                    className="mt-2 text-sm"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    {p.tagline}
+                  </p>
+                </div>
+                <span
+                  className="text-xs font-medium opacity-0 transition group-hover:opacity-100"
+                  style={{ color: 'var(--accent-bright)' }}
+                >
+                  Embarquer →
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      {/* LUMO compagne en bas à droite — version personnage car contexte enfant */}
+      <div className="fixed bottom-6 right-6 z-30">
+        <LumoSpeaker
+          text={`Bonjour ${firstName}, choisis une planète pour jouer avec moi.`}
+          size="md"
+        />
+      </div>
     </main>
   );
 }

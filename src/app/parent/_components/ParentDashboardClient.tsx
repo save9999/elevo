@@ -11,19 +11,21 @@ type ChildRow = {
   parcours: 'PETITS' | 'EXPLORATEURS' | 'AVENTURIERS' | 'LYCEENS';
 };
 
-const PARCOURS_LABELS: Record<ChildRow['parcours'], string> = {
-  PETITS: 'Les Petits',
-  EXPLORATEURS: 'Les Explorateurs',
-  AVENTURIERS: 'Les Aventuriers',
-  LYCEENS: 'Les Lycéens',
+const PARCOURS_LABELS: Record<ChildRow['parcours'], { label: string; ageRange: string }> = {
+  PETITS: { label: 'Petits', ageRange: '4 — 6 ans' },
+  EXPLORATEURS: { label: 'Explorateurs', ageRange: '6 — 10 ans' },
+  AVENTURIERS: { label: 'Aventuriers', ageRange: '10 — 14 ans' },
+  LYCEENS: { label: 'Lycéens', ageRange: '14 — 18 ans' },
 };
 
-const PARCOURS_EMOJI: Record<ChildRow['parcours'], string> = {
-  PETITS: '🏡',
-  EXPLORATEURS: '🛸',
-  AVENTURIERS: '🎒',
-  LYCEENS: '📓',
-};
+function ageOf(iso: string): number {
+  const b = new Date(iso);
+  const now = new Date();
+  let a = now.getFullYear() - b.getFullYear();
+  const m = now.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < b.getDate())) a--;
+  return a;
+}
 
 export default function ParentDashboardClient({
   parentName,
@@ -36,8 +38,9 @@ export default function ParentDashboardClient({
   const [firstName, setFirstName] = useState('');
   const [birthdate, setBirthdate] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [submitting, setSubmitting] = useState(false);
+  const [showForm, setShowForm] = useState(children.length === 0);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,6 +61,7 @@ export default function ParentDashboardClient({
       }
       setFirstName('');
       setBirthdate('');
+      setShowForm(false);
       startTransition(() => router.refresh());
     } catch {
       setError("Impossible de contacter le serveur.");
@@ -67,126 +71,270 @@ export default function ParentDashboardClient({
   }
 
   return (
-    <main className="relative min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950 text-slate-100">
-      <div className="pointer-events-none absolute inset-0 opacity-40 bg-[radial-gradient(2px_2px_at_20%_30%,white_,transparent_50%),radial-gradient(1px_1px_at_60%_20%,white_,transparent_50%),radial-gradient(2px_2px_at_80%_60%,white_,transparent_50%),radial-gradient(1px_1px_at_40%_80%,white_,transparent_50%)]" />
+    <main className="relative min-h-screen grain" style={{ background: 'var(--bg-base)' }}>
+      <div
+        className="pointer-events-none absolute -left-40 top-0 h-[500px] w-[500px] rounded-full opacity-[0.05] blur-[120px]"
+        style={{ background: 'var(--accent)' }}
+      />
 
-      <div className="relative mx-auto max-w-5xl px-6 py-12">
-        <header className="mb-12 flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-indigo-300">
-              Centre de contrôle parent
+      {/* Top nav */}
+      <nav
+        className="relative z-30 border-b"
+        style={{ borderColor: 'var(--border-subtle)' }}
+      >
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-8 py-5">
+          <Link href="/" className="flex items-center gap-3">
+            <Mark />
+            <span className="text-base font-semibold">Elevo</span>
+          </Link>
+          <div className="flex items-center gap-6">
+            <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+              {parentName}
             </p>
-            <h1 className="mt-2 text-3xl font-bold">Bonjour {parentName} 👋</h1>
-            <p className="mt-2 text-slate-400">
-              Ajoute tes enfants et embarque-les à bord de la Station Elevo.
-            </p>
+            <form action="/api/auth/signout" method="post">
+              <button
+                type="submit"
+                className="rounded-md border px-4 py-1.5 text-xs font-medium transition hover:border-[var(--text-secondary)]"
+                style={{
+                  borderColor: 'var(--border-default)',
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                Déconnexion
+              </button>
+            </form>
           </div>
-          <form action="/api/auth/signout" method="post">
-            <button
-              type="submit"
-              className="rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500 hover:bg-slate-900/60"
-            >
-              Se déconnecter
-            </button>
-          </form>
+        </div>
+      </nav>
+
+      <div className="relative z-20 mx-auto max-w-6xl px-8 py-16">
+        {/* Header */}
+        <header className="mb-16 max-w-2xl">
+          <p className="eyebrow reveal reveal-1">
+            <span className="divider" />
+            Espace parent
+          </p>
+          <h1 className="reveal reveal-2 mt-6 text-5xl font-bold tracking-tight">
+            Bonjour {parentName}.
+          </h1>
+          <p
+            className="reveal reveal-3 mt-4 text-base"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            {children.length === 0
+              ? "Ajoutez un premier enfant pour commencer."
+              : `Vous suivez ${children.length} ${
+                  children.length === 1 ? 'enfant' : 'enfants'
+                }.`}
+          </p>
         </header>
 
-        <section className="mb-10">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
-            Tes astronautes
-          </h2>
-
-          {children.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-900/30 p-8 text-center">
-              <p className="text-slate-400">
-                Aucun enfant enregistré pour le moment. Ajoute-en un ci-dessous pour
-                l&apos;embarquer dans la Station.
+        {/* Children list */}
+        {children.length > 0 && (
+          <section className="mb-16">
+            <div className="mb-6 flex items-center justify-between">
+              <p className="eyebrow">
+                <span className="divider" />
+                Enfants
               </p>
+              <button
+                type="button"
+                onClick={() => setShowForm(!showForm)}
+                className="text-sm font-medium transition hover:text-[var(--accent-bright)]"
+                style={{ color: 'var(--accent)' }}
+              >
+                {showForm ? '— Annuler' : '+ Ajouter un enfant'}
+              </button>
             </div>
-          ) : (
-            <ul className="grid gap-4 sm:grid-cols-2">
-              {children.map((c) => (
-                <li
-                  key={c.id}
-                  className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 backdrop-blur"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-2 text-lg font-semibold">
-                        <span>{PARCOURS_EMOJI[c.parcours]}</span>
-                        <span>{c.firstName}</span>
-                      </div>
-                      <p className="mt-1 text-xs text-slate-400">
-                        {PARCOURS_LABELS[c.parcours]} ·{' '}
-                        {new Date(c.birthdate).toLocaleDateString('fr-FR')}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <Link
-                      href={`/onboarding?childId=${c.id}`}
-                      className="inline-flex items-center justify-center rounded-full bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-400"
-                    >
-                      Entrer dans la Station →
-                    </Link>
-                    <Link
-                      href={`/parent/child/${c.id}`}
-                      className="inline-flex items-center justify-center rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-200 transition hover:border-slate-500"
-                    >
-                      Voir le rapport
-                    </Link>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
 
-        <section>
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
-            Ajouter un enfant
-          </h2>
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900/40 p-5 backdrop-blur sm:flex-row sm:items-end"
-          >
-            <label className="flex-1 text-sm">
-              <span className="mb-1 block text-slate-400">Prénom</span>
-              <input
-                type="text"
-                required
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="Léa"
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 placeholder:text-slate-600 focus:border-indigo-500 focus:outline-none"
-              />
-            </label>
-            <label className="flex-1 text-sm">
-              <span className="mb-1 block text-slate-400">Date de naissance</span>
-              <input
-                type="date"
-                required
-                value={birthdate}
-                onChange={(e) => setBirthdate(e.target.value)}
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-indigo-500 focus:outline-none"
-              />
-            </label>
-            <button
-              type="submit"
-              disabled={submitting || isPending}
-              className="rounded-full bg-indigo-500 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:opacity-60"
+            <div
+              className="grid gap-px overflow-hidden rounded-xl border"
+              style={{
+                borderColor: 'var(--border-default)',
+                backgroundColor: 'var(--border-default)',
+              }}
             >
-              {submitting ? 'Ajout...' : 'Ajouter'}
-            </button>
-          </form>
-          {error && (
-            <p className="mt-3 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-300">
-              {error}
+              {children.map((c, i) => {
+                const age = ageOf(c.birthdate);
+                const meta = PARCOURS_LABELS[c.parcours];
+                return (
+                  <article
+                    key={c.id}
+                    className="reveal group p-8 transition hover:bg-[var(--bg-elevated)]"
+                    style={{
+                      background: 'var(--bg-surface)',
+                      animationDelay: `${i * 60}ms`,
+                    }}
+                  >
+                    <div className="grid gap-6 sm:grid-cols-[80px_1fr_auto] sm:items-center">
+                      <div
+                        className="font-mono text-3xl font-light"
+                        style={{ color: 'var(--text-tertiary)' }}
+                      >
+                        {String(i + 1).padStart(2, '0')}
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-semibold tracking-tight">
+                          {c.firstName}
+                        </h3>
+                        <div
+                          className="mt-2 flex items-center gap-4 text-sm"
+                          style={{ color: 'var(--text-tertiary)' }}
+                        >
+                          <span>{age} ans</span>
+                          <span>·</span>
+                          <span>Parcours {meta.label}</span>
+                          <span>·</span>
+                          <span>Né·e le {new Date(c.birthdate).toLocaleDateString('fr-FR')}</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <Link
+                          href={`/onboarding?childId=${c.id}`}
+                          className="rounded-md px-5 py-2.5 text-sm font-semibold transition hover:translate-y-[-1px]"
+                          style={{
+                            background: 'var(--accent)',
+                            color: 'var(--bg-base)',
+                          }}
+                        >
+                          Ouvrir l&apos;espace →
+                        </Link>
+                        <Link
+                          href={`/parent/child/${c.id}`}
+                          className="text-xs transition hover:text-[var(--accent-bright)]"
+                          style={{ color: 'var(--text-secondary)' }}
+                        >
+                          Voir le rapport
+                        </Link>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Add child form */}
+        {showForm && (
+          <section className="mb-16">
+            <p className="eyebrow mb-6">
+              <span className="divider" />
+              Ajouter un enfant
             </p>
-          )}
-        </section>
+            <form
+              onSubmit={handleSubmit}
+              className="rounded-xl border p-8"
+              style={{
+                borderColor: 'var(--border-default)',
+                background: 'var(--bg-surface)',
+              }}
+            >
+              <div className="grid gap-6 sm:grid-cols-2">
+                <label className="block">
+                  <span
+                    className="mb-2 block text-xs font-medium uppercase tracking-wider"
+                    style={{ color: 'var(--text-tertiary)' }}
+                  >
+                    Prénom
+                  </span>
+                  <input
+                    type="text"
+                    required
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="Léa"
+                    className="w-full rounded-md border bg-transparent px-4 py-3 text-base text-[var(--text-primary)] placeholder:text-[var(--text-disabled)] focus:border-[var(--accent)] focus:outline-none"
+                    style={{ borderColor: 'var(--border-default)' }}
+                  />
+                </label>
+                <label className="block">
+                  <span
+                    className="mb-2 block text-xs font-medium uppercase tracking-wider"
+                    style={{ color: 'var(--text-tertiary)' }}
+                  >
+                    Date de naissance
+                  </span>
+                  <input
+                    type="date"
+                    required
+                    value={birthdate}
+                    onChange={(e) => setBirthdate(e.target.value)}
+                    className="w-full rounded-md border bg-transparent px-4 py-3 text-base text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                    style={{ borderColor: 'var(--border-default)' }}
+                  />
+                </label>
+              </div>
+              <div className="mt-6 flex flex-wrap items-center gap-4">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="rounded-md px-6 py-3 text-sm font-semibold transition hover:translate-y-[-1px] disabled:opacity-60"
+                  style={{ background: 'var(--accent)', color: 'var(--bg-base)' }}
+                >
+                  {submitting ? 'Enregistrement…' : 'Enregistrer'}
+                </button>
+                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                  Le parcours sera attribué automatiquement selon l&apos;âge.
+                </p>
+              </div>
+              {error && (
+                <p
+                  className="mt-4 rounded-md border px-4 py-3 text-sm"
+                  style={{
+                    borderColor: 'rgba(239, 68, 68, 0.4)',
+                    background: 'rgba(239, 68, 68, 0.08)',
+                    color: '#fca5a5',
+                  }}
+                >
+                  {error}
+                </p>
+              )}
+            </form>
+          </section>
+        )}
+
+        {/* Empty state */}
+        {children.length === 0 && !showForm && (
+          <section
+            className="rounded-xl border p-12 text-center"
+            style={{
+              borderColor: 'var(--border-default)',
+              background: 'var(--bg-surface)',
+            }}
+          >
+            <p style={{ color: 'var(--text-secondary)' }}>
+              Aucun enfant enregistré pour le moment.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowForm(true)}
+              className="mt-4 rounded-md px-5 py-2.5 text-sm font-semibold"
+              style={{ background: 'var(--accent)', color: 'var(--bg-base)' }}
+            >
+              + Ajouter un premier enfant
+            </button>
+          </section>
+        )}
       </div>
     </main>
+  );
+}
+
+function Mark() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <rect
+        x="1"
+        y="1"
+        width="18"
+        height="18"
+        rx="4"
+        stroke="var(--accent)"
+        strokeWidth="1.5"
+      />
+      <circle cx="10" cy="10" r="3" fill="var(--accent)" />
+    </svg>
   );
 }
 
@@ -200,8 +348,8 @@ function humanizeError(code: string | undefined): string {
     case 'age_out_of_range':
       return "Elevo accompagne les enfants de 4 à 18 ans.";
     case 'unauthorized':
-      return 'Session expirée. Reconnecte-toi.';
+      return 'Session expirée. Reconnectez-vous.';
     default:
-      return "Une erreur est survenue. Réessaie dans un instant.";
+      return "Une erreur est survenue. Réessayez dans un instant.";
   }
 }
