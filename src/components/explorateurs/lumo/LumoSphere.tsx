@@ -12,18 +12,22 @@ export type LumoMood =
 
 export type LumoSize = 'sm' | 'md' | 'lg' | 'xl';
 
-const SIZES: Record<LumoSize, { box: string; inner: string }> = {
-  sm: { box: 'h-14 w-14', inner: 'inset-2' },
-  md: { box: 'h-24 w-24', inner: 'inset-3' },
-  lg: { box: 'h-40 w-40', inner: 'inset-5' },
-  xl: { box: 'h-64 w-64', inner: 'inset-8' },
+const SIZES: Record<LumoSize, number> = {
+  sm: 64,
+  md: 110,
+  lg: 180,
+  xl: 280,
 };
 
 /**
- * LUMO — IA holographique.
+ * LUMO — l'IA holographique d'Elevo.
  *
- * Une sphère lumineuse pulsante avec 6 états d'humeur, pilotée uniquement par CSS.
- * Aucune dépendance externe (pas de Lottie, pas de SVG animé).
+ * Personnage SVG complet, conçu comme un esprit céleste à mi-chemin entre
+ * une étoile et une créature. Pas un simple cercle gradient : un vrai
+ * personnage avec yeux, expression, halo orbital et particules ambiantes.
+ *
+ * Tout est en SVG inline + animations CSS — zéro asset externe, zéro Lottie.
+ * Léger et déformable à toutes les tailles.
  */
 export function LumoSphere({
   mood = 'idle',
@@ -34,94 +38,358 @@ export function LumoSphere({
   size?: LumoSize;
   className?: string;
 }) {
-  const sz = SIZES[size];
-
-  const moodClasses = {
-    idle: {
-      bg: 'from-sky-300 via-indigo-400 to-blue-600',
-      glow: 'shadow-[0_0_60px_10px_rgba(99,102,241,0.55)]',
-      anim: 'animate-[lumo-pulse_2.8s_ease-in-out_infinite]',
-      ringOpacity: 'opacity-60',
-    },
-    speaking: {
-      bg: 'from-sky-200 via-indigo-300 to-blue-500',
-      glow: 'shadow-[0_0_80px_16px_rgba(129,140,248,0.75)]',
-      anim: 'animate-[lumo-pulse_0.45s_ease-in-out_infinite]',
-      ringOpacity: 'opacity-90',
-    },
-    thinking: {
-      bg: 'from-emerald-200 via-teal-400 to-emerald-600',
-      glow: 'shadow-[0_0_50px_10px_rgba(16,185,129,0.5)]',
-      anim: 'animate-[lumo-pulse_4s_ease-in-out_infinite]',
-      ringOpacity: 'opacity-80',
-    },
-    happy: {
-      bg: 'from-amber-200 via-yellow-300 to-orange-400',
-      glow: 'shadow-[0_0_80px_14px_rgba(251,191,36,0.7)]',
-      anim: 'animate-[lumo-pulse_0.9s_ease-in-out_infinite]',
-      ringOpacity: 'opacity-90',
-    },
-    gentle: {
-      bg: 'from-pink-200 via-rose-300 to-pink-500',
-      glow: 'shadow-[0_0_55px_10px_rgba(244,114,182,0.55)]',
-      anim: 'animate-[lumo-pulse_3.2s_ease-in-out_infinite]',
-      ringOpacity: 'opacity-70',
-    },
-    sleeping: {
-      bg: 'from-slate-500 via-slate-600 to-slate-800',
-      glow: 'shadow-[0_0_20px_4px_rgba(100,116,139,0.25)]',
-      anim: '',
-      ringOpacity: 'opacity-20',
-    },
-  } satisfies Record<LumoMood, { bg: string; glow: string; anim: string; ringOpacity: string }>;
-
-  const m = moodClasses[mood];
+  const px = SIZES[size];
+  const moodCfg = MOODS[mood];
 
   return (
     <div
-      className={clsx(
-        'relative flex items-center justify-center',
-        sz.box,
-        className,
-      )}
+      className={clsx('relative inline-block', className)}
+      style={{ width: px, height: px }}
       role="img"
       aria-label={`LUMO, ${mood}`}
     >
-      {/* Anneau orbital externe */}
-      <div
-        className={clsx(
-          'absolute inset-0 rounded-full border border-dashed border-indigo-300',
-          m.ringOpacity,
-        )}
-        style={{ transform: 'rotate(20deg)' }}
-      />
-      {/* Anneau orbital interne */}
-      <div
-        className={clsx(
-          'absolute inset-2 rounded-full border border-dashed border-sky-200/60',
-        )}
-        style={{ transform: 'rotate(-35deg)' }}
-      />
-      {/* Sphère centrale */}
-      <div
-        className={clsx(
-          'absolute rounded-full bg-gradient-to-br',
-          m.bg,
-          m.glow,
-          m.anim,
-          sz.inner,
-        )}
+      <svg
+        viewBox="0 0 200 200"
+        width={px}
+        height={px}
+        style={{ overflow: 'visible' }}
       >
-        {/* Highlight top-left pour effet 3D */}
-        <div className="absolute left-1/4 top-1/4 h-1/3 w-1/3 rounded-full bg-white/40 blur-md" />
-      </div>
-      {/* Deux yeux minimalistes */}
-      {mood !== 'sleeping' && (
-        <div className="pointer-events-none absolute z-10 flex gap-[0.35em] text-white">
-          <span className="block h-[0.35em] w-[0.25em] rounded-full bg-white/90 shadow-[0_0_6px_rgba(255,255,255,0.9)]" />
-          <span className="block h-[0.35em] w-[0.25em] rounded-full bg-white/90 shadow-[0_0_6px_rgba(255,255,255,0.9)]" />
-        </div>
-      )}
+        <defs>
+          {/* Body radial gradient — depends on mood */}
+          <radialGradient id={`lumo-body-${mood}`} cx="40%" cy="35%" r="65%">
+            <stop offset="0%" stopColor={moodCfg.bodyHighlight} />
+            <stop offset="45%" stopColor={moodCfg.bodyMid} />
+            <stop offset="100%" stopColor={moodCfg.bodyDeep} />
+          </radialGradient>
+          {/* Outer glow */}
+          <radialGradient id={`lumo-glow-${mood}`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor={moodCfg.glow} stopOpacity="0.6" />
+            <stop offset="50%" stopColor={moodCfg.glow} stopOpacity="0.2" />
+            <stop offset="100%" stopColor={moodCfg.glow} stopOpacity="0" />
+          </radialGradient>
+          {/* Subtle inner shimmer */}
+          <radialGradient id={`lumo-shimmer-${mood}`} cx="30%" cy="25%" r="35%">
+            <stop offset="0%" stopColor="white" stopOpacity="0.7" />
+            <stop offset="100%" stopColor="white" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+
+        {/* Outer halo glow — VERY soft, large */}
+        <circle
+          cx="100"
+          cy="100"
+          r="98"
+          fill={`url(#lumo-glow-${mood})`}
+          style={{
+            transformOrigin: '100px 100px',
+            animation: mood === 'sleeping' ? 'none' : 'lumo-breathe 4s ease-in-out infinite',
+          }}
+        />
+
+        {/* Orbital ring — outer, slow rotation */}
+        <g
+          style={{
+            transformOrigin: '100px 100px',
+            animation: mood === 'sleeping' ? 'none' : 'lumo-halo-spin 18s linear infinite',
+          }}
+        >
+          <ellipse
+            cx="100"
+            cy="100"
+            rx="86"
+            ry="22"
+            fill="none"
+            stroke={moodCfg.ring}
+            strokeWidth="1"
+            strokeDasharray="2 6"
+            opacity={mood === 'sleeping' ? '0.2' : '0.55'}
+            transform="rotate(-18 100 100)"
+          />
+          {/* Orbital dot to make rotation visible */}
+          <circle cx="186" cy="100" r="2.5" fill={moodCfg.ring} opacity="0.85"
+            transform="rotate(-18 100 100)" />
+        </g>
+
+        {/* Orbital ring — inner, counter-rotating */}
+        <g
+          style={{
+            transformOrigin: '100px 100px',
+            animation: mood === 'sleeping' ? 'none' : 'lumo-halo-spin-rev 26s linear infinite',
+          }}
+        >
+          <ellipse
+            cx="100"
+            cy="100"
+            rx="76"
+            ry="14"
+            fill="none"
+            stroke={moodCfg.ringInner}
+            strokeWidth="0.8"
+            strokeDasharray="1 4"
+            opacity={mood === 'sleeping' ? '0.1' : '0.4'}
+            transform="rotate(28 100 100)"
+          />
+        </g>
+
+        {/* Body container — breathes */}
+        <g
+          style={{
+            transformOrigin: '100px 100px',
+            animation: mood === 'sleeping' ? 'lumo-breathe 6s ease-in-out infinite' : `lumo-breathe ${moodCfg.breatheSpeed}s ease-in-out infinite`,
+          }}
+        >
+          {/* Body sphere */}
+          <circle cx="100" cy="100" r="52" fill={`url(#lumo-body-${mood})`} />
+
+          {/* Top-left specular highlight (3D feel) */}
+          <ellipse
+            cx="82"
+            cy="82"
+            rx="20"
+            ry="14"
+            fill={`url(#lumo-shimmer-${mood})`}
+            opacity="0.85"
+          />
+
+          {/* Subtle inner ring (energy core) */}
+          <circle
+            cx="100"
+            cy="100"
+            r="40"
+            fill="none"
+            stroke="white"
+            strokeWidth="0.5"
+            opacity="0.15"
+          />
+
+          {/* === FACE === */}
+          {/* Eyes */}
+          {mood === 'sleeping' ? (
+            <>
+              {/* Closed eye lines */}
+              <path d="M 78 102 Q 86 106 94 102" stroke={moodCfg.faceColor} strokeWidth="2.5" fill="none" strokeLinecap="round" />
+              <path d="M 106 102 Q 114 106 122 102" stroke={moodCfg.faceColor} strokeWidth="2.5" fill="none" strokeLinecap="round" />
+            </>
+          ) : (
+            <>
+              {/* Eye whites */}
+              <g style={{
+                transformOrigin: '100px 100px',
+                animation: 'lumo-blink 5s ease-in-out infinite',
+              }}>
+                <ellipse cx="86" cy="98" rx="7" ry="9" fill="white" opacity="0.95" />
+                <ellipse cx="114" cy="98" rx="7" ry="9" fill="white" opacity="0.95" />
+                {/* Pupils */}
+                <circle cx={86 + moodCfg.pupilOffsetX} cy={98 + moodCfg.pupilOffsetY} r="3.5" fill={moodCfg.faceColor} />
+                <circle cx={114 + moodCfg.pupilOffsetX} cy={98 + moodCfg.pupilOffsetY} r="3.5" fill={moodCfg.faceColor} />
+                {/* Eye sparkle */}
+                <circle cx={87 + moodCfg.pupilOffsetX} cy={96 + moodCfg.pupilOffsetY} r="1.2" fill="white" />
+                <circle cx={115 + moodCfg.pupilOffsetX} cy={96 + moodCfg.pupilOffsetY} r="1.2" fill="white" />
+              </g>
+            </>
+          )}
+
+          {/* Mouth — varies by mood */}
+          {mood === 'speaking' && (
+            <ellipse cx="100" cy="120" rx="6" ry="4" fill={moodCfg.faceColor} />
+          )}
+          {mood === 'idle' && (
+            <path d="M 92 120 Q 100 124 108 120" stroke={moodCfg.faceColor} strokeWidth="2" fill="none" strokeLinecap="round" />
+          )}
+          {mood === 'happy' && (
+            <path d="M 88 118 Q 100 130 112 118" stroke={moodCfg.faceColor} strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          )}
+          {mood === 'gentle' && (
+            <path d="M 92 121 Q 100 124 108 121" stroke={moodCfg.faceColor} strokeWidth="1.8" fill="none" strokeLinecap="round" />
+          )}
+          {mood === 'thinking' && (
+            <line x1="94" y1="121" x2="106" y2="121" stroke={moodCfg.faceColor} strokeWidth="2" strokeLinecap="round" />
+          )}
+
+          {/* Cheek blush for happy/gentle */}
+          {(mood === 'happy' || mood === 'gentle') && (
+            <>
+              <ellipse cx="78" cy="113" rx="5" ry="3" fill={moodCfg.blush} opacity="0.65" />
+              <ellipse cx="122" cy="113" rx="5" ry="3" fill={moodCfg.blush} opacity="0.65" />
+            </>
+          )}
+
+          {/* Sleep Z */}
+          {mood === 'sleeping' && (
+            <text
+              x="135"
+              y="75"
+              fontFamily="serif"
+              fontSize="20"
+              fill="white"
+              opacity="0.6"
+              fontStyle="italic"
+            >
+              z
+            </text>
+          )}
+
+          {/* Thinking dots */}
+          {mood === 'thinking' && (
+            <g opacity="0.7">
+              <circle cx="135" cy="60" r="2" fill={moodCfg.glow} />
+              <circle cx="142" cy="55" r="1.6" fill={moodCfg.glow} />
+              <circle cx="148" cy="50" r="1.2" fill={moodCfg.glow} />
+            </g>
+          )}
+        </g>
+
+        {/* Floating ambient particles (only when awake) */}
+        {mood !== 'sleeping' && (
+          <>
+            <circle cx="35" cy="60" r="2" fill={moodCfg.particle1} style={{
+              transformOrigin: '35px 60px',
+              animation: 'lumo-particle-float 4s ease-in-out infinite',
+            }} />
+            <circle cx="170" cy="80" r="1.6" fill={moodCfg.particle2} style={{
+              transformOrigin: '170px 80px',
+              animation: 'lumo-particle-float-2 3.5s ease-in-out infinite 0.5s',
+            }} />
+            <circle cx="50" cy="155" r="2.2" fill={moodCfg.particle1} style={{
+              transformOrigin: '50px 155px',
+              animation: 'lumo-particle-float-3 5s ease-in-out infinite 1s',
+            }} />
+            <circle cx="160" cy="160" r="1.8" fill={moodCfg.particle2} style={{
+              transformOrigin: '160px 160px',
+              animation: 'lumo-particle-float 4.5s ease-in-out infinite 1.5s',
+            }} />
+            {mood === 'happy' && (
+              <>
+                <circle cx="100" cy="30" r="2.5" fill="#fde68a" style={{
+                  transformOrigin: '100px 30px',
+                  animation: 'lumo-particle-float-2 2.5s ease-in-out infinite',
+                }} />
+                <circle cx="20" cy="100" r="2" fill="#fbbf24" style={{
+                  transformOrigin: '20px 100px',
+                  animation: 'lumo-particle-float 3s ease-in-out infinite 0.3s',
+                }} />
+                <circle cx="180" cy="120" r="2.2" fill="#fde68a" style={{
+                  transformOrigin: '180px 120px',
+                  animation: 'lumo-particle-float-3 2.8s ease-in-out infinite 0.6s',
+                }} />
+              </>
+            )}
+          </>
+        )}
+      </svg>
     </div>
   );
 }
+
+/**
+ * Configurations par mood — couleurs, rythme, expressions.
+ */
+const MOODS: Record<
+  LumoMood,
+  {
+    bodyHighlight: string;
+    bodyMid: string;
+    bodyDeep: string;
+    glow: string;
+    ring: string;
+    ringInner: string;
+    faceColor: string;
+    blush: string;
+    particle1: string;
+    particle2: string;
+    breatheSpeed: number;
+    pupilOffsetX: number;
+    pupilOffsetY: number;
+  }
+> = {
+  idle: {
+    bodyHighlight: '#bae6fd',
+    bodyMid: '#38bdf8',
+    bodyDeep: '#1e3a8a',
+    glow: '#22d3ee',
+    ring: '#67e8f9',
+    ringInner: '#c7d2fe',
+    faceColor: '#0a0e27',
+    blush: '#f0abfc',
+    particle1: '#67e8f9',
+    particle2: '#fde68a',
+    breatheSpeed: 4,
+    pupilOffsetX: 0,
+    pupilOffsetY: 0,
+  },
+  speaking: {
+    bodyHighlight: '#bae6fd',
+    bodyMid: '#22d3ee',
+    bodyDeep: '#1e3a8a',
+    glow: '#22d3ee',
+    ring: '#67e8f9',
+    ringInner: '#c7d2fe',
+    faceColor: '#0a0e27',
+    blush: '#f0abfc',
+    particle1: '#67e8f9',
+    particle2: '#22d3ee',
+    breatheSpeed: 0.6,
+    pupilOffsetX: 0,
+    pupilOffsetY: 0,
+  },
+  thinking: {
+    bodyHighlight: '#bbf7d0',
+    bodyMid: '#34d399',
+    bodyDeep: '#14532d',
+    glow: '#10b981',
+    ring: '#6ee7b7',
+    ringInner: '#a7f3d0',
+    faceColor: '#0a0e27',
+    blush: '#f0abfc',
+    particle1: '#6ee7b7',
+    particle2: '#a7f3d0',
+    breatheSpeed: 5,
+    pupilOffsetX: 0,
+    pupilOffsetY: -2.5, // looks up
+  },
+  happy: {
+    bodyHighlight: '#fef3c7',
+    bodyMid: '#fbbf24',
+    bodyDeep: '#92400e',
+    glow: '#fbbf24',
+    ring: '#fde68a',
+    ringInner: '#fef3c7',
+    faceColor: '#451a03',
+    blush: '#fb7185',
+    particle1: '#fde68a',
+    particle2: '#fbbf24',
+    breatheSpeed: 1.4,
+    pupilOffsetX: 0,
+    pupilOffsetY: 1, // squinting joyfully
+  },
+  gentle: {
+    bodyHighlight: '#fbcfe8',
+    bodyMid: '#f9a8d4',
+    bodyDeep: '#9d174d',
+    glow: '#ec4899',
+    ring: '#f9a8d4',
+    ringInner: '#fbcfe8',
+    faceColor: '#4a044e',
+    blush: '#fb7185',
+    particle1: '#f9a8d4',
+    particle2: '#fbcfe8',
+    breatheSpeed: 5.5,
+    pupilOffsetX: 0,
+    pupilOffsetY: 0,
+  },
+  sleeping: {
+    bodyHighlight: '#cbd5e1',
+    bodyMid: '#64748b',
+    bodyDeep: '#1e293b',
+    glow: '#475569',
+    ring: '#475569',
+    ringInner: '#475569',
+    faceColor: '#0a0e27',
+    blush: '#475569',
+    particle1: '#475569',
+    particle2: '#475569',
+    breatheSpeed: 8,
+    pupilOffsetX: 0,
+    pupilOffsetY: 0,
+  },
+};

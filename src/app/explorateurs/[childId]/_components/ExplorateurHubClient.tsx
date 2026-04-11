@@ -2,9 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { StarField } from '@/components/explorateurs/station/StarField';
 import { Station } from '@/components/explorateurs/station/Station';
-import { LumoSpeaker } from '@/components/explorateurs/lumo/LumoSpeaker';
+import { CosmicBackground } from '@/components/cosmic/CosmicBackground';
 import type { Planet } from '@/components/explorateurs/station/planets-data';
 
 export function ExplorateurHubClient({
@@ -16,44 +15,37 @@ export function ExplorateurHubClient({
 }) {
   const router = useRouter();
 
-  const welcomeText = `Bienvenue à bord, ${firstName}. Choisis une planète pour commencer ton aventure.`;
-
   const handlePlanetSelect = (planet: Planet) => {
-    // Plan 3 : vraie navigation vers la planète et ses activités.
-    // Pour le Plan 2, on affiche un petit toast temporaire via router.refresh
-    // ou on navigue vers une route à créer plus tard.
-    console.info('[explorateurs] planet selected (placeholder)', planet.slug);
     router.push(`/explorateurs/${childId}/planet/${planet.slug}`);
   };
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-100">
-      <StarField />
+    <main className="relative min-h-screen overflow-hidden grain">
+      <CosmicBackground variant="default" />
 
-      {/* Header minimal */}
-      <header className="relative z-20 flex items-center justify-between px-6 py-4">
+      {/* Header */}
+      <header className="relative z-20 mx-auto flex max-w-7xl items-center justify-between px-8 py-6">
         <Link
           href="/parent"
-          className="text-xs uppercase tracking-[0.25em] text-slate-400 transition hover:text-indigo-300"
+          className="rounded-full border px-5 py-3 text-xs uppercase tracking-[0.2em] transition hover:border-[var(--gold)]"
+          style={{
+            borderColor: 'var(--ink-500)',
+            color: 'var(--paper-muted)',
+          }}
         >
-          ← Retour au centre de contrôle
+          ← Centre de contrôle
         </Link>
-        <p className="text-xs uppercase tracking-[0.25em] text-indigo-300">
-          Astronaute · {firstName}
+        <p className="eyebrow">
+          Astronaute <span className="deco-rule" /> {firstName}
         </p>
       </header>
 
-      {/* Hub central */}
+      {/* Hub */}
       <div className="relative z-10 flex flex-col items-center justify-center pt-4">
         <Station
           onPlanetSelect={handlePlanetSelect}
           cabinetHref={`/explorateurs/${childId}/cabinet`}
         />
-      </div>
-
-      {/* LUMO flottante en bas à droite avec phrase d'accueil */}
-      <div className="fixed bottom-6 right-6 z-30">
-        <LumoSpeaker text={welcomeText} size="md" />
       </div>
     </main>
   );
