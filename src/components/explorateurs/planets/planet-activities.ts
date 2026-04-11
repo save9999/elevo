@@ -19,15 +19,21 @@ export const PLANET_ACTIVITIES: Record<PlanetSlug, PlanetActivity[]> = {
       slug: 'pseudo-word-read',
       name: 'Mots-martiens',
       emoji: '🛸',
-      description: 'Lis des mots inventés et trouve le vrai mot qui a le même nombre de syllabes.',
+      description: "Lis des mots inventés et trouve le vrai mot qui a le même nombre de syllabes.",
     },
   ],
   numeris: [
     {
+      slug: 'rocket-math',
+      name: 'Décolle la fusée',
+      emoji: '🚀',
+      description: 'Chaque bonne réponse propulse ta fusée un étage plus haut. Atteins la lune !',
+    },
+    {
       slug: 'subitize',
       name: 'Compte éclair',
       emoji: '⚡',
-      description: 'Combien il y a d\'objets ? Sans les compter un par un !',
+      description: "Combien il y a d'objets ? Sans les compter un par un !",
     },
     {
       slug: 'number-line',
@@ -72,30 +78,42 @@ export const PLANET_ACTIVITIES: Record<PlanetSlug, PlanetActivity[]> = {
   ],
   memoria: [
     {
+      slug: 'memory-pairs',
+      name: 'Les paires mystérieuses',
+      emoji: '🃏',
+      description: 'Retourne deux cartes à la fois pour trouver toutes les paires identiques.',
+    },
+    {
       slug: 'simon-lumo',
       name: 'Simon avec LUMO',
       emoji: '🌈',
-      description: 'Répète la séquence de couleurs.',
+      description: 'Répète la séquence de couleurs que LUMO te montre.',
     },
     {
       slug: 'image-sequence',
-      name: 'Suite d\'images',
+      name: "Suite d'images",
       emoji: '🧩',
-      description: 'Quelle image vient ensuite dans la séquence ?',
+      description: "Retiens l'ordre des images et clique-les dans le même ordre.",
     },
   ],
   geometra: [
     {
+      slug: 'constellation-connect',
+      name: 'Dessine la constellation',
+      emoji: '✨',
+      description: 'Relie les étoiles dans le bon ordre pour tracer une constellation.',
+    },
+    {
       slug: 'shape-reproduce',
       name: 'Reproduis la forme',
       emoji: '🔷',
-      description: 'Recompose la forme qui t\'est montrée.',
+      description: "Recompose la figure qui t'est montrée sur une grille.",
     },
     {
       slug: 'left-right',
       name: 'Gauche ou droite ?',
       emoji: '🧭',
-      description: 'L\'objet est-il à gauche ou à droite du repère ?',
+      description: "L'objet est-il à gauche ou à droite du repère ?",
     },
   ],
 };

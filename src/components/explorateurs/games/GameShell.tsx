@@ -1,15 +1,17 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { LumoSphere, type LumoMood } from '../lumo/LumoSphere';
+import { parcoursFromPath } from './parcours-context';
 
 /**
  * GameShell — cadre commun light theme pour les mini-jeux.
+ * Détecte automatiquement le parcours depuis l'URL pour construire les
+ * liens de retour corrects (Station + Planète).
  */
 export function GameShell({
-  childId,
-  planetSlug,
   title,
   instruction,
   mood = 'idle',
@@ -30,6 +32,8 @@ export function GameShell({
   onFinish?: () => void;
   status: 'idle' | 'ready' | 'playing' | 'done';
 }) {
+  const pathname = usePathname();
+  const ctx = parcoursFromPath(pathname);
   const total = correct + wrong;
   const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
 
@@ -45,7 +49,7 @@ export function GameShell({
       >
         <div className="mx-auto flex max-w-5xl items-center justify-between px-8 py-4">
           <Link
-            href={`/explorateurs/${childId}/planet/${planetSlug}`}
+            href={ctx.planetUrl}
             className="text-sm font-medium transition hover:text-[var(--accent)]"
             style={{ color: 'var(--text-secondary)' }}
           >
@@ -104,7 +108,7 @@ export function GameShell({
             </p>
             <div className="flex gap-2">
               <Link
-                href={`/explorateurs/${childId}/planet/${planetSlug}`}
+                href={ctx.planetUrl}
                 className="rounded-full border px-5 py-2 text-sm font-medium transition hover:border-[var(--accent)]"
                 style={{
                   borderColor: 'var(--border-default)',
@@ -114,7 +118,7 @@ export function GameShell({
                 Autre activité
               </Link>
               <Link
-                href={`/explorateurs/${childId}`}
+                href={ctx.stationUrl}
                 className="rounded-full px-5 py-2 text-sm font-semibold text-white"
                 style={{ background: 'var(--accent)' }}
               >

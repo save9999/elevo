@@ -2,15 +2,15 @@
 
 import { LetterMatch } from '../explorateurs/games/LetterMatch';
 import { Subitize } from '../explorateurs/games/Subitize';
+import { RocketMath } from '../explorateurs/games/RocketMath';
 import { SimonLumo } from '../explorateurs/games/SimonLumo';
+import { MemoryPairs } from '../explorateurs/games/MemoryPairs';
 import { PlaceholderActivity } from '../explorateurs/games/PlaceholderActivity';
 
 /**
  * Route les activités Petits vers les bons composants de jeu.
- *
- * On réutilise les mini-jeux déjà écrits pour Explorateurs — ils fonctionnent
- * visuellement pour 4-6 ans. Les parcours continueront d'accumuler leurs
- * propres jeux spécifiques dans des itérations futures.
+ * Le GameShell détecte le parcours depuis l'URL, donc les retours pointent
+ * correctement vers /petits/... (plus de bug onboarding).
  */
 export function PetitsActivityRouter({
   childId,
@@ -28,8 +28,12 @@ export function PetitsActivityRouter({
       return <LetterMatch childId={childId} />;
     case 'numeris/subitize':
       return <Subitize childId={childId} />;
+    case 'numeris/rocket-math':
+      return <RocketMath childId={childId} />;
     case 'memoria/simon-lumo':
       return <SimonLumo childId={childId} />;
+    case 'memoria/memory-pairs':
+      return <MemoryPairs childId={childId} />;
     default:
       return (
         <PlaceholderActivity

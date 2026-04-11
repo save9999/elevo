@@ -1,16 +1,18 @@
 'use client';
 
 import Link from 'next/link';
-import clsx from 'clsx';
 import { PLANET_ACTIVITIES } from '../explorateurs/planets/planet-activities';
+import { PLANETS, type PlanetSlug } from '../explorateurs/station/planets-data';
+import { IllustratedPlanet, type PlanetKind } from '../cosmic/IllustratedPlanet';
+import { LumoSphere } from '../explorateurs/lumo/LumoSphere';
 
-const CHAPITRE_META: Record<string, { title: string; subtitle: string; accent: string }> = {
-  alphabos: { title: 'I. Lecture & décodage', subtitle: 'Entraîne ta fluence et ta précision de lecture.', accent: 'from-amber-700/40 to-amber-900/60' },
-  scripta: { title: 'II. Orthographe', subtitle: "Muscle ton orthographe lexicale et grammaticale.", accent: 'from-emerald-700/40 to-emerald-900/60' },
-  numeris: { title: 'III. Mathématiques', subtitle: 'Consolide ton calcul mental et ton sens du nombre.', accent: 'from-orange-700/40 to-orange-900/60' },
-  verbalia: { title: 'IV. Langage & vocabulaire', subtitle: 'Affine ton lexique et ta discrimination fine.', accent: 'from-rose-700/40 to-rose-900/60' },
-  memoria: { title: 'V. Attention & mémoire', subtitle: 'Entraîne ta mémoire de travail et ton attention.', accent: 'from-violet-700/40 to-violet-900/60' },
-  geometra: { title: 'VI. Espace & géométrie', subtitle: 'Travaille ton repérage et ta visuo-spatialité.', accent: 'from-cyan-700/40 to-cyan-900/60' },
+const PLANET_KINDS: Record<string, PlanetKind> = {
+  alphabos: 'lettres',
+  numeris: 'nombres',
+  scripta: 'ecriture',
+  verbalia: 'langage',
+  memoria: 'memoire',
+  geometra: 'espace',
 };
 
 export function AventuriersChapitrePage({
@@ -20,70 +22,117 @@ export function AventuriersChapitrePage({
   childId: string;
   chapitreSlug: string;
 }) {
-  const meta = CHAPITRE_META[chapitreSlug];
+  const planet = PLANETS.find((p) => p.slug === (chapitreSlug as PlanetSlug));
   const activities = PLANET_ACTIVITIES[chapitreSlug as keyof typeof PLANET_ACTIVITIES] ?? [];
 
-  if (!meta) {
+  if (!planet) {
     return (
-      <main className="min-h-screen bg-stone-950 text-stone-100 flex flex-col items-center justify-center p-8">
-        <p>Chapitre introuvable.</p>
-        <Link href={`/aventuriers/${childId}`} className="mt-4 underline">← Retour</Link>
+      <main className="flex min-h-screen flex-col items-center justify-center sky-bg p-8">
+        <p style={{ color: 'var(--text-secondary)' }}>Chapitre introuvable.</p>
+        <Link href={`/aventuriers/${childId}`} className="mt-4 underline" style={{ color: 'var(--accent)' }}>
+          ← Retour
+        </Link>
       </main>
     );
   }
 
   return (
-    <main className={clsx('relative min-h-screen bg-gradient-to-br text-stone-100', meta.accent, 'via-stone-950')}>
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.08] mix-blend-overlay"
+    <main className="relative min-h-screen sky-bg">
+      <nav
+        className="relative z-30 border-b"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+          borderColor: 'var(--border-subtle)',
+          background: 'rgba(255,255,255,0.6)',
+          backdropFilter: 'blur(8px)',
         }}
-      />
+      >
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-8 py-4">
+          <Link
+            href={`/aventuriers/${childId}`}
+            className="flex items-center gap-2 text-sm font-medium transition hover:text-[var(--accent)]"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            ← Retour à la Station
+          </Link>
+          <p className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>
+            Chapitre <span style={{ color: 'var(--accent)' }}>{planet.name}</span>
+          </p>
+        </div>
+      </nav>
 
-      <div className="relative mx-auto max-w-4xl px-6 py-10">
-        <Link
-          href={`/aventuriers/${childId}`}
-          className="text-xs uppercase tracking-[0.25em] text-amber-200/70 hover:text-amber-100"
-        >
-          ← Carnet de bord
-        </Link>
+      <header className="relative z-20 mx-auto mt-8 flex max-w-5xl flex-col items-center gap-5 px-8 text-center">
+        <IllustratedPlanet kind={PLANET_KINDS[chapitreSlug]} size={140} />
+        <div>
+          <p className="eyebrow">
+            <span className="divider" /> {planet.domain}
+          </p>
+          <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
+            {planet.name}
+          </h1>
+          <p
+            className="mx-auto mt-3 max-w-md text-base"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            {planet.tagline}
+          </p>
+        </div>
+      </header>
 
-        <header className="mt-6 mb-10 border-b border-stone-800 pb-6">
-          <p className="text-xs uppercase tracking-[0.25em] text-amber-300/70">Chapitre</p>
-          <h1 className="mt-2 font-serif text-4xl font-semibold italic">{meta.title}</h1>
-          <p className="mt-2 text-stone-300">{meta.subtitle}</p>
-        </header>
-
-        <section>
-          <h2 className="mb-4 text-xs uppercase tracking-[0.25em] text-stone-400">
-            Missions disponibles
-          </h2>
+      <section className="relative z-10 mx-auto mt-12 max-w-5xl px-8 pb-24">
+        <p className="eyebrow mb-6">
+          <span className="divider" /> Missions
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {activities.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-stone-700 p-6 text-sm text-stone-500">
+            <div
+              className="col-span-full rounded-2xl border border-dashed p-8 text-center text-sm"
+              style={{
+                borderColor: 'var(--border-default)',
+                color: 'var(--text-tertiary)',
+              }}
+            >
               Aucune mission pour l&apos;instant dans ce chapitre.
-            </p>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {activities.map((a) => (
-                <Link
-                  key={a.slug}
-                  href={`/aventuriers/${childId}/chapitre/${chapitreSlug}/mission/${a.slug}`}
-                  className="group flex items-center gap-4 rounded-xl border border-stone-700 bg-stone-900/50 p-4 transition hover:border-amber-500/50 hover:bg-stone-900"
-                >
-                  <div className="text-2xl">{a.emoji}</div>
-                  <div className="flex-1">
-                    <p className="text-base font-semibold">{a.name}</p>
-                    <p className="text-xs text-stone-400">{a.description}</p>
-                  </div>
-                  <span className="text-xs text-amber-300/70 opacity-0 transition group-hover:opacity-100">
-                    Lancer →
-                  </span>
-                </Link>
-              ))}
             </div>
+          ) : (
+            activities.map((a) => (
+              <Link
+                key={a.slug}
+                href={`/aventuriers/${childId}/chapitre/${chapitreSlug}/mission/${a.slug}`}
+                className="group flex flex-col gap-3 rounded-2xl border p-6 transition hover:translate-y-[-2px] hover:border-[var(--accent)]"
+                style={{
+                  borderColor: 'var(--border-default)',
+                  background: 'var(--bg-surface)',
+                  boxShadow: '0 4px 12px -4px rgba(11, 25, 48, 0.04)',
+                }}
+              >
+                <div
+                  className="flex h-12 w-12 items-center justify-center rounded-xl text-2xl"
+                  style={{ background: 'var(--accent-pale)' }}
+                >
+                  {a.emoji}
+                </div>
+                <div>
+                  <p className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    {a.name}
+                  </p>
+                  <p className="mt-1 text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                    {a.description}
+                  </p>
+                </div>
+                <span
+                  className="mt-auto pt-2 text-xs font-semibold opacity-0 transition group-hover:opacity-100"
+                  style={{ color: 'var(--accent)' }}
+                >
+                  Commencer →
+                </span>
+              </Link>
+            ))
           )}
-        </section>
+        </div>
+      </section>
+
+      <div className="fixed bottom-6 right-6 z-20">
+        <LumoSphere mood="idle" size="md" />
       </div>
     </main>
   );

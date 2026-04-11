@@ -7,35 +7,81 @@ import type { LumoMood } from './LumoSphere';
 /**
  * Hook qui gère la parole de LUMO.
  *
- * Retourne le mood courant (à passer à `<LumoSphere mood={...}>`) et une
- * fonction `speak(text)` qui déclenche la synthèse vocale et met LUMO en
- * mood `speaking` pendant la durée de la parole.
+ * Stratégie :
+ *  1. Essaie d'abord /api/tts qui utilise OpenAI TTS (voix humaine `nova`, FR).
+ *  2. Si 503 (pas de clé OpenAI) ou échec réseau → fallback Web Speech API.
+ *
+ * Retourne le mood courant (à passer à <LumoSphere mood={...}>) et `speak(text)`.
  */
 export function useLumoVoice() {
-  const providerRef = useRef<WebSpeechProvider | null>(null);
+  const webSpeechRef = useRef<WebSpeechProvider | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [mood, setMood] = useState<LumoMood>('idle');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      providerRef.current = new WebSpeechProvider();
+      webSpeechRef.current = new WebSpeechProvider();
     }
     return () => {
-      providerRef.current?.cancel();
+      webSpeechRef.current?.cancel();
+      audioRef.current?.pause();
     };
   }, []);
 
   const speak = useCallback(async (text: string) => {
-    if (!providerRef.current) return;
     setMood('speaking');
     try {
-      await providerRef.current.synthesize(text, 'nova');
+      // 1. OpenAI TTS
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, voice: 'nova' }),
+      });
+
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audioRef.current = audio;
+        await new Promise<void>((resolve) => {
+          audio.onended = () => {
+            URL.revokeObjectURL(url);
+            resolve();
+          };
+          audio.onerror = () => {
+            URL.revokeObjectURL(url);
+            resolve();
+          };
+          audio.play().catch(() => {
+            URL.revokeObjectURL(url);
+            resolve();
+          });
+        });
+        setMood('idle');
+        return;
+      }
+
+      // 2. Fallback Web Speech API
+      if (webSpeechRef.current) {
+        await webSpeechRef.current.synthesize(text, 'nova');
+      }
+    } catch {
+      // Silent fail → fallback Web Speech
+      try {
+        if (webSpeechRef.current) {
+          await webSpeechRef.current.synthesize(text, 'nova');
+        }
+      } catch {
+        // Total fail, silencieux
+      }
     } finally {
       setMood('idle');
     }
   }, []);
 
   const stop = useCallback(() => {
-    providerRef.current?.cancel();
+    webSpeechRef.current?.cancel();
+    audioRef.current?.pause();
     setMood('idle');
   }, []);
 

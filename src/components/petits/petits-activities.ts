@@ -1,16 +1,8 @@
 import type { PlanetActivity } from '../explorateurs/planets/PlanetPage';
 
 /**
- * Activités du parcours Petits (4-6 ans) — sélection réduite.
- *
- * Seules les activités qui ne demandent pas de savoir lire sont proposées :
- *   - Alphabos : Attrape la lettre (association visuelle maj/min)
- *   - Numeris : Compte éclair (subitisation)
- *   - Memoria : Simon avec LUMO (séquence de couleurs)
- *
- * Les 3 autres planètes (Scripta, Verbalia, Geometra) ne sont pas exposées
- * aux Petits dans ce MVP parce que leurs activités nécessitent la lecture
- * ou une discrimination phonologique plus fine.
+ * Activités du parcours Petits (4-6 ans) — seulement les jeux qui marchent
+ * sans savoir lire.
  */
 export const PETITS_ACTIVITIES: Record<string, PlanetActivity[]> = {
   alphabos: [
@@ -23,18 +15,30 @@ export const PETITS_ACTIVITIES: Record<string, PlanetActivity[]> = {
   ],
   numeris: [
     {
+      slug: 'rocket-math',
+      name: 'Décolle la fusée',
+      emoji: '🚀',
+      description: 'Réponds aux calculs pour faire monter la fusée vers la lune.',
+    },
+    {
       slug: 'subitize',
       name: 'Compte éclair',
       emoji: '⚡',
-      description: 'Combien tu vois d\'étoiles ?',
+      description: "Combien tu vois d'étoiles en un coup d'œil ?",
     },
   ],
   memoria: [
     {
+      slug: 'memory-pairs',
+      name: 'Les paires mystérieuses',
+      emoji: '🃏',
+      description: 'Retourne les cartes pour trouver toutes les paires.',
+    },
+    {
       slug: 'simon-lumo',
       name: 'Suis LUMO',
       emoji: '🌈',
-      description: 'Répète la suite des couleurs de LUMO.',
+      description: 'Répète la suite de couleurs que LUMO te montre.',
     },
   ],
 };
