@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import clsx from 'clsx';
 import type { Planet } from '../station/planets-data';
 import { LumoSphere } from '../lumo/LumoSphere';
+import { IllustratedPlanet, type PlanetKind } from '../../cosmic/IllustratedPlanet';
 
 export interface PlanetActivity {
   slug: string;
@@ -12,78 +12,107 @@ export interface PlanetActivity {
   description: string;
 }
 
-/**
- * Template commune à toutes les pages de planète.
- * Affiche le titre de la planète, un background thématique et les activités disponibles.
- */
+const PLANET_KINDS: Record<string, PlanetKind> = {
+  alphabos: 'lettres',
+  numeris: 'nombres',
+  scripta: 'ecriture',
+  verbalia: 'langage',
+  memoria: 'memoire',
+  geometra: 'espace',
+};
+
 export function PlanetPage({
   childId,
   planet,
   activities,
-  bgGradient = 'from-slate-950 via-indigo-950 to-slate-950',
+  backHref,
 }: {
   childId: string;
   planet: Planet;
   activities: PlanetActivity[];
-  bgGradient?: string;
+  backHref?: string;
 }) {
   return (
-    <main
-      className={clsx(
-        'relative min-h-screen bg-gradient-to-br text-slate-100',
-        bgGradient,
-      )}
-    >
-      <div className="pointer-events-none absolute inset-0 opacity-40 bg-[radial-gradient(2px_2px_at_20%_30%,white_,transparent_50%),radial-gradient(1px_1px_at_60%_20%,white_,transparent_50%),radial-gradient(2px_2px_at_80%_60%,white_,transparent_50%)]" />
+    <main className="relative min-h-screen sky-bg">
+      <nav
+        className="relative z-30 border-b"
+        style={{ borderColor: 'var(--border-subtle)', background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(8px)' }}
+      >
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-8 py-4">
+          <Link
+            href={backHref ?? `/explorateurs/${childId}`}
+            className="flex items-center gap-2 text-sm font-medium transition hover:text-[var(--accent)]"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            ← Retour à la Station
+          </Link>
+          <p className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>
+            Planète <span style={{ color: 'var(--accent)' }}>{planet.name}</span>
+          </p>
+        </div>
+      </nav>
 
-      <header className="relative z-10 flex items-center justify-between px-6 py-4">
-        <Link
-          href={`/explorateurs/${childId}`}
-          className="text-xs uppercase tracking-[0.25em] text-slate-300 hover:text-white"
-        >
-          ← Retour à la station
-        </Link>
-        <p className="text-xs uppercase tracking-[0.25em] text-slate-300">
-          {planet.name} · {planet.domain}
-        </p>
+      <header className="relative z-20 mx-auto mt-8 flex max-w-5xl flex-col items-center gap-5 px-8 text-center">
+        <IllustratedPlanet kind={PLANET_KINDS[planet.slug]} size={140} />
+        <div>
+          <p className="eyebrow">
+            <span className="divider" /> {planet.domain}
+          </p>
+          <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
+            {planet.name}
+          </h1>
+          <p className="mx-auto mt-3 max-w-md text-base" style={{ color: 'var(--text-secondary)' }}>
+            {planet.tagline}
+          </p>
+        </div>
       </header>
 
-      <section className="relative z-10 mx-auto mt-6 flex max-w-4xl flex-col items-center gap-4 px-6 text-center">
-        <div
-          className={clsx(
-            'flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br text-6xl',
-            planet.gradientFrom,
-            planet.gradientTo,
-            planet.halo,
-          )}
-        >
-          {planet.emoji}
-        </div>
-        <h1 className="text-4xl font-bold">Planète {planet.name}</h1>
-        <p className="max-w-xl text-slate-300">{planet.tagline}</p>
-      </section>
-
-      <section className="relative z-10 mx-auto mt-12 max-w-4xl px-6 pb-20">
-        <h2 className="mb-6 text-center text-xs uppercase tracking-[0.3em] text-slate-400">
-          Choisis une activité
-        </h2>
+      <section className="relative z-10 mx-auto mt-12 max-w-5xl px-8 pb-24">
+        <p className="eyebrow mb-6">
+          <span className="divider" /> Activités
+        </p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {activities.map((a) => (
             <Link
               key={a.slug}
-              href={`/explorateurs/${childId}/planet/${planet.slug}/activity/${a.slug}`}
-              className="group flex flex-col gap-2 rounded-2xl border border-slate-800 bg-slate-900/50 p-5 backdrop-blur transition hover:border-indigo-500 hover:bg-slate-900"
+              href={`${backHref ? backHref.replace('/aventuriers', '/aventuriers').replace('/lyceens', '/lyceens') : `/explorateurs/${childId}`}/planet/${planet.slug}/activity/${a.slug}`}
+              className="group flex flex-col gap-3 rounded-2xl border p-6 transition hover:translate-y-[-2px] hover:border-[var(--accent)]"
+              style={{
+                borderColor: 'var(--border-default)',
+                background: 'var(--bg-surface)',
+                boxShadow: '0 4px 12px -4px rgba(11, 25, 48, 0.04)',
+              }}
             >
-              <div className="text-3xl">{a.emoji}</div>
-              <div className="text-base font-semibold">{a.name}</div>
-              <p className="text-sm leading-relaxed text-slate-400">{a.description}</p>
-              <span className="mt-auto pt-3 text-xs uppercase tracking-wider text-indigo-300 opacity-0 transition group-hover:opacity-100">
-                Lancer →
+              <div
+                className="flex h-12 w-12 items-center justify-center rounded-xl text-2xl"
+                style={{ background: 'var(--accent-pale)' }}
+              >
+                {a.emoji}
+              </div>
+              <div>
+                <p className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  {a.name}
+                </p>
+                <p className="mt-1 text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                  {a.description}
+                </p>
+              </div>
+              <span
+                className="mt-auto pt-2 text-xs font-semibold opacity-0 transition group-hover:opacity-100"
+                style={{ color: 'var(--accent)' }}
+              >
+                Commencer →
               </span>
             </Link>
           ))}
           {activities.length === 0 && (
-            <div className="col-span-full rounded-2xl border border-dashed border-slate-700 bg-slate-900/30 p-8 text-center text-sm text-slate-500">
+            <div
+              className="col-span-full rounded-2xl border border-dashed p-8 text-center text-sm"
+              style={{
+                borderColor: 'var(--border-default)',
+                color: 'var(--text-tertiary)',
+              }}
+            >
               Des activités arriveront bientôt sur cette planète.
             </div>
           )}

@@ -47,14 +47,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <main
-      className="relative flex min-h-screen items-center justify-center grain px-6 py-12"
-      style={{ background: 'var(--bg-base)' }}
-    >
-      <div
-        className="pointer-events-none absolute -right-40 top-0 h-[500px] w-[500px] rounded-full opacity-[0.06] blur-[120px]"
-        style={{ background: 'var(--accent)' }}
-      />
+    <main className="relative flex min-h-screen items-center justify-center sky-bg px-6 py-12">
 
       <div className="relative z-20 w-full max-w-md">
         <div className="mb-12 text-center">
@@ -159,7 +152,7 @@ export default function RegisterPage() {
             className="w-full rounded-md px-6 py-3.5 text-sm font-semibold transition hover:translate-y-[-1px] disabled:opacity-60"
             style={{
               background: 'var(--accent)',
-              color: 'var(--bg-base)',
+              color: 'white',
               boxShadow: '0 10px 30px -10px var(--accent-glow)',
             }}
           >

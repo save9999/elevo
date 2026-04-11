@@ -71,11 +71,7 @@ export default function ParentDashboardClient({
   }
 
   return (
-    <main className="relative min-h-screen grain" style={{ background: 'var(--bg-base)' }}>
-      <div
-        className="pointer-events-none absolute -left-40 top-0 h-[500px] w-[500px] rounded-full opacity-[0.05] blur-[120px]"
-        style={{ background: 'var(--accent)' }}
-      />
+    <main className="relative min-h-screen sky-bg">
 
       {/* Top nav */}
       <nav
@@ -194,7 +190,7 @@ export default function ParentDashboardClient({
                           className="rounded-md px-5 py-2.5 text-sm font-semibold transition hover:translate-y-[-1px]"
                           style={{
                             background: 'var(--accent)',
-                            color: 'var(--bg-base)',
+                            color: 'white',
                           }}
                         >
                           Ouvrir l&apos;espace →
@@ -270,7 +266,7 @@ export default function ParentDashboardClient({
                   type="submit"
                   disabled={submitting}
                   className="rounded-md px-6 py-3 text-sm font-semibold transition hover:translate-y-[-1px] disabled:opacity-60"
-                  style={{ background: 'var(--accent)', color: 'var(--bg-base)' }}
+                  style={{ background: 'var(--accent)', color: 'white' }}
                 >
                   {submitting ? 'Enregistrement…' : 'Enregistrer'}
                 </button>
@@ -310,7 +306,7 @@ export default function ParentDashboardClient({
               type="button"
               onClick={() => setShowForm(true)}
               className="mt-4 rounded-md px-5 py-2.5 text-sm font-semibold"
-              style={{ background: 'var(--accent)', color: 'var(--bg-base)' }}
+              style={{ background: 'var(--accent)', color: 'white' }}
             >
               + Ajouter un premier enfant
             </button>

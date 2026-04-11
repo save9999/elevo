@@ -33,19 +33,7 @@ export default async function PlanetPageRoute({
       childId={child.id}
       planet={planet}
       activities={activities}
-      bgGradient={planetBackground(planet.slug)}
+      backHref={`/explorateurs/${child.id}`}
     />
   );
-}
-
-function planetBackground(slug: PlanetSlug): string {
-  const map: Record<PlanetSlug, string> = {
-    alphabos: 'from-slate-950 via-indigo-950 to-slate-950',
-    numeris: 'from-slate-950 via-orange-950 to-slate-950',
-    scripta: 'from-slate-950 via-emerald-950 to-slate-950',
-    verbalia: 'from-slate-950 via-rose-950 to-slate-950',
-    memoria: 'from-slate-950 via-purple-950 to-slate-950',
-    geometra: 'from-slate-950 via-cyan-950 to-slate-950',
-  };
-  return map[slug];
 }

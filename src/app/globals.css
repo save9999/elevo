@@ -1,47 +1,48 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500;1,9..144,600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ══════════════════════════════════════════════════════════════════
-   ELEVO — Edtech éditorial
-   Aesthetic : premium, mature, science-backed, minimal
+   ELEVO — Sky Light
+   Light theme, sky blue + emerald green, inviting and bright
    ══════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Typography — Geist primary, Fraunces accent ponctuel */
   --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-serif: 'Fraunces', Georgia, serif;
   --font-mono: 'Geist Mono', ui-monospace, monospace;
 
-  /* Palette — sophisticated charcoal, single accent */
-  --bg-base: #0a0a0f;
-  --bg-surface: #13131c;
-  --bg-elevated: #1a1a26;
-  --bg-hover: #22222e;
+  --bg-base: #fbfcff;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f5f9ff;
+  --bg-hover: #eef5ff;
 
-  --border-subtle: #1f1f2c;
-  --border-default: #2a2a3a;
-  --border-strong: #3a3a4d;
+  --border-subtle: #eef2f8;
+  --border-default: #dbe3ef;
+  --border-strong: #b4c2d6;
 
-  --text-primary: #e8e8f0;
-  --text-secondary: #a0a0b0;
-  --text-tertiary: #6a6a7d;
-  --text-disabled: #4a4a5c;
+  --text-primary: #0b1930;
+  --text-secondary: #3d4e69;
+  --text-tertiary: #6b7a92;
+  --text-disabled: #a3b0c4;
 
-  /* Single brand accent — refined cyan-teal */
-  --accent: #06b6d4;
-  --accent-bright: #22d3ee;
-  --accent-muted: #0e7490;
-  --accent-glow: rgba(6, 182, 212, 0.25);
+  --accent: #0284c7;
+  --accent-bright: #0ea5e9;
+  --accent-soft: #7dd3fc;
+  --accent-pale: #e0f2fe;
+  --accent-glow: rgba(14, 165, 233, 0.25);
 
-  /* Semantic */
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #ef4444;
+  --green: #059669;
+  --green-bright: #10b981;
+  --green-soft: #6ee7b7;
+  --green-pale: #d1fae5;
 
-  /* Motion */
+  --success: #059669;
+  --warning: #d97706;
+  --danger: #dc2626;
+
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
   --duration-fast: 150ms;
@@ -59,7 +60,6 @@ html {
   font-family: var(--font-sans);
   color: var(--text-primary);
   background: var(--bg-base);
-  font-feature-settings: 'cv11', 'ss01', 'ss03';
 }
 
 body {
@@ -90,8 +90,8 @@ a {
 }
 
 ::selection {
-  background: var(--accent);
-  color: var(--bg-base);
+  background: var(--accent-pale);
+  color: var(--accent);
 }
 
 ::-webkit-scrollbar { width: 12px; height: 12px; }
@@ -109,25 +109,13 @@ a {
   border-radius: 4px;
 }
 
-/* ══════════════════════════════════════════════════════════════════
-   SUBTLE GRAIN — adds film-grain texture
-   ══════════════════════════════════════════════════════════════════ */
-
-.grain::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 100;
-  opacity: 0.04;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 200px 200px;
+.sky-bg {
+  background:
+    radial-gradient(ellipse 1200px 700px at 20% -10%, rgba(14, 165, 233, 0.18) 0%, transparent 70%),
+    radial-gradient(ellipse 900px 600px at 100% 20%, rgba(16, 185, 129, 0.12) 0%, transparent 70%),
+    radial-gradient(ellipse 1000px 500px at 50% 110%, rgba(125, 211, 252, 0.18) 0%, transparent 70%),
+    linear-gradient(180deg, #fbfcff 0%, #f0f9ff 100%);
 }
-
-/* ══════════════════════════════════════════════════════════════════
-   EDITORIAL ACCENT — Fraunces italic used SPARINGLY
-   ══════════════════════════════════════════════════════════════════ */
 
 .serif-italic {
   font-family: var(--font-serif);
@@ -147,7 +135,7 @@ a {
   font-size: 0.7rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: var(--accent);
   font-weight: 500;
 }
 
@@ -155,53 +143,39 @@ a {
   display: inline-block;
   width: 32px;
   height: 1px;
-  background: var(--text-tertiary);
+  background: var(--accent);
   vertical-align: middle;
   margin: 0 0.75rem;
 }
-
-/* ══════════════════════════════════════════════════════════════════
-   LUMO ANIMATIONS (kept for kids parcours)
-   ══════════════════════════════════════════════════════════════════ */
 
 @keyframes lumo-breathe {
   0%, 100% { transform: scale(1) translateY(0); }
   50% { transform: scale(1.03) translateY(-3px); }
 }
-
 @keyframes lumo-blink {
   0%, 92%, 100% { transform: scaleY(1); }
   94%, 98% { transform: scaleY(0.1); }
 }
-
 @keyframes lumo-halo-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
-
 @keyframes lumo-halo-spin-rev {
   from { transform: rotate(360deg); }
   to { transform: rotate(0deg); }
 }
-
 @keyframes lumo-particle-float {
   0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.4; }
   50% { transform: translate(8px, -10px) scale(1.4); opacity: 0.9; }
 }
-
 @keyframes lumo-particle-float-2 {
   0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.5; }
   50% { transform: translate(-12px, -6px) scale(1.2); opacity: 1; }
 }
-
 @keyframes lumo-particle-float-3 {
   0%, 100% { transform: translate(0, 0) scale(0.8); opacity: 0.3; }
   50% { transform: translate(6px, 12px) scale(1.5); opacity: 0.8; }
 }
-
-/* ══════════════════════════════════════════════════════════════════
-   PAGE LOAD — subtle staggered reveal
-   ══════════════════════════════════════════════════════════════════ */
 
 @keyframes reveal-up {
   from { opacity: 0; transform: translateY(12px); }
@@ -212,7 +186,6 @@ a {
   opacity: 0;
   animation: reveal-up 700ms var(--ease-out) forwards;
 }
-
 .reveal-1 { animation-delay: 0ms; }
 .reveal-2 { animation-delay: 80ms; }
 .reveal-3 { animation-delay: 160ms; }
@@ -222,51 +195,33 @@ a {
 .reveal-7 { animation-delay: 480ms; }
 .reveal-8 { animation-delay: 560ms; }
 
-/* ══════════════════════════════════════════════════════════════════
-   ORBITS — for Station hub (kept)
-   ══════════════════════════════════════════════════════════════════ */
-
 @keyframes orbit-slow {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
-
 @keyframes orbit-counter-slow {
   from { transform: rotate(0deg); }
   to { transform: rotate(-360deg); }
 }
-
 @keyframes planet-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
-@keyframes nebula-drift {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(20px, -20px) scale(1.05); }
-  66% { transform: translate(-15px, 10px) scale(0.97); }
+@keyframes cloud-drift {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(30px, -10px); }
 }
-
-@keyframes star-twinkle {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
+@keyframes cloud-drift-2 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-40px, 15px); }
 }
-
-@keyframes constellation-pulse {
-  0%, 100% { opacity: 0.2; }
-  50% { opacity: 0.4; }
-}
-
-/* ══════════════════════════════════════════════════════════════════
-   GAME FEEL
-   ══════════════════════════════════════════════════════════════════ */
 
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
   20%, 40%, 60%, 80% { transform: translateX(3px); }
 }
-
 @keyframes pop-in {
   0% { transform: scale(0); opacity: 0; }
   60% { transform: scale(1.15); opacity: 1; }
@@ -276,7 +231,6 @@ a {
 .shake { animation: shake 0.45s ease-in-out; }
 .pop-in { animation: pop-in 0.4s var(--ease-out); }
 
-/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

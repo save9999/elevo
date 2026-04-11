@@ -5,13 +5,6 @@ import Link from 'next/link';
 
 const STORAGE_KEY = 'elevo-cookie-consent';
 
-/**
- * Bandeau cookies minimal et conforme RGPD.
- *
- * Elevo n'utilise que des cookies **essentiels** (session auth), donc on ne
- * demande pas vraiment de consentement — mais on informe l'utilisateur.
- * Si on ajoute un jour des cookies analytiques, il faudra un vrai consent flow.
- */
 export function CookieBanner() {
   const [visible, setVisible] = useState(false);
 
@@ -28,11 +21,18 @@ export function CookieBanner() {
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-2xl rounded-2xl border border-slate-700 bg-slate-900/95 p-4 shadow-2xl backdrop-blur">
-      <p className="text-sm text-slate-200">
+    <div
+      className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-2xl rounded-2xl border p-4"
+      style={{
+        borderColor: 'var(--border-default)',
+        background: 'var(--bg-surface)',
+        boxShadow: '0 20px 50px -20px rgba(11, 25, 48, 0.2)',
+      }}
+    >
+      <p className="text-sm" style={{ color: 'var(--text-primary)' }}>
         Elevo n&apos;utilise que des <strong>cookies essentiels</strong> (session de
         connexion). Aucun tracking, aucune pub, aucun cookie tiers.{' '}
-        <Link href="/confidentialite" className="text-indigo-300 underline">
+        <Link href="/confidentialite" className="underline" style={{ color: 'var(--accent)' }}>
           En savoir plus
         </Link>
       </p>
@@ -40,7 +40,8 @@ export function CookieBanner() {
         <button
           type="button"
           onClick={handleAccept}
-          className="rounded-full bg-indigo-500 px-4 py-1.5 text-xs font-medium text-white hover:bg-indigo-400"
+          className="rounded-full px-4 py-1.5 text-xs font-semibold text-white hover:opacity-90"
+          style={{ background: 'var(--accent)' }}
         >
           J&apos;ai compris
         </button>

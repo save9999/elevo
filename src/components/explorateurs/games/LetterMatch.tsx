@@ -4,14 +4,6 @@ import { useMemo, useState } from 'react';
 import { useGamePlay } from './useGamePlay';
 import { GameShell } from './GameShell';
 
-/**
- * Mini-jeu Alphabos — « Attrape la lettre »
- *
- * On montre une lettre majuscule. L'enfant doit cliquer sur la lettre minuscule
- * correspondante parmi 4 choix. Mesure la reconnaissance de correspondance
- * majuscule/minuscule (phonologie + discrimination visuelle).
- */
-
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'L', 'M', 'N', 'O', 'P', 'R', 'S', 'T'];
 const ROUNDS = 8;
 
@@ -28,16 +20,11 @@ function buildRounds(): Round[] {
     const target = LETTERS[Math.floor(Math.random() * LETTERS.length)];
     if (used.has(target)) continue;
     used.add(target);
-
     const distractors = LETTERS.filter((l) => l !== target)
       .sort(() => Math.random() - 0.5)
       .slice(0, 3);
     const choices = [...distractors, target].sort(() => Math.random() - 0.5);
-    rounds.push({
-      target,
-      choices,
-      correctIndex: choices.indexOf(target),
-    });
+    rounds.push({ target, choices, correctIndex: choices.indexOf(target) });
   }
   return rounds;
 }
@@ -63,20 +50,15 @@ export function LetterMatch({ childId }: { childId: string }) {
 
     play.record({
       kind: isCorrect ? 'answer_correct' : 'answer_wrong',
-      signal: isCorrect
-        ? `letter_match_${round.target}`
-        : `letter_confusion_${round.target}_${chosen}`,
+      signal: isCorrect ? `letter_match_${round.target}` : `letter_confusion_${round.target}_${chosen}`,
       weight: isCorrect ? 0.3 : 0.6,
       context: { target: round.target, chosen, correct: isCorrect },
     });
 
     setFeedback(isCorrect ? 'correct' : 'wrong');
-
     setTimeout(() => {
       setFeedback(null);
-      if (index + 1 >= ROUNDS) {
-        play.finish();
-      }
+      if (index + 1 >= ROUNDS) play.finish();
       setIndex((i) => i + 1);
     }, 700);
   };
@@ -95,7 +77,15 @@ export function LetterMatch({ childId }: { childId: string }) {
     >
       {!done ? (
         <div className="flex flex-col items-center gap-10">
-          <div className="flex h-40 w-40 items-center justify-center rounded-3xl border-2 border-indigo-400/40 bg-indigo-500/10 text-8xl font-bold text-indigo-200 shadow-[0_0_60px_-10px_rgba(99,102,241,0.7)]">
+          <div
+            className="flex h-40 w-40 items-center justify-center rounded-3xl text-8xl font-bold"
+            style={{
+              background: 'var(--bg-surface)',
+              border: '2px solid var(--border-default)',
+              color: 'var(--accent)',
+              boxShadow: '0 20px 60px -20px var(--accent-glow)',
+            }}
+          >
             {round.target}
           </div>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -105,27 +95,42 @@ export function LetterMatch({ childId }: { childId: string }) {
                 type="button"
                 onClick={() => handleChoice(i)}
                 disabled={feedback !== null}
-                className={`flex h-24 w-24 items-center justify-center rounded-2xl text-5xl font-semibold transition ${
+                className="flex h-24 w-24 items-center justify-center rounded-2xl border-2 text-5xl font-semibold transition"
+                style={
                   feedback && i === round.correctIndex
-                    ? 'border-2 border-emerald-400 bg-emerald-500/20 text-emerald-200'
-                    : feedback === 'wrong' &&
-                        round.choices[round.correctIndex] !== c
-                      ? 'border-2 border-rose-500 bg-rose-500/20 text-rose-200 opacity-60'
-                      : 'border-2 border-slate-700 bg-slate-900 text-slate-100 hover:border-indigo-400 hover:bg-slate-800'
-                }`}
+                    ? {
+                        borderColor: 'var(--success)',
+                        background: 'var(--green-pale)',
+                        color: 'var(--success)',
+                      }
+                    : feedback === 'wrong' && i !== round.correctIndex
+                      ? {
+                          borderColor: 'var(--danger)',
+                          background: '#fef2f2',
+                          color: 'var(--danger)',
+                          opacity: 0.6,
+                        }
+                      : {
+                          borderColor: 'var(--border-default)',
+                          background: 'var(--bg-surface)',
+                          color: 'var(--text-primary)',
+                        }
+                }
               >
                 {c.toLowerCase()}
               </button>
             ))}
           </div>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>
             Manche {index + 1} / {ROUNDS}
           </p>
         </div>
       ) : (
         <div className="flex flex-col items-center gap-4 text-center">
-          <p className="text-4xl">🌟</p>
-          <p className="text-xl">Mission terminée !</p>
+          <p className="text-5xl">🌟</p>
+          <p className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
+            Mission terminée !
+          </p>
         </div>
       )}
     </GameShell>
