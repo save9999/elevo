@@ -1,12 +1,12 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { AventuriersHub } from '@/components/aventuriers/AventuriersHub';
+import { AventuriersChapitrePage } from '@/components/aventuriers/AventuriersChapitrePage';
 
-export default async function AventuriersHubPage({
+export default async function ChapitrePage({
   params,
 }: {
-  params: { childId: string };
+  params: { childId: string; chapitreSlug: string };
 }) {
   const session = await auth();
   if (!session?.user) redirect('/login');
@@ -14,10 +14,15 @@ export default async function AventuriersHubPage({
 
   const child = await prisma.child.findFirst({
     where: { id: params.childId, parentId },
-    select: { id: true, firstName: true, parcours: true },
+    select: { id: true, parcours: true },
   });
   if (!child) redirect('/parent');
   if (child.parcours !== 'AVENTURIERS') redirect('/onboarding');
 
-  return <AventuriersHub childId={child.id} firstName={child.firstName} />;
+  return (
+    <AventuriersChapitrePage
+      childId={child.id}
+      chapitreSlug={params.chapitreSlug}
+    />
+  );
 }

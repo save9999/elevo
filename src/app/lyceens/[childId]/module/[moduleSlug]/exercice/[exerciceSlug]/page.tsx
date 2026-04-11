@@ -1,12 +1,12 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { LyceensDashboard } from '@/components/lyceens/LyceensDashboard';
+import { ActivityRouter } from '@/components/explorateurs/games/ActivityRouter';
 
-export default async function LyceensHome({
+export default async function LyceensExercicePage({
   params,
 }: {
-  params: { childId: string };
+  params: { childId: string; moduleSlug: string; exerciceSlug: string };
 }) {
   const session = await auth();
   if (!session?.user) redirect('/login');
@@ -14,10 +14,16 @@ export default async function LyceensHome({
 
   const child = await prisma.child.findFirst({
     where: { id: params.childId, parentId },
-    select: { id: true, firstName: true, parcours: true },
+    select: { id: true, parcours: true },
   });
   if (!child) redirect('/parent');
   if (child.parcours !== 'LYCEENS') redirect('/onboarding');
 
-  return <LyceensDashboard childId={child.id} firstName={child.firstName} />;
+  return (
+    <ActivityRouter
+      childId={child.id}
+      planetSlug={params.moduleSlug}
+      activitySlug={params.exerciceSlug}
+    />
+  );
 }
