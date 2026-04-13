@@ -1,31 +1,16 @@
 import { NextResponse } from 'next/server';
 import { createHash } from 'crypto';
-
-/**
- * POST /api/tts
- * Body: { text: string, voice?: 'nova' | 'alloy' | 'echo' | 'fable' | 'onyx' | 'shimmer' }
- *
- * Retourne un audio/mpeg généré par OpenAI TTS. Fallback : 503 si pas de clé.
- *
- * Cache en mémoire (Map) par hash SHA-256 du couple (voice, text).
- * Coût OpenAI TTS : ~$0.015 / 1000 chars → une phrase type "Bienvenue à bord, Léa" = 28 chars
- * = ~$0.0004 par appel, et chaque phrase est réutilisée après cache.
- */
+import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 
 export const runtime = 'nodejs';
 export const maxDuration = 15;
 
-// Cache mémoire (persisté tant que le lambda vit)
 const cache = new Map<string, Buffer>();
-const MAX_CACHE_ENTRIES = 200;
-
-interface TTSRequest {
-  text?: string;
-  voice?: 'nova' | 'alloy' | 'echo' | 'fable' | 'onyx' | 'shimmer';
-}
+const MAX_CACHE = 200;
+const EDGE_VOICE = 'fr-FR-VivienneMultilingualNeural';
 
 export async function POST(req: Request) {
-  let body: TTSRequest;
+  let body: { text?: string };
   try {
     body = await req.json();
   } catch {
@@ -33,77 +18,73 @@ export async function POST(req: Request) {
   }
 
   const text = body.text?.trim();
-  const voice = body.voice ?? 'nova';
-
-  if (!text || text.length === 0) {
-    return NextResponse.json({ error: 'missing_text' }, { status: 400 });
-  }
-  if (text.length > 500) {
-    return NextResponse.json({ error: 'text_too_long' }, { status: 400 });
+  if (!text || text.length === 0 || text.length > 500) {
+    return NextResponse.json({ error: 'invalid_text' }, { status: 400 });
   }
 
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) {
-    // Pas de clé → 503, le client sait qu'il doit fallback sur Web Speech.
-    return NextResponse.json({ error: 'no_openai_key' }, { status: 503 });
-  }
-
-  // Cache lookup
-  const cacheKey = createHash('sha256').update(`${voice}:${text}`).digest('hex');
+  const cacheKey = createHash('sha256').update(text).digest('hex');
   const cached = cache.get(cacheKey);
   if (cached) {
     return new Response(new Uint8Array(cached), {
-      headers: {
-        'Content-Type': 'audio/mpeg',
-        'X-Cache': 'HIT',
-        'Cache-Control': 'public, max-age=31536000, immutable',
-      },
+      headers: { 'Content-Type': 'audio/mpeg', 'X-Cache': 'HIT' },
     });
   }
 
-  // Appel OpenAI
+  // Edge TTS (gratuit, voix Vivienne — même que Contes Magiques)
   try {
-    const res = await fetch('https://api.openai.com/v1/audio/speech', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${key}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'tts-1',
-        voice,
-        input: text,
-        speed: 1.0,
-      }),
+    const tts = new MsEdgeTTS();
+    await tts.setMetadata(EDGE_VOICE, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
+    const result = tts.toStream(text);
+    const audioStream = result.audioStream ?? result;
+    const chunks: Buffer[] = [];
+
+    await new Promise<void>((resolve, reject) => {
+      const stream = audioStream as NodeJS.ReadableStream;
+      stream.on('data', (chunk: Buffer) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+      stream.on('end', () => resolve());
+      stream.on('error', (e: Error) => reject(e));
+      setTimeout(() => reject(new Error('timeout')), 12000);
     });
 
-    if (!res.ok) {
-      const errBody = await res.text();
-      console.error('[tts] OpenAI error', res.status, errBody);
-      return NextResponse.json(
-        { error: 'openai_failed', detail: errBody.slice(0, 200) },
-        { status: 502 },
-      );
+    const audio = Buffer.concat(chunks);
+    if (audio.length > 100) {
+      if (cache.size >= MAX_CACHE) {
+        const oldest = cache.keys().next().value;
+        if (oldest) cache.delete(oldest);
+      }
+      cache.set(cacheKey, audio);
+      return new Response(new Uint8Array(audio), {
+        headers: { 'Content-Type': 'audio/mpeg', 'X-Cache': 'MISS', 'X-Provider': 'edge-tts' },
+      });
     }
-
-    const audio = Buffer.from(await res.arrayBuffer());
-
-    // Store in cache (LRU: drop oldest if full)
-    if (cache.size >= MAX_CACHE_ENTRIES) {
-      const oldestKey = cache.keys().next().value;
-      if (oldestKey) cache.delete(oldestKey);
-    }
-    cache.set(cacheKey, audio);
-
-    return new Response(new Uint8Array(audio), {
-      headers: {
-        'Content-Type': 'audio/mpeg',
-        'X-Cache': 'MISS',
-        'Cache-Control': 'public, max-age=31536000, immutable',
-      },
-    });
   } catch (err) {
-    console.error('[tts] unexpected error', err);
-    return NextResponse.json({ error: 'unexpected' }, { status: 500 });
+    console.warn('[tts] Edge TTS failed:', (err as Error).message);
   }
+
+  // Fallback OpenAI si clé dispo
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (openaiKey) {
+    try {
+      const res = await fetch('https://api.openai.com/v1/audio/speech', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${openaiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'tts-1', voice: 'nova', input: text }),
+      });
+      if (res.ok) {
+        const audio = Buffer.from(await res.arrayBuffer());
+        if (cache.size >= MAX_CACHE) {
+          const oldest = cache.keys().next().value;
+          if (oldest) cache.delete(oldest);
+        }
+        cache.set(cacheKey, audio);
+        return new Response(new Uint8Array(audio), {
+          headers: { 'Content-Type': 'audio/mpeg', 'X-Cache': 'MISS', 'X-Provider': 'openai' },
+        });
+      }
+    } catch {
+      // silencieux
+    }
+  }
+
+  return NextResponse.json({ error: 'tts_unavailable' }, { status: 503 });
 }
